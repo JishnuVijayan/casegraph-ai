@@ -1,0 +1,57 @@
+# Data Contracts — PostgreSQL and TigerGraph
+
+## PostgreSQL is the canonical source of truth
+All primary keys use UUID or stable opaque strings, with explicit created/updated timestamps. Version corrections; never overwrite original evidence.
+
+| Table | Required columns / constraints |
+|---|---|
+| `users` | `id`, `role`, `organization_id?`, `demo_subject`; role enum victim/analyst/admin |
+| `organizations` | `id`, `name`, `kind` |
+| `cases` | `id`, `owner_id`, `organization_id?`, `status`, `category`, `created_at`, `updated_at` |
+| `case_access_grants` | `case_id`, `organization_id`, `scope`, `granted_by`, `revoked_at?`, `expires_at?` |
+| `evidence_files` | `id`, `case_id`, `object_key`, `sha256`, `mime_type`, `size_bytes`, `created_at`, `uploader_id` |
+| `extraction_runs` | `id`, `evidence_file_id`, `engine`, `version`, `status`, `created_at`, `error_code?` |
+| `claims` | `id`, `case_id`, `type`, `raw_value`, `normalized_value_json?`, `source_kind`, `verification_status`, `created_at` |
+| `claim_sources` | `claim_id`, `evidence_file_id`, `page?`, `text_span?`, `bbox_json?`, `audio_offset_ms?` |
+| `claim_revisions` | `id`, `claim_id`, `before_json`, `after_json`, `changed_by`, `changed_at`, `reason?` |
+| `timeline_events` | `id`, `case_id`, `event_type`, `occurred_at?`, `precision`, `uncertainty`, `created_at` |
+| `event_claims` | `event_id`, `claim_id`, composite unique |
+| `clarifications` | `id`, `case_id`, `kind`, `prompt`, `answer_json?`, `status`, `priority`, `created_at` |
+| `graph_leads` | `id`, `case_id`, `organization_id`, `path_json`, `review_status`, `created_at` |
+| `exports` | `id`, `case_id`, `version`, `object_key`, `created_by`, `created_at` |
+| `audit_events` | `id`, `actor_id`, `action`, `resource_type`, `resource_id`, `request_id`, `created_at` |
+
+## Claim model
+```ts
+type SourceKind =
+  | 'OBSERVED_IN_UPLOAD'
+  | 'VICTIM_RECOLLECTION'
+  | 'SYSTEM_INFERENCE'
+  | 'AUTHORIZED_EXTERNAL_RECORD';
+
+type VerificationStatus =
+  | 'UNVERIFIED'
+  | 'USER_CONFIRMED'
+  | 'EXTERNALLY_VERIFIED'
+  | 'DISPUTED'
+  | 'NEEDS_REVIEW';
+```
+Only set `AUTHORIZED_EXTERNAL_RECORD` / `EXTERNALLY_VERIFIED` after actual external verification **with its source**. Demo synthetic records should be visibly labeled and never shown as genuine bank confirmations.
+
+## TigerGraph schema — P0
+- Vertices: `CaseReport`, `UPI_VPA`, `BankAccount`, `PhoneNumber`, `SocialHandle`, `PhishingDomain`, `EvidenceRef`.
+- Edges: `CASE_REPORTED_VPA`, `CASE_REPORTED_PHONE`, `CASE_REPORTED_HANDLE`, `CASE_REPORTED_DOMAIN`, `VPA_SETTLED_TO_ACCOUNT`, `RELATION_SUPPORTED_BY_EVIDENCE`.
+- Edges carry source references, synthetic/authorized-data status, review status and timestamp where available.
+- Use graph-side opaque IDs; never put private full statements or bank credentials into graph nodes.
+- GSQL query: `find_case_links(case_id, max_hops)`, parameterized and bounded; confirm actual syntax against server version.
+
+## Synthetic seeds
+At least 20 fictional cases, containing:
+- Kochi and Bengaluru cases with **different front identifiers** but common synthetic layer-2 account.
+- One Goa case unrelated to that account.
+- Two unrelated cases with generic text similarity or shared hosting; should **not** imply a common perpetrator.
+- Conflicting dates, cropped transaction reference, blurred OCR digits.
+- Valid and unauthorized share-grant examples.
+
+## Required indexes and invariants
+Index `cases.owner_id`, `evidence_files.case_id`, `claims.case_id`, `claim_sources.claim_id`, `case_access_grants(case_id, organization_id)`, and `audit_events.created_at`; add foreign keys and uniqueness on keys. Apply authorization to every evidence file and every graph-source dereference. Generate Drizzle migrations; don't assume migration exists until Codex creates and tests it.
