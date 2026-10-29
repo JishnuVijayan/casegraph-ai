@@ -86,6 +86,7 @@ gsql /home/tigergraph/casegraph-t10/schema.gsql
 gsql /home/tigergraph/casegraph-t10/load.gsql
 gsql /home/tigergraph/casegraph-t10/seed.gsql
 gsql /home/tigergraph/casegraph-t10/find_case_links.gsql
+gsql /home/tigergraph/casegraph-t10/get_lead_sources.gsql
 gsql /home/tigergraph/casegraph-t10/verify_fixture_inventory.gsql
 ```
 
@@ -137,3 +138,26 @@ not validate GSQL syntax, compiler availability, CSV parser behavior or live tra
 - [Accumulators](https://www.tigergraph.com/docs/gsql-ref/4.2/querying/accumulators)
 - [Installed query REST API](https://www.tigergraph.com/docs/tigergraph-server/4.2/api/built-in-endpoints)
 - [License](https://www.tigergraph.com/license-agreement/)
+
+## T11 app integration source (runtime pending)
+
+The candidate EvidenceRef schema/CSV now includes from_id and to_id. Regenerate the
+current bundle on a clean checkout before deployment; do not apply an unreviewed
+reset to an existing graph. Install get_lead_sources.gsql as well as the path and
+administrative inventory queries. The live verifier now checks actual source records,
+endpoint bindings and source-scope negatives. All GSQL additions remain uncompiled
+in this ARM workspace.
+
+For the local NestJS app, use a separate `.local/tigergraph-app.token` mode-0600 file,
+not the administrative `.local/tigergraph.token` file used by graph:verify-live. The
+app token must only have the privileges required by find_case_links/get_lead_sources.
+After actual server auth and tunnel verification, export TIGERGRAPH_ENABLED=true
+and TIGERGRAPH_LOCAL_PORT=14240 when starting dev:demo. It defaults disabled and
+accepts no arbitrary remote URL. No token goes to Vite, URLs, logs or Git.
+
+The app derives allowed cases from current PostgreSQL INVESTIGATE grants. Both
+fixture case owners must explicitly grant that scope for the pair to be eligible.
+The fixture source metadata is authored synthetic content, not actual uploaded
+financial evidence. New queries validate and save snapshots; reading them is labeled
+historical and still requires current grants for both cases. An offline or invalid
+graph cannot return substituted fixture success. T11 live acceptance remains pending.

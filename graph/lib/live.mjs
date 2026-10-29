@@ -38,3 +38,8 @@ export async function queryLive(options) {
 export async function queryInventory(options) {
   return postInstalled('verify_fixture_inventory',{},options);
 }
+export async function querySources(options) {
+  const result=await postInstalled('get_lead_sources',{evidence_ids:options.evidenceIds,allowed_case_ids:options.allowedCaseIds},options);
+  if(result.classification!=='SYNTHETIC_FIXTURE_SOURCES'||!Array.isArray(result.sources)||result.sources.length>80)throw new Error('Invalid source result');
+  return result.sources;
+}

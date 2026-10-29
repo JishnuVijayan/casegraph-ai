@@ -169,3 +169,28 @@ its errors omit raw responses/tokens. Future EC2 deployment must rotate credenti
 enable authentication and use private/SSH-tunneled access; the optional loopback
 Compose override is not activated by this task. No public TigerGraph port, AWS
 account, infrastructure resource or security-group change was created.
+
+## T11 analyst workspace boundary
+
+Current PostgreSQL INVESTIGATE grants supply graph scope on the server. Every path
+endpoint and source case is rechecked before return; persistence/review lock cases
+in stable order and recheck inside the transaction. Revocation during a query denies
+its persistence/response. Source drilldown validates organization and membership,
+then rechecks both cases. Saved paths containing an inaccessible case are withheld.
+No client-provided allowlist is trusted. Victims and READ-only analysts cannot query.
+
+TigerGraph is disabled unless TIGERGRAPH_ENABLED=true is explicitly exported. Only
+fixed loopback/tunnel queries are sent with a server-side token from an owner-only,
+no-symlink file; token, raw errors and result payloads are never logged. Redirects,
+invalid shapes/labels, missing references and source/edge endpoint mismatches fail
+closed. No fixture generator/oracle is imported into runtime application code.
+Mock transport fixtures exist only in isolated tests. App credentials must have
+only the query privileges needed by find_case_links/get_lead_sources, not the
+administrative inventory verifier's permissions. Verify actual privileges on host.
+
+Lead/source reads are explicitly saved-query snapshots, with current access checks;
+source kind/UNVERIFIED labels survive human review. Source drilldown describes
+synthetic authored scenarios and cannot pretend these are uploaded originals or
+bank records. React renders values as text. Tests validate authorization using real
+PostgreSQL and explicitly mocked graph responses; actual graph behavior remains
+unverified until T09/T10 deployment. No EC2/account/network change was made here.

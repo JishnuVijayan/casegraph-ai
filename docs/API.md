@@ -197,3 +197,32 @@ VPAs, shared account and four EvidenceRef IDs with synthetic/unverified/review l
 Other hop bounds or invalid scope return no paths. This is not a substitute for
 T11 backend authorization, source dereference checks or actual GSQL compilation.
 `graph:verify-live` is an administrative deployment check, not an application route.
+
+## T11 analyst routes (live TigerGraph deployment pending)
+
+All routes require a current synthetic analyst session and INVESTIGATE grants for
+both cases of every returned or saved lead. READ alone is insufficient. The backend
+derives scope from PostgreSQL; undeclared body fields such as allowed_case_ids are
+rejected. Responses are no-store and use standard envelopes.
+
+- `POST /investigations/:caseId/graph-leads`: `{maxHops:4}`; executes fixed installed
+  `find_case_links` and `get_lead_sources`, validates the returned path and four source
+  records (case, relation and exact from/to binding), then commits source snapshots
+  and metadata-only audit entries. Returns `{status:"QUERY_EXECUTED",leads:[...]}`.
+  Empty results are distinct from unavailable queries (503). Graph disabled by default.
+- `GET /investigations/:caseId/graph-leads`: latest 100 saved snapshots still permitted
+  under current grants. A revoked/expired target case hides its whole path.
+- `GET /graph-leads/:leadId/sources/:sourceId`: validates organization, both case grants
+  and exact source membership before returning a saved source snapshot. Source IDs
+  are URL-encoded fx: fixture identifiers, not file IDs or arbitrary URLs.
+- `PATCH /graph-leads/:leadId/review`: `{status:"REVIEWED"}` or
+  `{status:"NOT_RELEVANT"}`; locks/rechecks both cases and records reviewer metadata
+  in audit. This changes human lead-review status only, not source verification.
+
+Leads start NEEDS_REVIEW and include origin TIGERGRAPH_QUERY_SNAPSHOT, creation time,
+synthetic classification, path and four source references. Snapshot reads are not
+presented as new query executions. Missing/invalid credentials, malformed or oversize
+responses and unavailable queries fail closed. No browser token or arbitrary GSQL is
+accepted. Query scope capped at 20 cases, result at 20 paths/80 sources, body at
+128 KiB and both outbound calls share a 12-second deadline. Live demonstration of
+these routes still awaits the compatible TigerGraph installation and query compilation.

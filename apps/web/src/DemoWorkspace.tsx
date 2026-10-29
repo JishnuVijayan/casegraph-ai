@@ -1,3 +1,4 @@
+import { AnalystPanel } from './AnalystPanel';
 import { ExportPanel } from './ExportPanel';
 import { QuestionsPanel } from './QuestionsPanel';
 import { useState } from 'react';
@@ -39,7 +40,7 @@ export function DemoWorkspace() {
   return <section aria-labelledby="demo-title">
     <h2 id="demo-title" className="text-xl font-bold">Local synthetic demo</h2>
     <p>Fictional role simulation only. Choosing an identity is not real identity verification. No real victim data.</p>
-    <p>Create synthetic cases, review local OCR, save source-linked claims and build a sourced timeline. Review and download a draft export. TigerGraph investigation is not implemented yet.</p>
+    <p>Create synthetic cases, review local OCR, save source-linked claims and build a sourced timeline. Review and download a draft export. Investigation requires an available TigerGraph instance and explicit investigation grants.</p>
     {!session ? <form onSubmit={(event) => { event.preventDefault(); void perform(async () => {
       clear();
       const next = await api<Session>('/auth/demo', undefined, { demoSubject: subject }, 'POST');
@@ -93,13 +94,14 @@ export function DemoWorkspace() {
         <p>Uploads are unverified user-supplied material, not bank-verified records.</p>
         <EvidencePanel key={`evidence-${detail.id}`} token={session.token} caseId={detail.id} owner={session.user.role === 'victim'} busy={busy} perform={perform} onClaimAdded={() => setReviewKey((value) => value + 1)} />
         <ReviewPanel key={`review-${detail.id}`} token={session.token} caseId={detail.id} owner={session.user.role === 'victim'} busy={busy} refreshKey={reviewKey} perform={perform} />
+        {session.user.role === 'analyst' && <AnalystPanel key={`analyst-${detail.id}`} token={session.token} caseId={detail.id} busy={busy} perform={perform} />}
         <ExportPanel key={`export-${detail.id}`} token={session.token} caseId={detail.id} busy={busy} perform={perform} />
         <QuestionsPanel key={`questions-${detail.id}`} token={session.token} caseId={detail.id} owner={session.user.role === 'victim'} busy={busy} perform={perform} />
         {session.user.role === 'victim' && <div>
           <p>Explicitly share this case with the Fictional Demo Consortium.</p>
           <label htmlFor="share-scope">Permission</label>
           <select id="share-scope" value={scope} disabled={busy} onChange={(event) => setScope(event.target.value)}>
-            <option value="READ">Read case</option><option value="INVESTIGATE">Read and future investigation scope</option>
+            <option value="READ">Read case</option><option value="INVESTIGATE">Read and investigate synthetic graph</option>
           </select>
           <button disabled={busy} onClick={() => void perform(async () => {
             const row = await api<{ id: string }>(`/cases/${detail.id}/shares`, session.token, { organizationId, scope }, 'POST');

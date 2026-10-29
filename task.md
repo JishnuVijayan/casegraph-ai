@@ -1,24 +1,24 @@
-# Current task — T10 synthetic graph schema and bounded query
+# Current task — T11 analyst investigation workspace
 
-Branch: `feat/t10-graph-schema-query` from develop after T09 preparation merged as `20fbcca`. T09 runtime remains incomplete. User plans a future demo EC2 deployment; no AWS resources or billing action authorized now.
+Branch: `feat/t11-analyst-workspace` from develop after merging T10 source preparation. T09/T10 live verification still pending future EC2 host.
+References: AGENTS, README, REQUIREMENTS, STACK, FREE_SETUP, ARCHITECTURE, DATA_MODEL, API, SECURITY, TASKS, TEST_PLAN and DEMO.
+Expected changes: backend graph client, investigation/lead/source/review guards and service, fixed source GSQL query, analyst React panel, synthetic unit/HTTP/component tests, scripts and docs.
 
-References: AGENTS, README, REQUIREMENTS, STACK, FREE_SETUP, SECURITY, DATA_MODEL, API, TEST_PLAN, DEMO, DECISIONS and official TigerGraph 4.2 GSQL schema/loading/query docs.
-Expected files: graph schema/query, deterministic fixture/bundle generator, offline contract tests, bounded token-authenticated live verification CLI, package scripts and deployment/task docs.
+- [x] Execute only fixed installed queries, disabled by default, private server token, loopback/tunnel transport, bounded responses and visible unavailable state.
+- [x] Derive current INVESTIGATE scope in backend, validate every path/source, and recheck grants on creation/list/source/review, including revocation while a query runs.
+- [x] Persist labeled query snapshots as NEEDS_REVIEW and provide source drilldown plus reviewer decisions.
+- [x] Build analyst-only accessible path visual and honest live-query vs saved-snapshot labels; do not invent source uploads.
+- [x] Run meaningful mocked-transport authorization tests plus real unavailable-path checks; log actual results.
+- [ ] Demonstrate actual installed live query on compatible host (pending T09/T10 deployment; T11 stays unchecked until live evidence).
 
-- [x] Define seven vertex types and source-bearing edges in an isolated graph; preserve source/verification distinctions.
-- [x] Build 20 fictional cases with the expected Kochi/Bengaluru shared-layer account, unrelated Goa case and benign generic-text/shared-host look-alikes.
-- [x] Write bounded four-hop installed GSQL query filtering both case endpoints and edge provenance by trusted case scope.
-- [x] Prepare deterministic CSV/loading bundle and repeatable seed commands without destructive resets.
-- [x] Add offline fixture/authorization contract tests and live-server functional verifier; run available checks.
-- [ ] Compile/install/load/run on compatible TigerGraph and record actual results (pending future host). Keep T10 unchecked until verified live.
+Done: authorized analyst can execute the installed scoped query and review its paths/sources; victims/READ-only grants and revoked cross-case paths are denied. Offline test fixtures cannot satisfy live acceptance.
 
-Done: actual installed query returns the scoped synthetic path with source refs and excludes benign/private cases. Offline results cannot satisfy that live requirement. T11 backend/analyst integration stays separate.
+## Actual results — 2026-10-29 IST
 
-## Observed results — 2026-10-29 IST
-
-- T09 preparation merged and pushed to develop as `20fbcca`; T10 is a separate source branch. Main unchanged this task.
-- `graph:bundle` passed twice with identical output. Bundle refuses differing files; the first task-generated revision was retained as ignored `.local/graph-t10-bundle-initial` before regeneration. No existing files were overwritten.
-- `graph:test`: 4 offline contract tests passed; `npm test`: 35 passed total (7 infrastructure, 4 graph offline contracts, 13 API, 11 web). Lint/typecheck and whitespace check passed. One unused test import caught by lint was removed; rerun passed.
-- `graph:verify-live` returned expected UNAVAILABLE_OR_VERIFICATION_FAILED / liveVerified false, exit 1 (runtime/token absent). No graph result, compilation, seed execution or live path is claimed.
-- Candidate bundle counts: 20 cases, 20 VPAs, 19 accounts, 20 phones, 20 handles, 19 domains, 100 fixture sources; 20 of each primary report/settlement edge plus 100 source-support edges. These are generated fixture counts, not observed database counts.
-- T09/T10 live acceptance pending future compatible EC2 deployment. No AWS resources, paid API, instance purchase, remote connection, security-group changes or benchmarks. No backend graph integration (T11).
+- Merged/pushed T10 source preparation into develop as `88a55b6`; T11 implemented separately on its feature branch. Main unchanged.
+- Added default-disabled fixed graph client; current backend-derived INVESTIGATE scope; strict path/source case/relation/endpoint binding; source-bound saved lead snapshots; source/review endpoints; analyst path visual, drilldown and honest unavailable/history labels.
+- Extended still-uninstalled EvidenceRef/schema/CSV and fixed get_lead_sources candidate query. Updated future live verifier; no live graph or cloud resource changed. Regenerated bundle twice identically; old ignored bundle preserved as `.local/graph-t10-bundle-before-t11`.
+- `npm test`: 39 passed (7 infrastructure, 4 graph offline, 15 API, 13 web). `test:investigations`: 5 passed with real isolated PostgreSQL and explicitly mocked graph transport. `test:auth`: 9 passed. Total: 53 regular/integration tests; no mock is shipped as a runtime fallback.
+- Lint, typecheck, production build and whitespace checks passed. `db:generate`: no pending schema changes; no PostgreSQL migration needed. Storage smoke: 21 HTTP probes plus asset sentinel scan passed; temporary servers/sentinel removed.
+- `graph:verify-live`: expected unavailable/nonzero with liveVerified false because runtime/token absent. No GSQL compiler, real query/source fetch, cloud deployment, live demonstration or benchmark was run. T09/T10/T11 remain unchecked pending actual host verification.
+- Local infrastructure shut down, final status empty; working volume/config preserved and temporary synthetic test DB/token files removed. No browser visual/E2E run. Next source phase is T12 E2E, with its live graph portion dependent on deployment.

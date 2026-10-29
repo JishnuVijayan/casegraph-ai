@@ -20,7 +20,7 @@ export function fixture() {
     for(const [type,from,to] of [['CASE_REPORTED_VPA',c.id,vpa],['CASE_REPORTED_PHONE',c.id,phone],['CASE_REPORTED_HANDLE',c.id,handle],['CASE_REPORTED_DOMAIN',c.id,domain],['VPA_SETTLED_TO_ACCOUNT',vpa,bank]]) {
       const evidence_id=`fx:evidence:${n}:${type.toLowerCase()}`;
       const provenance={case_id:c.id,evidence_id,source_kind:'SYSTEM_INFERENCE',verification_status:'UNVERIFIED',review_status:'NEEDS_REVIEW',data_origin:'SYNTHETIC_FIXTURE',synthetic:true,observed_at:'2026-10-29 12:00:00'};
-      vertices.EvidenceRef.push({id:evidence_id,case_id:c.id,relation_type:type,fixture_kind:type==='VPA_SETTLED_TO_ACCOUNT'?'FICTIONAL_SETTLEMENT_SCENARIO':'FICTIONAL_CASE_SCENARIO',source_kind:provenance.source_kind,verification_status:provenance.verification_status,data_origin:provenance.data_origin,synthetic:true});
+      vertices.EvidenceRef.push({id:evidence_id,case_id:c.id,relation_type:type,fixture_kind:type==='VPA_SETTLED_TO_ACCOUNT'?'FICTIONAL_SETTLEMENT_SCENARIO':'FICTIONAL_CASE_SCENARIO',source_kind:provenance.source_kind,verification_status:provenance.verification_status,data_origin:provenance.data_origin,synthetic:true,from_id:from,to_id:to});
       edges[type].push({from,to,...provenance});
       edges.RELATION_SUPPORTED_BY_EVIDENCE.push({from:c.id,to:evidence_id,...provenance});
     }
@@ -42,7 +42,7 @@ export function validateFixture(data) {
       if(type.startsWith('CASE_')&&edge.from!==edge.case_id) throw new Error('Cross-case report');
       if(type==='RELATION_SUPPORTED_BY_EVIDENCE'&&(edge.from!==edge.case_id||edge.to!==edge.evidence_id)) throw new Error('Cross-case evidence');
       if(type==='VPA_SETTLED_TO_ACCOUNT'&&!data.edges.CASE_REPORTED_VPA.some((report)=>report.to===edge.from&&report.case_id===edge.case_id)) throw new Error('Settlement provenance is not owned by the reporting case');
-      if(type!=='RELATION_SUPPORTED_BY_EVIDENCE'&&source.relation_type!==type) throw new Error('Mismatched evidence type');
+      if(type!=='RELATION_SUPPORTED_BY_EVIDENCE'&&(source.relation_type!==type||source.from_id!==edge.from||source.to_id!==edge.to)) throw new Error('Mismatched evidence type');
     }
   }
   return data;
