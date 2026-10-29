@@ -11,7 +11,14 @@ export class InvestigationsService {
   constructor(private readonly access:AccessStore,private readonly graph:TigerGraphClient){}
   private async scope(req:ApiRequest){
     if(req.actor?.role!=='analyst'||!req.actor.organizationId)throw new ForbiddenException();
-    const ids=await this.access.investigationCaseIds(req.actor);if(ids.length>250)throw new ServiceUnavailableException();return ids;
+    const ids=await this.access.investigationCaseIds(req.actor);
+    if(ids.length>250)throw new ServiceUnavailableException();
+    const root=req.caseRecord?.id;
+    // CaseScopeGuard already proved INVESTIGATE on the open case. Always keep it in the
+    // bounded graph window so newly submitted complaints are not Access-denied just because
+    // older seeded grants fill the first N ids.
+    if(root&&!ids.includes(root))return [root,...ids].slice(0,21);
+    return ids;
   }
   private view(row:Lead,snapshot:LeadSnapshot){return {id:row.id,caseId:row.caseId,createdAt:row.createdAt,reviewStatus:row.reviewStatus,origin:'TIGERGRAPH_QUERY_SNAPSHOT',classification:'SYNTHETIC_INVESTIGATIVE_LEAD',path:snapshot.path,sourceRefs:pathRefs(snapshot.path)};}
   private async lookup(req:ApiRequest,id:string){

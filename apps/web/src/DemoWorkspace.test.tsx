@@ -1,11 +1,11 @@
 import { afterEach, expect, test, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { VictimFilingPage } from './VictimFilingPage';
 
 const token = 'a'.repeat(64);
 const user = { id: 'synthetic-user', role: 'victim', displayName: 'Priya Demo' };
-const row = { id: 'synthetic-case', title: 'Synthetic payment complaint', status: 'DRAFT', synthetic: true, category: 'payment' };
+const row = { id: 'synthetic-case', title: 'Lost money on fake UPI', status: 'DRAFT', synthetic: true, category: 'payment' };
 const success = (data: unknown, status = 200) => ({ ok: true, status, json: async () => ({ data }) });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
@@ -44,7 +44,7 @@ test('shows unavailable intake truthfully without invented case data', async () 
   expect(screen.queryByRole('button', { name: 'Sign out' })).not.toBeInTheDocument();
 });
 
-test('creates the hidden case with syntheticAcknowledged and advances to uploads', async () => {
+test('creates the case and opens auto-upload zone without investigator tools', async () => {
   const fetch = vi.fn()
     .mockResolvedValueOnce(success({ token, user }))
     .mockResolvedValueOnce(success(row, 201))
@@ -56,27 +56,60 @@ test('creates the hidden case with syntheticAcknowledged and advances to uploads
   await screen.findByLabelText('Short description');
   fireEvent.change(screen.getByLabelText('Short description'), { target: { value: 'Lost money on fake UPI' } });
   fireEvent.click(screen.getByRole('button', { name: 'Continue to uploads' }));
-  await screen.findByLabelText('Image file');
+  await screen.findByText('Tap to add images');
   expect(JSON.parse(fetch.mock.calls[1][1].body)).toMatchObject({
     title: 'Lost money on fake UPI', category: 'payment', syntheticAcknowledged: true,
   });
   expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Run local OCR' })).not.toBeInTheDocument();
+  expect(screen.queryByLabelText('Claim type')).not.toBeInTheDocument();
+  expect(screen.queryByText(/Synthetic /)).not.toBeInTheDocument();
 });
 
-test('submits the complaint and shows confirmation', async () => {
+test('skips questions when prepare finds nothing missing and submits', async () => {
   const fetch = vi.fn()
     .mockResolvedValueOnce(success({ token, user }))
     .mockResolvedValueOnce(success(row, 201))
-    .mockResolvedValueOnce(success([])) // evidence list if any
     .mockImplementation((url: string, init?: { method?: string }) => {
-      if (String(url).includes('/clarifications')) return success([]);
+      if (String(url).includes('/prepare') && init?.method === 'POST') {
+        return success({ caseId: row.id, evidenceCount: 1, claimCount: 3, openQuestions: 0 });
+      }
       if (String(url).includes('/submit') && init?.method === 'POST') {
         return success({
           caseId: row.id, status: 'REVIEW_REQUIRED', exportId: 'export-1', exportVersion: 1,
           leadsStatus: 'UNAVAILABLE', similarCaseCount: 0,
         }, 201);
       }
-      if (String(url).includes('/claims') || String(url).includes('/timeline')) return success([]);
+      if (String(url).includes('/evidence') && (!init?.method || init.method === 'GET')) {
+        return success([{ id: 'ev-1', mimeType: 'image/png', sizeBytes: 12, sha256: 'a'.repeat(64), createdAt: '2026-10-29T00:00:00Z' }]);
+      }
+      return success([]);
+    });
+  vi.stubGlobal('fetch', fetch);
+  renderVictim();
+  fillIntake();
+  fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+  await screen.findByLabelText('Short description');
+  fireEvent.change(screen.getByLabelText('Short description'), { target: { value: 'UPI fraud' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Continue to uploads' }));
+  await screen.findByText('Ready');
+  fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+  await screen.findByRole('heading', { name: 'Ready to submit' });
+  expect(screen.queryByRole('heading', { name: 'A few more details' })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Submit complaint' }));
+  expect(await screen.findByRole('heading', { name: 'Complaint submitted for review' })).toBeVisible();
+  expect(screen.getByText(new RegExp(row.id))).toBeVisible();
+});
+
+test('auto-uploads chosen images and can remove them', async () => {
+  const uploaded = { id: 'ev-new', mimeType: 'image/png', sizeBytes: 12, sha256: 'b'.repeat(64), createdAt: '2026-10-29T00:00:00Z' };
+  const fetch = vi.fn()
+    .mockResolvedValueOnce(success({ token, user }))
+    .mockResolvedValueOnce(success(row, 201))
+    .mockResolvedValueOnce(success([]))
+    .mockImplementation((url: string, init?: { method?: string }) => {
+      if (String(url).includes('/evidence') && init?.method === 'POST') return success(uploaded, 201);
+      if (String(url).includes('/evidence/') && init?.method === 'DELETE') return success({ removed: true, id: uploaded.id });
       if (String(url).includes('/evidence')) return success([]);
       return success([]);
     });
@@ -87,12 +120,14 @@ test('submits the complaint and shows confirmation', async () => {
   await screen.findByLabelText('Short description');
   fireEvent.change(screen.getByLabelText('Short description'), { target: { value: 'UPI fraud' } });
   fireEvent.click(screen.getByRole('button', { name: 'Continue to uploads' }));
-  await screen.findByRole('button', { name: 'Continue to review details' });
-  fireEvent.click(screen.getByRole('button', { name: 'Continue to review details' }));
-  await screen.findByRole('button', { name: 'Continue to missing details' });
-  fireEvent.click(screen.getByRole('button', { name: 'Continue to missing details' }));
-  await screen.findByRole('button', { name: 'Submit complaint' });
-  fireEvent.click(screen.getByRole('button', { name: 'Submit complaint' }));
-  expect(await screen.findByRole('heading', { name: 'Complaint submitted for review' })).toBeVisible();
-  expect(screen.getByText(new RegExp(row.id))).toBeVisible();
+  await screen.findByText('Tap to add images');
+  const input = document.getElementById('evidence-file') as HTMLInputElement;
+  const file = new File(['png'], 'shot.png', { type: 'image/png' });
+  fireEvent.change(input, { target: { files: [file] } });
+  await screen.findByText('Ready');
+  expect(fetch.mock.calls.some((call) => String(call[0]).includes('/evidence') && call[1]?.method === 'POST')).toBe(true);
+  fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
+  await waitFor(() => {
+    expect(fetch.mock.calls.some((call) => String(call[0]).includes(`/evidence/${uploaded.id}`) && call[1]?.method === 'DELETE')).toBe(true);
+  });
 });

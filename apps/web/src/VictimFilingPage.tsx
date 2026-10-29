@@ -1,22 +1,21 @@
 import { Link, Navigate } from 'react-router-dom';
 import { useState } from 'react';
 import { DemoBadge } from './DemoBadge';
-import { EvidencePanel } from './EvidencePanel';
 import { QuestionsPanel } from './QuestionsPanel';
-import { ReviewPanel } from './ReviewPanel';
+import { VictimUploadZone } from './VictimUploadZone';
 import { api, ApiFailure } from './api';
 import type { CaseDetail, Session } from './types';
 
-type Step = 'intake' | 'details' | 'review' | 'questions' | 'done';
+type Step = 'intake' | 'details' | 'questions' | 'ready' | 'done';
 type SubmitResult = {
   caseId: string; status: string; exportId: string; exportVersion: number;
   leadsStatus: string; similarCaseCount: number;
 };
+type PrepareResult = { caseId: string; evidenceCount: number; claimCount: number; openQuestions: number };
 
 const WIZARD_STEPS = [
   { id: 'details', label: 'Details' },
-  { id: 'review', label: 'Review' },
-  { id: 'questions', label: 'Essentials' },
+  { id: 'questions', label: 'Questions' },
 ] as const;
 
 const CATEGORIES = [
@@ -28,17 +27,19 @@ const CATEGORIES = [
 
 function stepIndex(step: Step): number {
   if (step === 'details') return 0;
-  if (step === 'review') return 1;
-  if (step === 'questions') return 2;
+  if (step === 'questions' || step === 'ready') return 1;
   return -1;
 }
 
 function WizardProgress({ step }: { step: Step }) {
   const active = stepIndex(step);
   if (active < 0) return null;
+  const labels = step === 'ready'
+    ? [{ id: 'details', label: 'Details' }, { id: 'questions', label: 'Submit' }] as const
+    : WIZARD_STEPS;
   return (
-    <nav className="wizard-progress" aria-label="Complaint steps">
-      {WIZARD_STEPS.map((item, index) => {
+    <nav className="wizard-progress wizard-progress-2" aria-label="Complaint steps">
+      {labels.map((item, index) => {
         const state = index < active ? 'done' : index === active ? 'current' : 'todo';
         return (
           <div key={item.id} className={`wizard-step wizard-step-${state}`} aria-current={state === 'current' ? 'step' : undefined}>
@@ -59,23 +60,34 @@ export function VictimFilingPage() {
   const [category, setCategory] = useState('payment');
   const [summary, setSummary] = useState('');
   const [detail, setDetail] = useState<CaseDetail | null>(null);
-  const [reviewKey, setReviewKey] = useState(0);
+  const [readyUploads, setReadyUploads] = useState(0);
   const [submitResult, setSubmitResult] = useState<SubmitResult | null>(null);
   const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState('');
   const [error, setError] = useState('');
 
   function clear() {
     setSession(null); setDetail(null); setSubmitResult(null); setStep('intake');
     setName(''); setMobile(''); setSummary(''); setCategory('payment');
+    setReadyUploads(0); setStatus('');
   }
 
   async function perform(operation: () => Promise<void>) {
-    setBusy(true); setError('');
+    setBusy(true); setError(''); setStatus('');
     try { await operation(); }
     catch (failure) {
       if (failure instanceof ApiFailure && failure.status === 401) clear();
       setError(failure instanceof Error ? failure.message : 'Request failed.');
-    } finally { setBusy(false); }
+    } finally { setBusy(false); setStatus(''); }
+  }
+
+  async function submitComplaint(caseId: string, token: string) {
+    const result = await api<SubmitResult>(
+      `/cases/${encodeURIComponent(caseId)}/submit`,
+      token, {}, 'POST',
+    );
+    setSubmitResult(result);
+    setStep('done');
   }
 
   if (session?.user.role === 'analyst') return <Navigate to="/officer" replace />;
@@ -89,7 +101,7 @@ export function VictimFilingPage() {
             <h1 id="hero-brand" className="hero-brand anim-rise">CaseGraph AI</h1>
             <p className="hero-headline anim-rise-delay">File a complaint in a few clear steps.</p>
             <p className="hero-support anim-rise-delay">
-              Enter your name and mobile, upload screenshots, answer any missing essentials, then submit.
+              Enter your name and mobile, describe what happened, upload screenshots, answer only what’s still missing, then submit.
             </p>
             <aside className="safety-callout anim-fade" aria-label="Immediate reporting guidance">
               <p className="safety-callout-title">If money is still at risk</p>
@@ -182,29 +194,15 @@ export function VictimFilingPage() {
           <span className="step-label">Submitted</span>
           <h2 id="submitted-title" className="text-2xl font-bold m-0">Complaint submitted for review</h2>
           <p className="success-lead">
-            A reviewable case file was prepared with your timeline, answers, and draft report.
-            {submitResult.leadsStatus === 'CAPTURED' && (
-              <> Similar-case patterns found: {submitResult.similarCaseCount}.</>
-            )}
+            Your complaint package is ready for an officer to review.
             {submitResult.leadsStatus === 'UNAVAILABLE' && (
               <> Similar-case search was unavailable; officers can retry later.</>
-            )}
-            {submitResult.leadsStatus === 'NONE' && (
-              <> No similar-case links were found in the synthetic graph.</>
             )}
           </p>
           <dl className="success-meta">
             <div>
               <dt>Reference</dt>
               <dd><code>{submitResult.caseId}</code></dd>
-            </div>
-            <div>
-              <dt>Draft export</dt>
-              <dd>v{submitResult.exportVersion}</dd>
-            </div>
-            <div>
-              <dt>Pattern leads</dt>
-              <dd>{submitResult.leadsStatus}</dd>
             </div>
           </dl>
           <div className="action-row">
@@ -239,10 +237,10 @@ export function VictimFilingPage() {
 
       {step === 'details' && (
         <section className="workspace-panel wizard-panel" aria-labelledby="details-title">
-          <span className="step-label">Step 1 of 3</span>
+          <span className="step-label">Step 1 of 2</span>
           <h2 id="details-title" className="panel-title">What happened?</h2>
           <p className="panel-lead">
-            Briefly describe the incident, then upload screenshots or receipts.
+            Briefly describe the incident, then add screenshots or receipts.
           </p>
           {!detail ? (
             <form className="details-form" onSubmit={(event) => {
@@ -297,22 +295,25 @@ export function VictimFilingPage() {
                 <strong>{detail.title}</strong>
                 <span>{detail.category}</span>
               </div>
-              <EvidencePanel
+              <VictimUploadZone
                 key={`evidence-${detail.id}`}
                 token={session.token}
                 caseId={detail.id}
-                owner
                 busy={busy}
                 perform={perform}
-                autoOcr
-                autoLoad
-                compact
-                onClaimAdded={() => setReviewKey((value) => value + 1)}
+                onReadyCount={setReadyUploads}
               />
               <div className="action-row mt-4">
-                <button className="btn-primary" type="button" disabled={busy}
-                  onClick={() => setStep('review')}>
-                  Continue to review details
+                <button className="btn-primary" type="button" disabled={busy || readyUploads < 1}
+                  onClick={() => void perform(async () => {
+                    setStatus('Reading your screenshots and checking what’s missing…');
+                    const prepared = await api<PrepareResult>(
+                      `/cases/${encodeURIComponent(detail.id)}/prepare`,
+                      session.token, {}, 'POST',
+                    );
+                    setStep(prepared.openQuestions > 0 ? 'questions' : 'ready');
+                  })}>
+                  Continue
                 </button>
               </div>
             </>
@@ -320,38 +321,12 @@ export function VictimFilingPage() {
         </section>
       )}
 
-      {step === 'review' && detail && (
-        <section className="workspace-panel wizard-panel" aria-labelledby="review-title">
-          <span className="step-label">Step 2 of 3</span>
-          <h2 id="review-title" className="panel-title">Check extracted details</h2>
-          <p className="panel-lead">
-            Confirm amounts and add any recollection. Link claims on a payment timeline when ready.
-          </p>
-          <ReviewPanel
-            key={`review-${detail.id}-${reviewKey}`}
-            token={session.token}
-            caseId={detail.id}
-            owner
-            busy={busy}
-            refreshKey={reviewKey}
-            perform={perform}
-          />
-          <div className="action-row mt-4">
-            <button className="btn-ghost" type="button" disabled={busy} onClick={() => setStep('details')}>Back</button>
-            <button className="btn-primary" type="button" disabled={busy}
-              onClick={() => setStep('questions')}>
-              Continue to missing details
-            </button>
-          </div>
-        </section>
-      )}
-
       {step === 'questions' && detail && (
         <section className="workspace-panel wizard-panel" aria-labelledby="questions-title">
-          <span className="step-label">Step 3 of 3</span>
-          <h2 id="questions-title" className="panel-title">Missing essentials</h2>
+          <span className="step-label">Step 2 of 2</span>
+          <h2 id="questions-title" className="panel-title">A few more details</h2>
           <p className="panel-lead">
-            Answer only what is still missing, or mark unknown. Then submit the complaint.
+            Answer only what is still missing, or say you don’t remember. Then submit.
           </p>
           <QuestionsPanel
             key={`questions-${detail.id}`}
@@ -364,23 +339,33 @@ export function VictimFilingPage() {
             compact
           />
           <div className="action-row mt-4">
-            <button className="btn-ghost" type="button" disabled={busy} onClick={() => setStep('review')}>Back</button>
+            <button className="btn-ghost" type="button" disabled={busy} onClick={() => setStep('details')}>Back</button>
             <button className="btn-primary" type="button" disabled={busy}
-              onClick={() => void perform(async () => {
-                const result = await api<SubmitResult>(
-                  `/cases/${encodeURIComponent(detail.id)}/submit`,
-                  session.token, {}, 'POST',
-                );
-                setSubmitResult(result);
-                setStep('done');
-              })}>
+              onClick={() => void perform(() => submitComplaint(detail.id, session.token))}>
               Submit complaint
             </button>
           </div>
         </section>
       )}
 
-      {busy && <p className="status-line" role="status">Working…</p>}
+      {step === 'ready' && detail && (
+        <section className="workspace-panel wizard-panel" aria-labelledby="ready-title">
+          <span className="step-label">Step 2 of 2</span>
+          <h2 id="ready-title" className="panel-title">Ready to submit</h2>
+          <p className="panel-lead">
+            We already have the essentials from your description and screenshots. Nothing else is missing.
+          </p>
+          <div className="action-row mt-4">
+            <button className="btn-ghost" type="button" disabled={busy} onClick={() => setStep('details')}>Back</button>
+            <button className="btn-primary" type="button" disabled={busy}
+              onClick={() => void perform(() => submitComplaint(detail.id, session.token))}>
+              Submit complaint
+            </button>
+          </div>
+        </section>
+      )}
+
+      {(busy || status) && <p className="status-line" role="status">{status || 'Working…'}</p>}
       {error && <p role="alert">{error}</p>}
       <p className="workspace-foot">
         <Link to="/officer">Officer workspace</Link>

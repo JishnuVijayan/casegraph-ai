@@ -205,6 +205,11 @@ Current detailed plan: [`task.md`](../task.md) — AWS 24h working-demo (ADR-026
 - Lint, full typecheck including E2E, builds and whitespace checks passed. Temporary DBs/files/browser/server children cleaned, project PostgreSQL stopped and final status empty; working volume/config preserved. No paid service, EC2 change or benchmark.
 - Limits: no actual TigerGraph runtime or graph-server attack test; re-run live scope/source checks after deployment. No dependency vulnerability audit, independent penetration test or production security certification performed. T14–T16 optional; required live acceptance T09–T12 still outstanding.
 
+### Victim + officer complaint UX (2026-10-30 IST)
+- ADR-029: strip UI “synthetic” copy/titles; victim multi auto-upload + DELETE evidence; prepare OCR/summary heuristics; skip questions when `openQuestions===0`; officer inbox = `REVIEW_REQUIRED` with report + Print/Save as PDF; advanced tools collapsed.
+- Files: `VictimUploadZone`, `OfficerCaseReport`, prepare-parse, store list filter, evidence DELETE, DEMO/ADR updates, web/API/e2e tests.
+- Verified: `npm run lint`, `typecheck`, `npm test`, `test:auth`, `test:evidence`, `test:prepare`, `test:e2e` (graph unavailable) passed.
+
 ### AWS 24h working-demo prep (2026-10-29 IST) — code ready; live AWS pending credentials
 - ADR-026 + `docs/AWS_DEMO.md` + `.env.example` flags (`AWS_REGION`, `TEXTRACT_ENABLED`, `BEDROCK_ENABLED`, `BEDROCK_MODEL_ID`). Budget **$20** / `ap-south-1`; app stays local.
 - Synthetic bootstrap expanded to **50** fictional cases, clusters A/B/C in graph fixture, recollection-only enrichment for 5 cases, 48 grants (older INVESTIGATE for officer inbox). `db:verify` passed 50/48; graph contracts + regenerated `.local` bundle (50 CaseReport / 250 EvidenceRef).
