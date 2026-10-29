@@ -164,3 +164,25 @@ claim IDs, values and source kinds for traceability through the T06 claim/source
 viewer. Answers store victim-recollection/unverified labels, actor and time;
 no claim or verification state changes automatically. Old snapshots remain readable
 but cannot accept answers once their source interpretations change.
+
+## Implemented T08 draft exports
+
+All routes require current case ownership or an active explicit analyst READ or
+INVESTIGATE grant. They use `/api/v1` and no-store responses.
+
+- `POST /cases/:caseId/exports`: `{draftAcknowledged:true}`; creates a frozen version
+  and returns `{id,version,sha256,createdAt}`. Case lock serializes version allocation;
+  content and audit commit together. No private storage locator is returned.
+- `GET /cases/:caseId/exports`: latest 100 version metadata rows, newest first.
+- `GET /cases/:caseId/exports/:exportId/download`: protected HTML attachment with
+  nosniff and CSP sandbox headers. Validates snapshot checksum and live case scope.
+  Cross-case/malformed/nonexistent IDs return 403; missing/corrupt content returns 503.
+
+The printable DRAFT includes chronology and precision, claim interpretations,
+original OCR text/span/box references, revisions, question state/answers/unknowns,
+evidence source IDs and ingest SHA-256 manifest. Current rule gaps not yet persisted
+by T07 refresh are included as OPEN. Strings are escaped; user URLs remain text.
+Output is limited to 2 MiB and 1,000 rows per queried section (413 on excess). Each
+version remains frozen across later corrections. Browser Print / Save as PDF is a
+manual local action. Original images are not embedded or reauthenticated by export.
+Downloaded copies cannot be revoked from a user's device.

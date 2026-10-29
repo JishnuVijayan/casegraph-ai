@@ -152,7 +152,9 @@ export const graphLeads = pgTable('graph_leads', {
 
 export const reportExports = pgTable('exports', {
   id: id(), caseId: uuid('case_id').notNull().references(() => cases.id), version: integer('version').notNull(),
-  objectKey: text('object_key').unique().notNull(), createdBy: uuid('created_by').notNull().references(() => users.id),
+  objectKey: text('object_key').unique().notNull(),
+  contentHtml: text('content_html'), sha256: text('sha256'),
+  createdBy: uuid('created_by').notNull().references(() => users.id),
   createdAt: createdAt(),
 }, (t) => [unique('exports_case_version_unique').on(t.caseId, t.version), check('exports_version_positive', sql`${t.version} > 0`)]);
 

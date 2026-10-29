@@ -136,3 +136,14 @@ rows without a fingerprint are historical, not current. Answers record text or
 explicit null for UNKNOWN, source/verification labels, actor and time. There is no
 answer replacement endpoint. Currentness is calculated from current payment claims,
 so history survives correction without being presented as a current question.
+
+## T08 export snapshots
+
+Migration `0005_sloppy_ezekiel_stane.sql` adds nullable `content_html` and `sha256`
+to exports. New records store a frozen escaped HTML snapshot with checksum and
+logical `object_key` `db-export:<uuid>` within PostgreSQL. There is no public object
+or filesystem export file. Existing records with no content remain intact and
+return unavailable on download. `(case_id,version)` stays unique; generation locks
+the case row before reading data and allocating a version. Application writes do
+not modify old export snapshots. Downloads verify SHA-256 before returning bytes;
+this is corruption detection, not an administrator-proof audit or authenticity proof.
