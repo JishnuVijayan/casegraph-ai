@@ -6,7 +6,7 @@ CREATE VERTEX BankAccount (PRIMARY_ID id STRING, synthetic BOOL) WITH primary_id
 CREATE VERTEX PhoneNumber (PRIMARY_ID id STRING, synthetic BOOL) WITH primary_id_as_attribute="true"
 CREATE VERTEX SocialHandle (PRIMARY_ID id STRING, synthetic BOOL) WITH primary_id_as_attribute="true"
 CREATE VERTEX PhishingDomain (PRIMARY_ID id STRING, synthetic BOOL) WITH primary_id_as_attribute="true"
-CREATE VERTEX EvidenceRef (PRIMARY_ID id STRING, case_id STRING, relation_type STRING, fixture_kind STRING, source_kind STRING, verification_status STRING, data_origin STRING, synthetic BOOL) WITH primary_id_as_attribute="true"
+CREATE VERTEX EvidenceRef (PRIMARY_ID id STRING, case_id STRING, relation_type STRING, fixture_kind STRING, source_kind STRING, verification_status STRING, data_origin STRING, synthetic BOOL, from_id STRING, to_id STRING) WITH primary_id_as_attribute="true"
 
 CREATE DIRECTED EDGE CASE_REPORTED_VPA (FROM CaseReport, TO UPI_VPA, case_id STRING, evidence_id STRING, source_kind STRING, verification_status STRING, review_status STRING, data_origin STRING, synthetic BOOL, observed_at DATETIME) WITH REVERSE_EDGE="VPA_REPORTED_BY_CASE"
 CREATE DIRECTED EDGE CASE_REPORTED_PHONE (FROM CaseReport, TO PhoneNumber, case_id STRING, evidence_id STRING, source_kind STRING, verification_status STRING, review_status STRING, data_origin STRING, synthetic BOOL, observed_at DATETIME)

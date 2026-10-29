@@ -183,3 +183,24 @@ administrative inventory query and bounded token-authenticated live verifier wil
 check counts, real paths, provenance and negatives on that host. Offline reference
 logic exists only in tests, never as an application fallback. T11 owns authoritative
 PostgreSQL grant-derived scope, backend endpoints and analyst UI.
+
+### ADR-022 — T11 grant-derived investigation and labeled snapshots (2026-10-29)
+Implement analyst app code while the user defers TigerGraph runtime to a future EC2
+host. Keep T09/T10/T11 live acceptance pending. Execute fixed installed queries only,
+disabled by default, using a separate private application token and loopback/tunnel
+port. PostgreSQL supplies current INVESTIGATE scope (maximum 20 cases); never accept
+scope from request bodies. Validate every path and retrieve/bind its four source
+records by case, relation and exact edge endpoints before saving NEEDS_REVIEW leads.
+
+Use existing graph_leads JSON for immutable path/source snapshots, current lead
+review status and audit metadata; no new database or PostgreSQL migration. Recheck
+all implicated cases on list/drilldown/review, including revoked targets. Persist
+under stable case locks, rechecking grants inside transaction and before release.
+Snapshot reads remain available to permitted analysts when graph is offline, clearly
+labeled with capture time; new query actions return 503 without graph, never fixtures.
+
+Extend the still-uninstalled graph schema/fixture with source from_id/to_id and a
+fixed get_lead_sources query so source references cannot be attached to different
+path endpoints. Extend the future live verifier accordingly. Tests inject graph
+responses only into isolated test modules; application runtime has no fixture mode.
+Offline test success does not establish GSQL correctness or a demonstrated live lead.

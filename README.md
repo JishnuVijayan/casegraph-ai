@@ -992,3 +992,16 @@ shape. No fixture is shown as a live graph result. `npm run graph:verify-live` i
 reserved for the future secured TigerGraph host/tunnel and returns unavailable
 without its runtime/token. See [graph runbook](graph/README.md). T09 and T10 remain
 incomplete until actual installation, compilation, repeated seed and query checks.
+
+### T11 analyst workspace (live demo pending)
+
+Sign in as each synthetic case owner and grant **Read and investigate synthetic
+graph** to the fictional consortium for both cases in a potential path. Sign in as
+Fictional Analyst, read a permitted case and use **Run scoped TigerGraph query**.
+The server requires current investigation grants and an actually configured instance;
+without TigerGraph it reports unavailable. Successful queries create NEEDS_REVIEW
+snapshots with a four-hop visual and source drilldown. Human review never establishes
+guilt or verifies a bank record. Saved snapshots display capture time and are hidden
+if a case grant is revoked/expired. These app paths have synthetic mocked-transport
+HTTP/component coverage; an actual installed query demonstration is still pending
+T09/T10 on the future compatible host. See graph/README.md for handoff/configuration.

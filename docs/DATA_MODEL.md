@@ -165,3 +165,18 @@ to four hops and at most 20 trusted allowed cases. Both endpoint cases and all f
 edge source-case IDs are filtered. Returned tuples include four fixture source refs
 and explicit lead/review labels. Scope must come from backend grants in T11. No
 live schema, loader, query or graph authorization is claimed until host verification.
+
+## T11 lead snapshots and source bindings
+
+Existing graph_leads.path_json stores a version-1 object `{version,path,sources}`;
+review_status defaults to NEEDS_REVIEW and is changed only by authorized analyst
+review. No PostgreSQL migration is added. Source snapshots carry case and relation
+IDs plus from_id/to_id; the service binds all four references to the exact visualized
+edge endpoints. Review actions write identifier-only audit entries. Saved paths
+are not silently refreshed or served without current investigation scope.
+
+The uninstalled candidate EvidenceRef graph schema and generated CSV now include
+from_id/to_id. Candidate get_lead_sources returns only requested, authorized fixture
+metadata. Regenerate the bundle before first deployment; never overwrite a deployed
+schema/volume to apply this change without a reviewed migration. GSQL compile/load
+and actual source retrieval remain pending; no existing live graph was changed.

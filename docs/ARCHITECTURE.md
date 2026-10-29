@@ -60,3 +60,10 @@ privately alongside version metadata in PostgreSQL. Authorized list/download rou
 serve only escaped, checksum-verified drafts; a sandboxed React preview supports
 review before HTML download and manual browser PDF saving. It uses no PDF service
 or model. Details and bounds are recorded in ADR-019 and the API/data contracts.
+
+T11 adds a backend-owned investigation service: current PostgreSQL grants -> fixed
+TigerGraph path/source queries -> strict case/edge-source validation -> scoped JSON
+lead snapshots and audit. Browser actions never receive database credentials or
+supply graph scope. New queries require a responding graph; saved reads are explicitly
+historical snapshots with current grant checks. The analyst-only panel visualizes
+four hops, source metadata and human review state. Live graph proof remains pending.

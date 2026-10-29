@@ -49,3 +49,13 @@ or installed-query checklist based on offline fixture tests. On the future compa
 EC2 host, finish T09, compile/install/load T10, repeat the seed, run `graph:verify-live`
 and record actual results before staging Act 4. Administrative fixture query checks
 do not establish the T11 backend's grant enforcement. No benchmarks are included.
+
+## T11 workspace preparation status
+
+Analyst UI/backend code now enforces current INVESTIGATE grants for all cases and
+sources. Successful installed queries produce source-bound NEEDS_REVIEW snapshots;
+unavailable queries show an error and clear prior results. Offline HTTP tests inject
+explicit graph fixtures only into test modules. Before Act 4, complete the actual
+host installation, install get_lead_sources alongside find_case_links, verify both
+with graph:verify-live and then run the analyst UI against that host/tunnel. Do not
+present mocked transport tests or saved snapshots as a new live query demonstration.

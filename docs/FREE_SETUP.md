@@ -98,3 +98,24 @@ CPU/RAM/storage, license/demo review and a hosting budget. AWS compute/EBS costs
 are separate from paid API usage; this task creates no cloud resources or charges.
 Local frontend/backend/OCR continue without paid APIs. T09 runtime and T10 live
 checks remain pending. See [graph deployment source/runbook](../graph/README.md).
+
+## T11 graph application configuration (future host/tunnel)
+
+The analyst panel and backend are implemented; TigerGraph remains disabled by
+default. After actual T09/T10 deployment and query/authentication verification, store
+a distinct least-privilege application query token in ignored mode-0600
+`.local/tigergraph-app.token`. Keep the administrative verification token separate.
+Start with exported process variables:
+
+```bash
+TIGERGRAPH_ENABLED=true TIGERGRAPH_LOCAL_PORT=14240 npm run dev:demo
+```
+
+These optional graph flags read process environment, not .env. No browser token or
+VITE_ credential variable is used. Only loopback/tunnel endpoints are accepted.
+Grant INVESTIGATE on both fixture cases to the fictional consortium using each
+owner's demo identity before querying as analyst. Without a configured server/token,
+query actions show unavailable; no fake path is substituted. Future EC2 setup may
+incur hosting costs and needs its own deployment/budget review; no resource was
+provisioned during T11. `npm run test:investigations` uses local PostgreSQL plus
+explicitly mocked TigerGraph transport in a temporary synthetic database.

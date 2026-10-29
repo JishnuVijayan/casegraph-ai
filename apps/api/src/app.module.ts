@@ -1,3 +1,6 @@
+import { InvestigationsController, GraphLeadsController } from './investigations/controller';
+import { InvestigationsService } from './investigations/service';
+import { GraphConfig, TigerGraphClient, GRAPH_FETCH, GRAPH_TOKEN_FILE } from './investigations/client';
 import { ExportsController } from './exports/controller';
 import { ExportsService } from './exports/service';
 import { ClarificationsController } from './clarifications/controller';
@@ -30,8 +33,8 @@ class HealthController {
 }
 @Module({
   exports: [AccessStore, CaseScopeGuard],
-  controllers: [ExportsController, ClarificationsController, HealthController, AuthController, CasesController, EvidenceController, ExtractionController, ClaimsController, TimelineController],
-  providers: [ExportsService, ClarificationsService, EvidenceService, EvidenceStorage, ExtractionService, ClaimsService, { provide: TESSERACT_BINARY, useFactory: () => process.env.TESSERACT_BINARY || 'tesseract' }, { provide: EVIDENCE_DIRECTORY, useValue: resolve(__dirname, '../../../.local/evidence') }, DemoConfig, Sessions, AccessStore, CaseScopeGuard,
+  controllers: [InvestigationsController, GraphLeadsController, ExportsController, ClarificationsController, HealthController, AuthController, CasesController, EvidenceController, ExtractionController, ClaimsController, TimelineController],
+  providers: [InvestigationsService, GraphConfig, TigerGraphClient, {provide:GRAPH_FETCH,useValue:fetch}, {provide:GRAPH_TOKEN_FILE,useValue:resolve(__dirname,'../../../.local/tigergraph-app.token')}, ExportsService, ClarificationsService, EvidenceService, EvidenceStorage, ExtractionService, ClaimsService, { provide: TESSERACT_BINARY, useFactory: () => process.env.TESSERACT_BINARY || 'tesseract' }, { provide: EVIDENCE_DIRECTORY, useValue: resolve(__dirname, '../../../.local/evidence') }, DemoConfig, Sessions, AccessStore, CaseScopeGuard,
     { provide: LOCAL_DATABASE, inject: [DemoConfig], useFactory: (config: DemoConfig) => config.enabled ? connect('casegraph', config.database) : undefined },
     { provide: APP_GUARD, useClass: SessionGuard }, { provide: APP_GUARD, useClass: RolesGuard }],
 })
