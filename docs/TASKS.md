@@ -2,7 +2,7 @@
 
 **How to use:** Ask Codex to implement **one task** at a time, run tests, then mark it `[x]` and attach verification evidence. No single-prompt “build the whole app”. Track failures honestly. Update `docs/DECISIONS.md` when deviating from architecture.
 
-Current detailed plan: [`task.md`](../task.md) — T03 complete; T04 case creation/uploads is next.
+Current detailed plan: [`task.md`](../task.md) — T04 complete; T05 OCR/provenance is next.
 
 ## Phase 0 — Bootstrap (P0)
 - [x] **T00 Repo initialization.** Monorepo `apps/web`, `apps/api`, `infra`, `data/synthetic`, `docs`; copy existing README/docs; `.gitignore`, `.env.example`; lock dependencies. **Done:** both projects start locally and no secrets committed.
@@ -11,7 +11,7 @@ Current detailed plan: [`task.md`](../task.md) — T03 complete; T04 case creati
 
 ## Phase 1 — Victim reporting (P0)
 - [x] **T03 Auth and authorization.** Seeded demo login, `CaseScopeGuard`, role boundaries. **Done:** cross-user access tests return denial.
-- [ ] **T04 Case and uploads.** Form, bounded upload, SHA-256 stream, immutable original, metadata, audit event. **Done:** byte-equal hash and authorized retrieval.
+- [x] **T04 Case and uploads.** Form, bounded upload, SHA-256 stream, immutable original, metadata, audit event. **Done:** byte-equal hash and authorized retrieval.
 - [ ] **T05 OCR and provenance.** Tesseract local extraction with text spans/hOCR boxes; record extraction version/errors. **Done:** click sample extracted amount -> correct source crop; unreadable case says unknown.
 - [ ] **T06 Timeline and claims.** Normalized entities and uncertainty status; victim can correct, preserving revision. **Done:** source fact and edited interpretation both traceable.
 - [ ] **T07 Questions.** Missing reference/amount/time conflict rules; `UNKNOWN` answer; optional later Jev. **Done:** conflicting sample asks correct focused question.
@@ -95,3 +95,16 @@ Current detailed plan: [`task.md`](../task.md) — T03 complete; T04 case creati
 - Development servers stopped; `infra:down` succeeded and final status empty. Temporary verification DBs and sentinel removed, working seeded volume preserved; restart-invalidated demo sessions. Node 24 tested; Node 22 and dependency vulnerability audit still unverified.
 - Limits: local role simulation only, ephemeral single-process sessions, no real-user identity assurance or production session design. Case creation, file serving/immutability, uploads, OCR, graph and exports remain future tasks. T04 must apply scope checks to every new file route.
 - Next unblocked task: **T04 case creation and controlled uploads**, with exact-byte/hash and authorized-retrieval tests. T04 and later remain unchecked.
+
+
+### T04 verification details (2026-10-29 IST)
+- Implemented on `feat/t04-case-uploads` from develop. Added victim-only synthetic case creation, owner-only single-file multipart upload, evidence manifest and protected original retrieval, plus creation/upload/manifest/original audit events. Existing scope guards run before upload parsing and every evidence access; no client owner ID or filename becomes a storage path.
+- Busboy 1.6.0 streams at most 5 MiB into exclusive private staging while computing SHA-256. Sharp 0.35.5 validates PNG/JPEG signature/MIME and bounded decode (16 MP, 8192 per dimension, one image/page, 5-second processing timeout). One upload per process; multipart/stream limits and 15-second timeout. @types/busboy 1.5.5 installed/locked. PDF/SVG/remote URLs rejected.
+- Originals publish exclusively under UUID names with mode 0400; source IDs, hash, MIME, size, uploader and creation time stored using existing schema. Duplicate uploads create distinct sources without replacing bytes. Metadata/audit transactional; confirmed rollback cleans owned files. Unknown commit outcomes preserve private files for manual reconciliation rather than delete potentially committed evidence.
+- Retrieval checks live case authorization, evidence/case linkage, real-file/no-symlink/size/permission conditions and exact SHA-256 before returning an octet-stream attachment with no-store/nosniff/sandbox headers. A final authorization recheck occurs before release. Missing/tampered files return sanitized unavailable errors. No replacement/delete route introduced.
+- Added React case form, synthetic acknowledgement, multipart upload, manifest and protected bearer-authenticated original download. Token stays in memory and out of URLs; manifest shows source IDs/hashes without private storage keys. No OCR, automatic verification or bank authenticity claim.
+- `npm run test:evidence`: **8 tests passed** in a unique temporary local DB and private storage. Covered ownership injection/role denial, PNG/JPEG exact bytes/hash, duplicate preservation, invalid/corrupt/PDF/SVG/empty/multiple/oversized uploads with no residue, upload/list/read IDOR, cross-case source substitution, analyst sharing and immediate revocation, missing/tampered/symlinked original denial, and rollback cleanup after a test-only DB trigger rejected metadata insert after publication. Temporary DB/files removed.
+- Initial oversized stream test returned 503 due to double-close EBADF masking the size exception. Fixed teardown/error preservation; full rerun returned 413 correctly. A new component test's injected file did not satisfy JSDOM native validity; changed test submission to exercise the handler directly, then passed. Temporary diagnostic logging was removed; no upload content or credentials are logged.
+- Final lint/typecheck passed. `npm test`: **18 tests passed** (4 infra, 7 Jest, 7 Vitest/RTL including new creation/multipart/manifest-denial checks). `npm run test:auth`: **9 tests passed**. Total regular/integration tests: **35**. `infra:smoke:storage` rebuilt both projects and passed all 21 HTTP content probes and asset scan. `db:verify` passed repeated migration/seed and constraint regressions; no new migration required.
+- `infra:down` succeeded; final status empty. Task servers stopped, synthetic temporary DB/files/sentinel removed, working seeded volume preserved. No new working evidence was uploaded by integration tests. No real data, paid service, browser E2E test, Node 22 verification or dependency vulnerability audit used/performed.
+- Limits: image validation is not malware scanning or authenticity proof; read-only application storage is not administrator-proof preservation. Aggregate storage quotas/retention and crash/orphan reconciliation are not automated. No OCR, PDF ingestion, graph or exports. Next unblocked task: **T05 OCR and provenance**; T05 onward remain unchecked.

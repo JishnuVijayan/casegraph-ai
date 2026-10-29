@@ -139,3 +139,18 @@ named test database for deliberate manual cleanup.
 .env PostgreSQL configuration. No API secret is exposed to Vite. Disabled mode
 can run public process liveness without PostgreSQL. Idle pool errors are handled
 without logging connection details; subsequent database operations fail closed.
+
+## T04 original storage verification
+
+`npm run test:evidence` uses a unique temporary database and private directory,
+synthetic PNG/JPEG generated locally, and real HTTP requests. It checks streamed
+hash/byte equality, duplicate IDs, MIME/content/size rejection, role/IDOR controls,
+revocation, original tamper/symlink/missing-file failures and confirmed transaction
+rollback cleanup. A test-only DB trigger injects an insert failure after publication.
+It never modifies working demo evidence; normal completion removes its own DB/files.
+
+Working originals live in `.local/evidence/<source-UUID>.original` with mode 0400.
+A forced crash may leave `.part` or unreferenced `.original` files. Do not auto-delete
+these: inspect metadata and reconcile deliberately, especially after uncertain DB
+commit acknowledgements. Client filenames are not retained or used for paths.
+No additional migration is needed: T02's evidence/audit tables hold upload metadata.

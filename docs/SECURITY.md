@@ -65,3 +65,28 @@ These controls do not implement production authentication, persistent/distribute
 sessions, file access, upload immutability or graph/export authorization. Each new
 subsystem still needs its own scope checks. Test-only scope probe routes are not
 registered in the production application.
+
+## T04 upload boundary
+
+Authorization runs before multipart parsing. Only the owner may upload; reads and
+manifests require current case ownership or an active explicit analyst grant.
+Every evidence query includes case ID. Original bytes are hashed during bounded
+streaming to exclusive private staging, then validated using declared MIME,
+signature and local Sharp decoding. Files are limited to 5 MiB, 16 million pixels,
+8192 pixels per dimension and one image/page; processing has a five-second native
+timeout. One upload/validation runs per API process, with a 15-second stream bound.
+Multipart overhead/parts are bounded; client paths/filenames are never storage keys.
+
+Originals are published exclusively under UUID names, mode 0400 in mode-0700
+storage, with no static serving. Metadata and audit insert transactionally.
+Confirmed rollbacks clean only their own files; uncertain DB commit outcomes or
+process crashes may leave private orphan files for deliberate reconciliation.
+Never delete originals merely because a response or commit acknowledgement failed.
+
+Retrieval rejects symlinks, size/permission changes and SHA-256 mismatches before
+releasing bytes. It is a protected attachment, not active inline uploaded content.
+Filesystem administrators can still change permissions/files and DB records; this
+is application-level preservation, not tamper-proof or forensic certification.
+Sharp validation is not malware scanning or provenance/authenticity verification.
+No PDF parser, OCR worker sandbox, aggregate storage quota/retention mechanism or
+real-data pilot is implemented by T04.

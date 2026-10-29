@@ -84,3 +84,11 @@ and insert-only conflicts inside a transaction, preserving existing edits and
 revocations. It does not manufacture evidence or TigerGraph relationships.
 `npm run db:verify` proves migration/seed repeatability and database constraints in
 an isolated temporary database, which it removes on completion.
+
+## T04 metadata use
+
+Existing evidence_files fields now record source UUID, case, private UUID object key,
+streamed SHA-256, validated MIME, byte size, uploader, ingestion success and created
+time. Source filenames are not persisted. Public manifests omit private keys and
+uploader identity. Upload/read audit events contain identifiers/actions only.
+No new schema or automatic verification status is introduced.
