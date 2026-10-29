@@ -1,0 +1,266 @@
+{
+  "label": "FICTIONAL SYNTHETIC DEMO ONLY \u2014 no real evidence or bank records",
+  "organization": {
+    "id": "10000000-0000-4000-8000-000000000001",
+    "name": "Fictional Demo Consortium",
+    "kind": "SYNTHETIC_CONSORTIUM",
+    "synthetic": true
+  },
+  "users": [
+    {
+      "id": "20000000-0000-4000-8000-000000000001",
+      "role": "victim",
+      "organizationId": null,
+      "demoSubject": "synthetic-victim-a",
+      "displayName": "Fictional Victim A",
+      "synthetic": true
+    },
+    {
+      "id": "20000000-0000-4000-8000-000000000002",
+      "role": "victim",
+      "organizationId": null,
+      "demoSubject": "synthetic-victim-b",
+      "displayName": "Fictional Victim B",
+      "synthetic": true
+    },
+    {
+      "id": "20000000-0000-4000-8000-000000000003",
+      "role": "analyst",
+      "organizationId": "10000000-0000-4000-8000-000000000001",
+      "demoSubject": "synthetic-analyst",
+      "displayName": "Fictional Analyst",
+      "synthetic": true
+    }
+  ],
+  "cases": [
+    {
+      "id": "30000000-0000-4000-8000-000000000001",
+      "ownerId": "20000000-0000-4000-8000-000000000001",
+      "organizationId": null,
+      "status": "DRAFT",
+      "category": "investment",
+      "title": "Synthetic Kochi-01",
+      "synthetic": true,
+      "scenarioNote": "Future graph fixture A; no financial edge or ledger exists yet."
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000000002",
+      "ownerId": "20000000-0000-4000-8000-000000000002",
+      "organizationId": null,
+      "status": "DRAFT",
+      "category": "friendship",
+      "title": "Synthetic Bengaluru-04",
+      "synthetic": true,
+      "scenarioNote": "Future graph fixture B; no live graph result exists yet."
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000000003",
+      "ownerId": "20000000-0000-4000-8000-000000000001",
+      "organizationId": null,
+      "status": "DRAFT",
+      "category": "other",
+      "title": "Synthetic Goa-03",
+      "synthetic": true,
+      "scenarioNote": "Unrelated placeholder."
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000000004",
+      "ownerId": "20000000-0000-4000-8000-000000000002",
+      "organizationId": null,
+      "status": "DRAFT",
+      "category": "other",
+      "title": "Synthetic Lookalike-04",
+      "synthetic": true,
+      "scenarioNote": "Benign generic wording placeholder; does not indicate a shared perpetrator."
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000000005",
+      "ownerId": "20000000-0000-4000-8000-000000000001",
+      "organizationId": null,
+      "status": "DRAFT",
+      "category": "other",
+      "title": "Synthetic Lookalike-05",
+      "synthetic": true,
+      "scenarioNote": "Unrelated look-alike placeholder."
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000000006",
+      "ownerId": "20000000-0000-4000-8000-000000000002",
+      "organizationId": null,
+      "status": "DRAFT",
+      "category": "payment",
+      "title": "Synthetic Conflict-06",
+      "synthetic": true,
+      "scenarioNote": "Future timestamp conflict fixture; no extracted claim exists yet."
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000000007",
+      "ownerId": "20000000-0000-4000-8000-000000000001",
+      "organizationId": null,
+      "status": "DRAFT",
+      "category": "payment",
+      "title": "Synthetic Cropped-07",
+      "synthetic": true,
+      "scenarioNote": "Future cropped-reference fixture; no upload exists yet."
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000000008",
+      "ownerId": "20000000-0000-4000-8000-000000000002",
+      "organizationId": null,
+      "status": "DRAFT",
+      "category": "payment",
+      "title": "Synthetic Blurred-08",
+      "synthetic": true,
+      "scenarioNote": "Future OCR ambiguity fixture; no upload exists yet."
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000000009",
+      "ownerId": "20000000-0000-4000-8000-000000000001",
+      "organizationId": null,
+      "status": "DRAFT",
+      "category": "other",
+      "title": "Synthetic Placeholder-09",
+      "synthetic": true,
+      "scenarioNote": "Fictional empty case."
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000000010",
+      "ownerId": "20000000-0000-4000-8000-000000000002",
+      "organizationId": null,
+      "status": "DRAFT",
+      "category": "other",
+      "title": "Synthetic Placeholder-10",
+      "synthetic": true,
+      "scenarioNote": "Fictional empty case."
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000000011",
+      "ownerId": "20000000-0000-4000-8000-000000000001",
+      "organizationId": null,
+      "status": "DRAFT",
+      "category": "other",
+      "title": "Synthetic Placeholder-11",
+      "synthetic": true,
+      "scenarioNote": "Fictional empty case."
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000000012",
+      "ownerId": "20000000-0000-4000-8000-000000000002",
+      "organizationId": null,
+      "status": "DRAFT",
+      "category": "other",
+      "title": "Synthetic Placeholder-12",
+      "synthetic": true,
+      "scenarioNote": "Fictional empty case."
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000000013",
+      "ownerId": "20000000-0000-4000-8000-000000000001",
+      "organizationId": null,
+      "status": "DRAFT",
+      "category": "other",
+      "title": "Synthetic Placeholder-13",
+      "synthetic": true,
+      "scenarioNote": "Fictional empty case."
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000000014",
+      "ownerId": "20000000-0000-4000-8000-000000000002",
+      "organizationId": null,
+      "status": "DRAFT",
+      "category": "other",
+      "title": "Synthetic Placeholder-14",
+      "synthetic": true,
+      "scenarioNote": "Fictional empty case."
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000000015",
+      "ownerId": "20000000-0000-4000-8000-000000000001",
+      "organizationId": null,
+      "status": "DRAFT",
+      "category": "other",
+      "title": "Synthetic Placeholder-15",
+      "synthetic": true,
+      "scenarioNote": "Fictional empty case."
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000000016",
+      "ownerId": "20000000-0000-4000-8000-000000000002",
+      "organizationId": null,
+      "status": "DRAFT",
+      "category": "other",
+      "title": "Synthetic Placeholder-16",
+      "synthetic": true,
+      "scenarioNote": "Fictional empty case."
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000000017",
+      "ownerId": "20000000-0000-4000-8000-000000000001",
+      "organizationId": null,
+      "status": "DRAFT",
+      "category": "other",
+      "title": "Synthetic Placeholder-17",
+      "synthetic": true,
+      "scenarioNote": "Fictional empty case."
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000000018",
+      "ownerId": "20000000-0000-4000-8000-000000000002",
+      "organizationId": null,
+      "status": "DRAFT",
+      "category": "other",
+      "title": "Synthetic Placeholder-18",
+      "synthetic": true,
+      "scenarioNote": "Fictional empty case."
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000000019",
+      "ownerId": "20000000-0000-4000-8000-000000000001",
+      "organizationId": null,
+      "status": "DRAFT",
+      "category": "other",
+      "title": "Synthetic Placeholder-19",
+      "synthetic": true,
+      "scenarioNote": "Fictional empty case."
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000000020",
+      "ownerId": "20000000-0000-4000-8000-000000000002",
+      "organizationId": null,
+      "status": "DRAFT",
+      "category": "other",
+      "title": "Synthetic Placeholder-20",
+      "synthetic": true,
+      "scenarioNote": "Fictional empty case."
+    }
+  ],
+  "grants": [
+    {
+      "id": "40000000-0000-4000-8000-000000000001",
+      "caseId": "30000000-0000-4000-8000-000000000001",
+      "organizationId": "10000000-0000-4000-8000-000000000001",
+      "scope": "INVESTIGATE",
+      "grantedBy": "20000000-0000-4000-8000-000000000001",
+      "revokedAt": null,
+      "expiresAt": null
+    },
+    {
+      "id": "40000000-0000-4000-8000-000000000002",
+      "caseId": "30000000-0000-4000-8000-000000000002",
+      "organizationId": "10000000-0000-4000-8000-000000000001",
+      "scope": "READ",
+      "grantedBy": "20000000-0000-4000-8000-000000000002",
+      "revokedAt": "2026-10-28T01:00:00Z",
+      "expiresAt": null
+    },
+    {
+      "id": "40000000-0000-4000-8000-000000000003",
+      "caseId": "30000000-0000-4000-8000-000000000003",
+      "organizationId": "10000000-0000-4000-8000-000000000001",
+      "scope": "READ",
+      "grantedBy": "20000000-0000-4000-8000-000000000001",
+      "revokedAt": null,
+      "expiresAt": "2026-10-28T01:00:00Z"
+    }
+  ]
+}

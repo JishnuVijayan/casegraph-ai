@@ -52,3 +52,21 @@ persistence and non-disclosure tests are recorded in TASKS.md. No MinIO dependen
 cloud service, database schema, application DB access, or auth route is added.
 Per-case access control remains T03/T04; filesystem permissions do not replace it.
 Reviewer: implementation under the user's T01 request.
+
+### ADR-013 — T02 local Drizzle schema and insert-only synthetic seed (2026-10-29)
+Context: Canonical PostgreSQL tables and repeatable fixtures are required before auth.
+Alternatives considered: define only the three seed tables; bootstrap the documented
+15-table contract. Use destructive reset/upsert seeds versus insert-only seeds.
+Decision: Define all documented tables now, without implementing later endpoints.
+Use stable Drizzle ORM 0.45.4/Kit 0.31.11 and node-postgres 8.23.1; avoid prerelease
+packages. Generate SQL/snapshots offline and apply through the Drizzle migrator.
+Root wrappers load validated local credentials and force localhost, not a cloud URL.
+Use deterministic fixture IDs and transactional insert-only seeding so repeated
+commands preserve existing edits and revoked grants. Composite FKs keep uploaded
+claim sources and timeline links within their case. Database naming follows
+DATA_MODEL.md where the README blueprint used alternate names.
+Consequences and tests: A separate temporary local database verifies repeatability,
+indexes and real constraint failures without resetting working data. Schema is not
+authorization or immutable-file enforcement; T03/T04 remain required. Only 20 empty
+fictional case placeholders are seeded, with no fake OCR/graph/verified-bank output.
+Reviewer: implementation under the user's next-phase request.
