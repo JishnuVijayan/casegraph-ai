@@ -89,3 +89,12 @@ Compose template only; `graph:health` cannot claim graph readiness. Follow
 [the supported-host runbook](../infra/TIGERGRAPH.md) once an owned x86-64 host exists.
 It records the pinned candidate image, official platform/license references and
 unexecuted setup steps. No paid host or emulation is configured.
+
+## Future TigerGraph EC2 demo plan (not provisioned)
+
+The user plans to host only TigerGraph on an Intel/AMD x86-64 EC2 machine later.
+This may satisfy the platform requirement but requires a supported OS, sufficient
+CPU/RAM/storage, license/demo review and a hosting budget. AWS compute/EBS costs
+are separate from paid API usage; this task creates no cloud resources or charges.
+Local frontend/backend/OCR continue without paid APIs. T09 runtime and T10 live
+checks remain pending. See [graph deployment source/runbook](../graph/README.md).

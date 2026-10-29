@@ -1,0 +1,17 @@
+// UNEXECUTED: requires an empty, dedicated TigerGraph Community 4.2.5 instance.
+// Never run against a shared schema. No DROP/reset commands.
+CREATE VERTEX CaseReport (PRIMARY_ID case_id STRING, label STRING, synthetic BOOL, generic_text_hint STRING) WITH primary_id_as_attribute="true"
+CREATE VERTEX UPI_VPA (PRIMARY_ID id STRING, synthetic BOOL) WITH primary_id_as_attribute="true"
+CREATE VERTEX BankAccount (PRIMARY_ID id STRING, synthetic BOOL) WITH primary_id_as_attribute="true"
+CREATE VERTEX PhoneNumber (PRIMARY_ID id STRING, synthetic BOOL) WITH primary_id_as_attribute="true"
+CREATE VERTEX SocialHandle (PRIMARY_ID id STRING, synthetic BOOL) WITH primary_id_as_attribute="true"
+CREATE VERTEX PhishingDomain (PRIMARY_ID id STRING, synthetic BOOL) WITH primary_id_as_attribute="true"
+CREATE VERTEX EvidenceRef (PRIMARY_ID id STRING, case_id STRING, relation_type STRING, fixture_kind STRING, source_kind STRING, verification_status STRING, data_origin STRING, synthetic BOOL) WITH primary_id_as_attribute="true"
+
+CREATE DIRECTED EDGE CASE_REPORTED_VPA (FROM CaseReport, TO UPI_VPA, case_id STRING, evidence_id STRING, source_kind STRING, verification_status STRING, review_status STRING, data_origin STRING, synthetic BOOL, observed_at DATETIME) WITH REVERSE_EDGE="VPA_REPORTED_BY_CASE"
+CREATE DIRECTED EDGE CASE_REPORTED_PHONE (FROM CaseReport, TO PhoneNumber, case_id STRING, evidence_id STRING, source_kind STRING, verification_status STRING, review_status STRING, data_origin STRING, synthetic BOOL, observed_at DATETIME)
+CREATE DIRECTED EDGE CASE_REPORTED_HANDLE (FROM CaseReport, TO SocialHandle, case_id STRING, evidence_id STRING, source_kind STRING, verification_status STRING, review_status STRING, data_origin STRING, synthetic BOOL, observed_at DATETIME)
+CREATE DIRECTED EDGE CASE_REPORTED_DOMAIN (FROM CaseReport, TO PhishingDomain, case_id STRING, evidence_id STRING, source_kind STRING, verification_status STRING, review_status STRING, data_origin STRING, synthetic BOOL, observed_at DATETIME)
+CREATE DIRECTED EDGE VPA_SETTLED_TO_ACCOUNT (FROM UPI_VPA, TO BankAccount, case_id STRING, evidence_id STRING, source_kind STRING, verification_status STRING, review_status STRING, data_origin STRING, synthetic BOOL, observed_at DATETIME) WITH REVERSE_EDGE="ACCOUNT_SETTLED_FROM_VPA"
+CREATE DIRECTED EDGE RELATION_SUPPORTED_BY_EVIDENCE (FROM CaseReport, TO EvidenceRef, case_id STRING, evidence_id STRING, source_kind STRING, verification_status STRING, review_status STRING, data_origin STRING, synthetic BOOL, observed_at DATETIME)
+CREATE GRAPH CaseGraphDemoV1 (CaseReport, UPI_VPA, BankAccount, PhoneNumber, SocialHandle, PhishingDomain, EvidenceRef, CASE_REPORTED_VPA, VPA_REPORTED_BY_CASE, CASE_REPORTED_PHONE, CASE_REPORTED_HANDLE, CASE_REPORTED_DOMAIN, VPA_SETTLED_TO_ACCOUNT, ACCOUNT_SETTLED_FROM_VPA, RELATION_SUPPORTED_BY_EVIDENCE)

@@ -981,3 +981,14 @@ complaint. Export hashes do not authenticate screenshots or bank records. Keep s
 copies private. Owners and currently granted analysts can generate/read exports;
 revocation blocks future server requests. Run `npm run test:exports` against local
 PostgreSQL for the isolated synthetic HTTP suite.
+
+### T10 graph source preparation (live installation pending)
+
+`npm run graph:bundle` creates a deterministic private CSV/GSQL deployment package
+for 20 fictional cases. `npm run graph:test` runs offline fixture/transport contracts,
+also included in `npm test`. Candidate GSQL provides a scoped four-hop financial
+lead with source refs; benign shared-host/text cases are excluded by that query
+shape. No fixture is shown as a live graph result. `npm run graph:verify-live` is
+reserved for the future secured TigerGraph host/tunnel and returns unavailable
+without its runtime/token. See [graph runbook](graph/README.md). T09 and T10 remain
+incomplete until actual installation, compilation, repeated seed and query checks.

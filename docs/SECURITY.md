@@ -152,3 +152,20 @@ rows and HTML at 2 MiB. Users must keep downloaded copies private; revocation de
 future server access but cannot erase saved HTML/PDF. Automatic expiry/retention and
 administrator-proof storage are not implemented. A manifest records ingest integrity
 metadata, not screenshot authenticity or guaranteed court admissibility.
+
+## T10 candidate query and deployment boundary
+
+T10 adds no app endpoint or direct browser access to TigerGraph. The future backend
+must derive allowed_case_ids from current PostgreSQL grants and recheck each path's
+cases and source dereferences before release. A client-provided allowlist is not
+authorization. Administrative inventory/query tokens must not become frontend or
+application credentials. Scoped query source filters both endpoint cases and four
+edge provenance case IDs; it remains uncompiled/unverified here.
+
+Offline fixture/oracle code is test-only. No unavailable graph response is replaced
+with paths. The live verifier accepts only fixed loopback installed-query endpoints,
+private no-symlink mode-0600 token files, numeric ports, bounded JSON and no redirects;
+its errors omit raw responses/tokens. Future EC2 deployment must rotate credentials,
+enable authentication and use private/SSH-tunneled access; the optional loopback
+Compose override is not activated by this task. No public TigerGraph port, AWS
+account, infrastructure resource or security-group change was created.

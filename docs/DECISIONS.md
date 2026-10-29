@@ -160,3 +160,26 @@ Keep T09 unchecked pending a compatible operator-approved local machine, license
 review, credential hardening and actual startup/seed/persistence checks. No paid VM,
 remote account, benchmark, fake query, runtime success or sponsor permission is inferred.
 Sources and unexecuted host runbook: infra/TIGERGRAPH.md.
+
+### ADR-021 — T10 source preparation with deferred EC2 runtime (2026-10-29)
+User plans to deploy only TigerGraph on a future EC2 demo host. Prepare T10 source
+on ARM now and defer actual GSQL compile/install/load/query evidence to a compatible
+Intel/AMD x86-64 Linux host. No AWS resources, credentials, charges or connections
+are created by this task. EC2 is a future hosting-cost exception to local-only setup,
+not a paid API dependency; budget, license/demo use and deployment security require
+review when provisioning. T09 and T10 remain unchecked pending live evidence.
+
+Use a dedicated CaseGraphDemoV1 with 20 bootstrap case IDs and opaque fx: identifiers.
+Authored graph relations are SYNTHETIC_FIXTURE / SYSTEM_INFERENCE / UNVERIFIED /
+NEEDS_REVIEW; no upload or externally verified ledger is invented. Four-hop query
+follows case/VPA/account/VPA/case, requiring both cases and edge provenance to match
+trusted allowed scope. Restrict max_hops to exactly 4 and scope size to 20 for this
+MVP; reject other bounds. Hosting/text look-alikes are not financial-path signals.
+
+Generate deterministic private CSV/GSQL bundles, refusing differing existing files.
+Schema/load-job creation is one-time on an empty dedicated instance; seeding uses
+stable IDs without DROP. Repeatability on TigerGraph remains unverified. A separate
+administrative inventory query and bounded token-authenticated live verifier will
+check counts, real paths, provenance and negatives on that host. Offline reference
+logic exists only in tests, never as an application fallback. T11 owns authoritative
+PostgreSQL grant-derived scope, backend endpoints and analyst UI.

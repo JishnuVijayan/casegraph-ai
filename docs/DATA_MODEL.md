@@ -147,3 +147,21 @@ return unavailable on download. `(case_id,version)` stays unique; generation loc
 the case row before reading data and allocating a version. Application writes do
 not modify old export snapshots. Downloads verify SHA-256 before returning bytes;
 this is corruption detection, not an administrator-proof audit or authenticity proof.
+
+## T10 candidate graph source (not installed)
+
+`graph/gsql/schema.gsql` defines the seven specified vertex types and six primary
+edge types, plus reverse VPA-report/settlement edges for a four-hop traversal.
+`graph/lib/fixture.mjs` generates 20 cases matching bootstrap UUIDs, opaque `fx:`
+front/account IDs and 100 fixture EvidenceRefs. These references identify authored
+fixture rows, not PostgreSQL evidence-file IDs. Each edge carries case/source IDs,
+source kind, verification/review state, data origin, synthetic flag and timestamp.
+All authored relationships use SYSTEM_INFERENCE, UNVERIFIED, NEEDS_REVIEW and
+SYNTHETIC_FIXTURE. The shared-layer account is fictional; benign shared domains and
+generic hints do not imply identity or a financial link.
+
+`find_case_links(case_id,max_hops,allowed_case_ids)` is candidate GSQL restricted
+to four hops and at most 20 trusted allowed cases. Both endpoint cases and all four
+edge source-case IDs are filtered. Returned tuples include four fixture source refs
+and explicit lead/review labels. Scope must come from backend grants in T11. No
+live schema, loader, query or graph authorization is claimed until host verification.
