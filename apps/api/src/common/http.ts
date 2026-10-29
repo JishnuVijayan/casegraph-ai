@@ -19,6 +19,7 @@ class ApiErrors implements ExceptionFilter {
     const errors: Record<number, [string, string]> = {
       400: ['BAD_REQUEST', 'Invalid request.'], 401: ['UNAUTHENTICATED', 'Demo sign-in required.'],
       403: ['ACCESS_DENIED', 'Access denied.'], 404: ['NOT_FOUND', 'Route not found.'],
+      415: ['UNSUPPORTED_MEDIA_TYPE', 'Only valid bounded PNG/JPEG files are supported.'],
       413: ['PAYLOAD_TOO_LARGE', 'Request too large.'], 429: ['RATE_LIMITED', 'Please try again later.'],
       503: ['UNAVAILABLE', 'Local service unavailable. Check configuration and retry.'],
     };

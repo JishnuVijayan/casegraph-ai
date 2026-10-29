@@ -81,3 +81,15 @@ current identities and case grants on every request; scope mutations lock/rechec
 ownership and write audit events transactionally. Add only case reading and
 explicit sharing, leaving creation/uploads to T04. Tests use isolated PostgreSQL
 and real HTTP guards; no production identity/security claims are made.
+
+### ADR-015 — T04 streamed immutable originals (2026-10-29)
+Use Busboy streaming into exclusive private staging and SHA-256 before any image
+processing. Validate PNG/JPEG with signature/MIME and bounded local Sharp decode;
+discard decoded pixels and preserve uploaded bytes unchanged. Reject PDFs until a
+safe parser is selected. Publish UUID originals via exclusive hard links on the
+same filesystem, with mode 0400, then commit metadata/audit transactionally.
+On confirmed rollback remove only this upload's files; retain private orphans if
+commit status is unknown rather than risk deleting a committed original.
+Download only after live authorization and byte/hash verification, as an attachment.
+Reuse the canonical evidence schema without a migration. No client-controlled
+storage path, source overwrite, OCR, malware-scan or authenticity promise is added.

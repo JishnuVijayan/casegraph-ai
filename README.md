@@ -1,6 +1,6 @@
 # CaseGraph AI
 
-**Current implementation: T00 scaffold, T01 local infrastructure, T02 database bootstrap, T03 demo authorization.** React/Vite and NestJS run locally.
+**Current implementation: T00 scaffold, T01 local infrastructure, T02 database bootstrap, T03 demo authorization, T04 controlled uploads.** React/Vite and NestJS run locally.
 See [app setup](#implemented-local-scaffold-t00) and [local infrastructure](#implemented-local-infrastructure-t01) for commands.
 The following product blueprint includes future, unimplemented features.
 
@@ -895,7 +895,7 @@ case placeholders and three sharing examples. Repeating seeds preserves edits.
 `db:verify` uses a separate temporary local database and removes it afterward.
 `npm run db:generate` generates future migrations offline. See
 [infrastructure instructions](infra/README.md) and [data model](docs/DATA_MODEL.md).
-T03 adds demo authentication and protected case reads; actual evidence processing remains unimplemented. No fixture is a real victim record or live investigation result.
+T03 adds demo authentication and protected case reads; T04 adds original evidence ingestion; OCR remains unimplemented. No fixture is a real victim record or live investigation result.
 
 ## Local demo login and authorization (T03)
 
@@ -908,8 +908,7 @@ npm run dev:demo
 
 Open http://127.0.0.1:5173 and choose a fictional identity. Victims see only their
 10 owned placeholders; the seeded analyst sees the one actively shared case.
-Owners can explicitly grant/revoke scope to the Fictional Demo Consortium. Case
-creation and uploads remain T04. Refresh the permitted list to observe grant changes.
+Owners can explicitly grant/revoke scope to the Fictional Demo Consortium. Case creation and uploads are implemented in T04 below. Refresh the permitted list to observe grant changes.
 
 `npm run dev` keeps login disabled unless DEMO_MODE=true was explicitly configured.
 Demo mode is refused with NODE_ENV=production. This is local role simulation;
@@ -921,3 +920,21 @@ are cleared on server restart; browser tokens are held only in memory.
 PostgreSQL database, then removes it. `npm run db:verify` remains the migration
 regression check. Stop dev servers with Ctrl+C and infrastructure with
 `npm run infra:down`; volume contents are preserved.
+
+## Synthetic case creation and evidence originals (T04)
+
+Start the seeded local demo as described above. As a fictional victim, create a
+synthetic draft, read it, and choose an entirely fictional PNG/JPEG to upload.
+Confirm the synthetic-only checkbox. Refresh the evidence manifest to inspect
+its source ID, MIME, byte count, SHA-256 and upload time. Download the original
+through its authenticated action. Shared analysts may read/download but cannot
+upload; revoking their last active grant denies the next manifest or original read.
+
+Files are limited to 5 MiB and validated before commit. Originals are private,
+read-only, never replaced, and SHA-256 checked before download. Hashes establish
+post-ingest integrity, not authenticity. There is no PDF ingestion, OCR, automated
+report or live graph result yet. Never upload real records or personal images.
+
+With local PostgreSQL running, `npm run test:evidence` creates an isolated synthetic
+database/private directory, runs 8 upload/authorization tests and removes its own
+fixtures. `npm run test:auth` remains the separate 9-test authorization regression.

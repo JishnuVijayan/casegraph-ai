@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { EvidencePanel } from './EvidencePanel';
+import { api, ApiFailure } from './api';
 
 type Identity = { id: string; displayName: string; role: 'victim' | 'analyst' };
 type CaseSummary = { id: string; title: string; status: string; synthetic: true };
@@ -6,24 +8,12 @@ type CaseDetail = CaseSummary & { category: string };
 type Session = { token: string; user: Identity };
 const organizationId = '10000000-0000-4000-8000-000000000001';
 
-class ApiFailure extends Error {
-  constructor(readonly status: number, message: string) { super(message); }
-}
-async function api<T>(path: string, token?: string, body?: object, method = 'GET'): Promise<T> {
-  let response: Response;
-  try {
-    response = await fetch(`/api/v1${path}`, { method, cache: 'no-store',
-      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(body ? { 'Content-Type': 'application/json' } : {}) },
-      body: body ? JSON.stringify(body) : undefined });
-  } catch { throw new ApiFailure(503, 'Local API unavailable. Start the local services and retry.'); }
-  const payload = await response.json().catch(() => null);
-  if (!response.ok) throw new ApiFailure(response.status, payload?.error?.message ?? 'Local request failed.');
-  return payload.data;
-}
 
 export function DemoWorkspace() {
   // In-memory only: reloads and sign-out clear the browser's token and private view.
   const [session, setSession] = useState<Session | null>(null);
+  const [title, setTitle] = useState('');
+  const [category, setCategory] = useState('other');
   const [subject, setSubject] = useState('synthetic-victim-a');
   const [cases, setCases] = useState<CaseSummary[]>([]);
   const [caseId, setCaseId] = useState('');
@@ -33,7 +23,7 @@ export function DemoWorkspace() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
-  function clear() { setSession(null); setCases([]); setDetail(null); setCaseId(''); setGrant(null); }
+  function clear() { setSession(null); setCases([]); setDetail(null); setCaseId(''); setGrant(null); setTitle(''); }
   async function perform(operation: () => Promise<void>) {
     setBusy(true); setError(''); setNotice('');
     try { await operation(); }
@@ -45,7 +35,7 @@ export function DemoWorkspace() {
   return <section aria-labelledby="demo-title">
     <h2 id="demo-title" className="text-xl font-bold">Local synthetic demo</h2>
     <p>Fictional role simulation only. Choosing an identity is not real identity verification. No real victim data.</p>
-    <p>Case creation, evidence upload, OCR, exports and TigerGraph investigation are not implemented yet.</p>
+    <p>Create synthetic cases and upload original PNG/JPEG evidence. OCR, exports and TigerGraph investigation are not implemented yet.</p>
     {!session ? <form onSubmit={(event) => { event.preventDefault(); void perform(async () => {
       clear();
       const next = await api<Session>('/auth/demo', undefined, { demoSubject: subject }, 'POST');
@@ -65,6 +55,21 @@ export function DemoWorkspace() {
       <button disabled={busy} onClick={() => void perform(async () => {
         try { await api('/auth/logout', session.token, {}, 'POST'); } finally { clear(); }
       })}>Sign out</button>
+      {session.user.role === 'victim' && <form onSubmit={(event) => { event.preventDefault(); void perform(async () => {
+        const row = await api<CaseDetail>('/cases', session.token, { title, category, syntheticAcknowledged: true }, 'POST');
+        setDetail(row); setCaseId(row.id); setTitle(''); setGrant(null);
+        setCases(await api<CaseSummary[]>('/cases', session.token));
+      }); }}>
+        <h3 className="mt-4 text-lg font-bold">Create a synthetic draft</h3>
+        <label htmlFor="new-case-title">Fictional case title</label>
+        <input id="new-case-title" maxLength={120} value={title} required disabled={busy} onChange={(event) => setTitle(event.target.value)} />
+        <label htmlFor="new-case-category">Category</label>
+        <select id="new-case-category" value={category} disabled={busy} onChange={(event) => setCategory(event.target.value)}>
+          <option value="other">Other</option><option value="payment">Payment</option><option value="investment">Investment</option><option value="friendship">Friendship</option>
+        </select>
+        <label><input type="checkbox" required disabled={busy} /> This draft contains only fictional/synthetic data.</label>
+        <button type="submit" disabled={busy}>Create draft</button>
+      </form>}
       <h3 className="mt-4 text-lg font-bold">Cases you can access</h3>
       {cases.length ? <ul>{cases.map((row) => <li key={row.id}>
         <button disabled={busy} onClick={() => { setCaseId(row.id); setDetail(null); }}>{row.title}</button>
@@ -81,7 +86,8 @@ export function DemoWorkspace() {
       {detail && <article aria-label="Case details" className="my-4 rounded border p-4">
         <h3 className="text-lg font-bold">{detail.title}</h3>
         <p>Synthetic placeholder · {detail.status} · {detail.category}</p>
-        <p>No evidence or verified bank records are attached.</p>
+        <p>Uploads are unverified user-supplied material, not bank-verified records.</p>
+        <EvidencePanel key={detail.id} token={session.token} caseId={detail.id} owner={session.user.role === 'victim'} busy={busy} perform={perform} />
         {session.user.role === 'victim' && <div>
           <p>Explicitly share this case with the Fictional Demo Consortium.</p>
           <label htmlFor="share-scope">Permission</label>

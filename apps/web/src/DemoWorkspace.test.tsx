@@ -19,7 +19,7 @@ test('signs in, reads scoped cases, and clears private UI on sign-out without pe
   expect(localStorage.getItem('token')).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'Read case' }));
   await screen.findByRole('article', { name: 'Case details' });
-  expect(screen.getByText(/No evidence or verified bank records/)).toBeVisible();
+  expect(screen.getByText(/Uploads are unverified user-supplied material/)).toBeVisible();
   fireEvent.click(screen.getByRole('button', { name: 'Sign out' }));
   await screen.findByRole('button', { name: 'Sign in to local demo' });
   expect(screen.queryByText(row.title)).not.toBeInTheDocument();
@@ -49,4 +49,19 @@ test('clears an earlier case detail before a denied read', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Read case' }));
   expect(await screen.findByRole('alert')).toHaveTextContent('Access denied');
   expect(screen.queryByRole('article', { name: 'Case details' })).not.toBeInTheDocument();
+});
+
+test('creates an acknowledged synthetic draft without sending an owner identity', async () => {
+  const created = { ...row, id: 'synthetic-new-case', title: 'Synthetic new draft', category: 'other' };
+  const fetch = vi.fn().mockResolvedValueOnce(success({ token, user })).mockResolvedValueOnce(success([row]))
+    .mockResolvedValueOnce(success(created)).mockResolvedValueOnce(success([row, created]));
+  vi.stubGlobal('fetch', fetch);
+  render(<DemoWorkspace />);
+  fireEvent.click(screen.getByRole('button', { name: 'Sign in to local demo' }));
+  await screen.findByText(/Signed in as/);
+  fireEvent.change(screen.getByLabelText('Fictional case title'), { target: { value: 'new draft' } });
+  fireEvent.click(screen.getByRole('checkbox', { name: /This draft contains only/ }));
+  fireEvent.click(screen.getByRole('button', { name: 'Create draft' }));
+  await screen.findByRole('article', { name: 'Case details' });
+  expect(JSON.parse(fetch.mock.calls[2][1].body)).toEqual({ title: 'new draft', category: 'other', syntheticAcknowledged: true });
 });

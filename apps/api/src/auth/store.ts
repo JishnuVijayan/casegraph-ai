@@ -14,7 +14,7 @@ export class AccessStore implements OnModuleDestroy {
   constructor(@Inject(LOCAL_DATABASE) private readonly connection: ReturnType<typeof connect> | undefined) {}
   async onModuleDestroy() { await this.connection?.pool.end(); }
 
-  private async available<T>(operation: (db: ReturnType<typeof connect>['db']) => Promise<T>): Promise<T> {
+  async available<T>(operation: (db: ReturnType<typeof connect>['db']) => Promise<T>): Promise<T> {
     try {
       if (!this.connection) throw new ServiceUnavailableException();
       return await operation(this.connection.db);
@@ -22,6 +22,14 @@ export class AccessStore implements OnModuleDestroy {
       if (error instanceof HttpException) throw error;
       throw new ServiceUnavailableException();
     }
+  }
+  async createCase(actor: Actor, title: string, category: string, requestId: string) {
+    if (actor.role !== 'victim') throw new ForbiddenException();
+    return this.available((db) => db.transaction(async (tx) => {
+      const [row] = await tx.insert(cases).values({ ownerId: actor.id, title: `Synthetic ${title}`, category, synthetic: true }).returning();
+      await tx.insert(auditEvents).values({ actorId: actor.id, action: 'CASE_CREATED', resourceType: 'case', resourceId: row.id, requestId });
+      return { id: row.id, title: row.title, category: row.category, status: row.status, synthetic: row.synthetic };
+    }));
   }
   async actor(id: string): Promise<Actor | undefined> {
     return this.available(async (db) => {

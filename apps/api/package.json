@@ -14,15 +14,18 @@
     "@nestjs/common": "^11.1.0",
     "@nestjs/core": "^11.1.0",
     "@nestjs/platform-express": "^11.1.0",
+    "busboy": "^1.6.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "drizzle-orm": "^0.45.4",
     "pg": "^8.23.1",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.2"
+    "rxjs": "^7.8.2",
+    "sharp": "^0.35.5"
   },
   "devDependencies": {
     "@nestjs/testing": "^11.1.0",
+    "@types/busboy": "^1.5.5",
     "@types/express": "^5.0.6",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.0.0",

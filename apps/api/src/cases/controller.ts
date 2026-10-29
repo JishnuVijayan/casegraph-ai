@@ -1,9 +1,16 @@
 import { Body, Controller, Delete, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
-import { IsIn, IsISO8601, IsOptional, IsUUID } from 'class-validator';
+import { Equals, IsIn, IsISO8601, IsOptional, IsUUID, IsString, Length } from 'class-validator';
 import { ApiRequest, envelope } from '../common/http';
 import { CaseScopeGuard, RequireCaseScope, Roles } from '../auth/guards';
+import { Transform } from 'class-transformer';
 import { AccessStore } from '../auth/store';
 
+export class CreateCase {
+  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
+  @IsString() @Length(1, 120) title!: string;
+  @IsIn(['investment', 'friendship', 'payment', 'other']) category!: string;
+  @Equals(true) syntheticAcknowledged!: boolean;
+}
 export class ShareCase {
   @IsUUID('4') organizationId!: string;
   @IsIn(['READ', 'INVESTIGATE']) scope!: 'READ' | 'INVESTIGATE';
@@ -14,6 +21,11 @@ export class ShareCase {
 export class CasesController {
   constructor(private readonly store: AccessStore) {}
 
+  @Post()
+  @Roles('victim')
+  async create(@Body() dto: CreateCase, @Req() request: ApiRequest) {
+    return envelope(request, await this.store.createCase(request.actor!, dto.title, dto.category, request.requestId));
+  }
   @Get()
   async list(@Req() request: ApiRequest) {
     const rows = await this.store.list(request.actor!);
