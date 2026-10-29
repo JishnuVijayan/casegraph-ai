@@ -25,7 +25,9 @@
     "db:generate": "npm run db:generate -w @casegraph/api",
     "db:migrate": "npm run build -w @casegraph/api && node infra/database.mjs migrate",
     "seed:synthetic": "npm run build -w @casegraph/api && node infra/database.mjs seed",
-    "db:verify": "npm run build -w @casegraph/api && node infra/database.mjs verify"
+    "db:verify": "npm run build -w @casegraph/api && node infra/database.mjs verify",
+    "test:auth": "node infra/auth-test.mjs",
+    "dev:demo": "DEMO_MODE=true npm run dev"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

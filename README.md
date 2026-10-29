@@ -1,6 +1,6 @@
 # CaseGraph AI
 
-**Current implementation: T00 scaffold, T01 local infrastructure, T02 database bootstrap.** React/Vite and NestJS run locally.
+**Current implementation: T00 scaffold, T01 local infrastructure, T02 database bootstrap, T03 demo authorization.** React/Vite and NestJS run locally.
 See [app setup](#implemented-local-scaffold-t00) and [local infrastructure](#implemented-local-infrastructure-t01) for commands.
 The following product blueprint includes future, unimplemented features.
 
@@ -895,5 +895,29 @@ case placeholders and three sharing examples. Repeating seeds preserves edits.
 `db:verify` uses a separate temporary local database and removes it afterward.
 `npm run db:generate` generates future migrations offline. See
 [infrastructure instructions](infra/README.md) and [data model](docs/DATA_MODEL.md).
-Authentication, protected case endpoints and actual evidence processing are still
-unimplemented. No fixture is a real victim record or live investigation result.
+T03 adds demo authentication and protected case reads; actual evidence processing remains unimplemented. No fixture is a real victim record or live investigation result.
+
+## Local demo login and authorization (T03)
+
+```bash
+npm run infra:up
+npm run db:migrate
+npm run seed:synthetic
+npm run dev:demo
+```
+
+Open http://127.0.0.1:5173 and choose a fictional identity. Victims see only their
+10 owned placeholders; the seeded analyst sees the one actively shared case.
+Owners can explicitly grant/revoke scope to the Fictional Demo Consortium. Case
+creation and uploads remain T04. Refresh the permitted list to observe grant changes.
+
+`npm run dev` keeps login disabled unless DEMO_MODE=true was explicitly configured.
+Demo mode is refused with NODE_ENV=production. This is local role simulation;
+no real passwords or identity verification. Sessions expire after 30 minutes and
+are cleared on server restart; browser tokens are held only in memory.
+
+`npm test` runs offline unit/component/API checks. With infrastructure running,
+`npm run test:auth` runs 9 HTTP authorization tests against a temporary local
+PostgreSQL database, then removes it. `npm run db:verify` remains the migration
+regression check. Stop dev servers with Ctrl+C and infrastructure with
+`npm run infra:down`; volume contents are preserved.

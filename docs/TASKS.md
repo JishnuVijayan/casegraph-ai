@@ -2,7 +2,7 @@
 
 **How to use:** Ask Codex to implement **one task** at a time, run tests, then mark it `[x]` and attach verification evidence. No single-prompt “build the whole app”. Track failures honestly. Update `docs/DECISIONS.md` when deviating from architecture.
 
-Current detailed plan: [`task.md`](../task.md) — T02 database bootstrap complete; T03 authentication/authorization is next.
+Current detailed plan: [`task.md`](../task.md) — T03 complete; T04 case creation/uploads is next.
 
 ## Phase 0 — Bootstrap (P0)
 - [x] **T00 Repo initialization.** Monorepo `apps/web`, `apps/api`, `infra`, `data/synthetic`, `docs`; copy existing README/docs; `.gitignore`, `.env.example`; lock dependencies. **Done:** both projects start locally and no secrets committed.
@@ -10,7 +10,7 @@ Current detailed plan: [`task.md`](../task.md) — T02 database bootstrap comple
 - [x] **T02 Database.** Drizzle schema, migrations, seed-demo accounts and 20 synthetic case placeholders. **Done:** migrate twice safely / verify schema and seed idempotence.
 
 ## Phase 1 — Victim reporting (P0)
-- [ ] **T03 Auth and authorization.** Seeded demo login, `CaseScopeGuard`, role boundaries. **Done:** cross-user access tests return denial.
+- [x] **T03 Auth and authorization.** Seeded demo login, `CaseScopeGuard`, role boundaries. **Done:** cross-user access tests return denial.
 - [ ] **T04 Case and uploads.** Form, bounded upload, SHA-256 stream, immutable original, metadata, audit event. **Done:** byte-equal hash and authorized retrieval.
 - [ ] **T05 OCR and provenance.** Tesseract local extraction with text spans/hOCR boxes; record extraction version/errors. **Done:** click sample extracted amount -> correct source crop; unreadable case says unknown.
 - [ ] **T06 Timeline and claims.** Normalized entities and uncertainty status; victim can correct, preserving revision. **Done:** source fact and edited interpretation both traceable.
@@ -81,3 +81,17 @@ Current detailed plan: [`task.md`](../task.md) — T02 database bootstrap comple
 - `npm run infra:down` succeeded; final status showed no project containers. Smoke servers stopped, sentinel and temporary verification DB removed; working seeded volume and ignored local credentials were preserved. No credentials added to Git or printed by database commands.
 - Limits: Node 24.15.0 was tested, Node 22 was not. No dependency audit, browser E2E, auth/IDOR, original-file immutability enforcement, JSON coordinate validation, OCR or TigerGraph integration tests yet. CLI migrations/seeds do not create protected application routes or a readiness endpoint. Forced interruption may leave a uniquely named temporary test database requiring deliberate manual cleanup.
 - Next unblocked task: **T03 — seeded demo login, CaseScopeGuard and role boundaries**. T03 and later tasks remain unchecked.
+
+
+### T03 verification details (2026-10-29 IST)
+- Reviewed and reverified T02 (lint/typecheck, 9 tests, db:verify, builds and 21 private-file probes); no blockers. Merged into develop as `9e64df1` and pushed. T03 implemented on `feat/t03-demo-authorization`.
+- Added disabled-by-default/production-refused fictional login for three seeded identities; random 256-bit opaque tokens, hashed in-memory records, 30-minute expiry, rotation, logout, bounded sign-in attempts and cross-site/origin rejection. No real identity verification, password system, cookies, localStorage tokens or paid auth service.
+- Added default global session and declared-role guards, SQL-backed CaseScopeGuard, scoped case lists/reads, owner-only explicit consortium grant/revoke actions, transactional audit and stable sanitized response envelopes. Actor role/membership/synthetic status and current grants rechecked on each request; READ does not grant INVESTIGATE scope. Multiple active grant scopes compose.
+- Added minimal React role-selection/case-reading/sharing UI after urgent guidance. Old details clear before a new read, logout or expired session; denied/unavailable requests do not invent case data.
+- Installed/locked class-validator 0.15.1, class-transformer 0.5.1, @types/express 5.0.6. No schema migration required. Initial TypeScript parseEnv optional-string mismatch fixed; lint/typecheck/build then passed.
+- `npm test`: 15 tests passed (4 infrastructure, 7 Jest health/fixture/session, 4 Vitest/RTL UI). `npm run test:auth`: 9 PostgreSQL-backed HTTP tests passed in a unique temporary database; removed afterward. Tests cover cross-user denial, malformed/nonexistent case equivalence, forged/missing sessions, identity-field injection, undeclared handler denial, cross-origin login, absent/revoked/expired grants, scope/owner boundaries, immediate revocation effects, changed organization/role/synthetic flag, logout, expiry and redacted audit. One query-error fault injection verified sanitized 503; no actual database-outage test is claimed.
+- Final lint/typecheck and both builds passed. `infra:smoke:storage` passed all 21 content probes/build scan; `db:verify` again passed migration/seed/constraint regressions after connection integration.
+- `npm run dev:demo` started both servers on loopback. Browser UI verified fictional Victim A sign-in, owned case read, and denial of Victim B's case with old details cleared. Screenshot capture was unavailable; no saved screenshot or full browser E2E suite is claimed.
+- Development servers stopped; `infra:down` succeeded and final status empty. Temporary verification DBs and sentinel removed, working seeded volume preserved; restart-invalidated demo sessions. Node 24 tested; Node 22 and dependency vulnerability audit still unverified.
+- Limits: local role simulation only, ephemeral single-process sessions, no real-user identity assurance or production session design. Case creation, file serving/immutability, uploads, OCR, graph and exports remain future tasks. T04 must apply scope checks to every new file route.
+- Next unblocked task: **T04 case creation and controlled uploads**, with exact-byte/hash and authorized-retrieval tests. T04 and later remain unchecked.

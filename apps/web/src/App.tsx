@@ -1,4 +1,5 @@
 import { Route, Routes, Link } from 'react-router-dom';
+import { DemoWorkspace } from './DemoWorkspace';
 
 export function App() {
   return (
@@ -13,14 +14,7 @@ export function App() {
         </p>
       </section>
       <Routes>
-        <Route path="/" element={
-          <section>
-            <h2 className="text-xl font-bold">Local synthetic demo</h2>
-            <p>Scaffold only. Case intake, evidence upload, OCR, and investigation are not implemented yet.</p>
-            <p>No real victim data. No paid APIs. No official government, police, or bank affiliation.</p>
-            <p>TigerGraph and optional AI integrations are not configured.</p>
-          </section>
-        } />
+        <Route path="/" element={<DemoWorkspace />} />
         <Route path="*" element={<p>Page not found. <Link to="/">Return home</Link></p>} />
       </Routes>
     </main>

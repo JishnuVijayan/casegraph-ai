@@ -70,3 +70,14 @@ indexes and real constraint failures without resetting working data. Schema is n
 authorization or immutable-file enforcement; T03/T04 remain required. Only 20 empty
 fictional case placeholders are seeded, with no fake OCR/graph/verified-bank output.
 Reviewer: implementation under the user's next-phase request.
+
+### ADR-014 — T03 opt-in fictional sessions and live case scopes (2026-10-29)
+Use opaque random, hashed, short-lived in-memory sessions instead of introducing
+JWT secrets or external identity services for the local synthetic demo. Default
+demo mode OFF and reject production mode; seeded role selection is explicitly
+not real identity verification. Validate DTOs with class-validator/transformer.
+Global session/role guards deny private handlers lacking declared roles. Query
+current identities and case grants on every request; scope mutations lock/recheck
+ownership and write audit events transactionally. Add only case reading and
+explicit sharing, leaving creation/uploads to T04. Tests use isolated PostgreSQL
+and real HTTP guards; no production identity/security claims are made.
