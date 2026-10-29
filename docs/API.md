@@ -226,3 +226,7 @@ responses and unavailable queries fail closed. No browser token or arbitrary GSQ
 accepted. Query scope capped at 20 cases, result at 20 paths/80 sources, body at
 128 KiB and both outbound calls share a 12-second deadline. Live demonstration of
 these routes still awaits the compatible TigerGraph installation and query compilation.
+
+## Savanna transport update (2026-10-29)
+
+Existing investigation endpoints and backend-derived INVESTIGATE scope are unchanged. Upstream graph HTTP 401/403 now return sanitized 502 `GRAPH_AUTHENTICATION_FAILED`; they do not invalidate an application session. Disabled/unreachable/timed-out/malformed graph responses remain 503 `UNAVAILABLE`. See [Savanna configuration, contracts and live evidence limits](tigergraph-savanna-integration.md).

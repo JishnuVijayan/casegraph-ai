@@ -56,7 +56,7 @@ fixture is authored separately and is not falsely attributed to the uploaded ima
 
 Finish T09/T10/T11's actual host installation/query/authentication checks first.
 Use the current bundle including EvidenceRef from_id/to_id and get_lead_sources.
-Set up the existing loopback/SSH tunnel and a separate private mode-0600
+Set up either the existing loopback/SSH tunnel or the validated public Savanna origin (see [integration runbook](../docs/tigergraph-savanna-integration.md)) and a separate private mode-0600
 `.local/tigergraph-app.token` with the required query privileges. No token goes in
 Git, command arguments, a browser variable or test logs.
 

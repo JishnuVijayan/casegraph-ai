@@ -222,3 +222,7 @@ prove only reporting/OCR/export and honest unavailability. No EC2 or paid API wo
 Disable trace/video/screenshots; keep any error context in ignored private test
 artifacts. Controlled OCR fixture uses clear uniform text after an initial mixed-size
 layout produced honest UNKNOWN. This is not OCR accuracy evaluation or a benchmark.
+
+## 2026-10-29 — Savanna data-plane integration
+
+User explicitly selected an existing Savanna graph, superseding the Community-only local deployment preference for this demo connection. No resources or costs were introduced here. Restrict public origins to HTTPS *.i.tgcloud.io, retain loopback, and read either bearer token or GSQL-Secret from the existing private backend credential file. Do not use control-plane API keys or automatic secret exchange. Upstream HTTP credential rejection is 502, separate from end-user session failure and generic unavailable 503. The handoff's successful runtime observations are attributed to the user; exact local source compilation and public app/live scope tests remain pending. Preserve existing graph and bundle. See tigergraph-savanna-integration.md.

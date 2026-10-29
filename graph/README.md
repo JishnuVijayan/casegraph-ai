@@ -1,10 +1,12 @@
+> Update 2026-10-29: the user reports successful Savanna inventory/path/source queries. See [current Savanna integration and evidence limits](../docs/tigergraph-savanna-integration.md). The candidate/deployment sections below are historical preparation; do not reload or clean up the existing verified graph. The app now also accepts a validated public HTTPS Savanna workspace origin.
+
 # T10 graph source package — live verification pending
 
 This package contains **candidate TigerGraph 4.2.5 source**, not an installed or
 compiler-verified graph/query. T09 still needs a compatible runtime. The user plans
 a future x86-64 EC2 demo; no EC2 instance, cloud account connection or paid resource
 was provisioned here. Offline contract tests are explicitly fixtures and never
-substitute paths in the API. Existing app UI still reports investigation unimplemented.
+substitute paths in the API. The current app includes scoped analyst queries, source snapshots and review UI.
 
 ## What is prepared
 
@@ -153,7 +155,7 @@ not the administrative `.local/tigergraph.token` file used by graph:verify-live.
 app token must only have the privileges required by find_case_links/get_lead_sources.
 After actual server auth and tunnel verification, export TIGERGRAPH_ENABLED=true
 and TIGERGRAPH_LOCAL_PORT=14240 when starting dev:demo. It defaults disabled and
-accepts no arbitrary remote URL. No token goes to Vite, URLs, logs or Git.
+accepts only loopback or the validated public Savanna origin described above. No token goes to Vite, URLs, logs or Git.
 
 The app derives allowed cases from current PostgreSQL INVESTIGATE grants. Both
 fixture case owners must explicitly grant that scope for the pair to be eligible.

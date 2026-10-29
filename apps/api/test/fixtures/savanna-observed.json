@@ -1,0 +1,86 @@
+{
+  "provenance": "User-reported Savanna results, 2026-10-29; regression fixture only, not independently executed. REST envelope reconstructed for transport tests.",
+  "paths": {
+    "error": false,
+    "results": [
+      {
+        "classification": "SYNTHETIC_INVESTIGATIVE_LEAD",
+        "paths": [
+          {
+            "source_case_id": "30000000-0000-4000-8000-000000000001",
+            "source_vpa_id": "fx:vpa:01",
+            "account_id": "fx:account:shared-01",
+            "target_vpa_id": "fx:vpa:02",
+            "target_case_id": "30000000-0000-4000-8000-000000000002",
+            "source_report_ref": "fx:evidence:01:case_reported_vpa",
+            "source_settlement_ref": "fx:evidence:01:vpa_settled_to_account",
+            "target_settlement_ref": "fx:evidence:02:vpa_settled_to_account",
+            "target_report_ref": "fx:evidence:02:case_reported_vpa",
+            "source_kind": "SYSTEM_INFERENCE",
+            "verification_status": "UNVERIFIED",
+            "review_status": "NEEDS_REVIEW",
+            "data_origin": "SYNTHETIC_FIXTURE"
+          }
+        ]
+      }
+    ]
+  },
+  "sources": {
+    "error": false,
+    "results": [
+      {
+        "classification": "SYNTHETIC_FIXTURE_SOURCES",
+        "sources": [
+          {
+            "id": "fx:evidence:01:vpa_settled_to_account",
+            "case_id": "30000000-0000-4000-8000-000000000001",
+            "from_id": "fx:vpa:01",
+            "to_id": "fx:account:shared-01",
+            "relation_type": "VPA_SETTLED_TO_ACCOUNT",
+            "fixture_kind": "FICTIONAL_SETTLEMENT_SCENARIO",
+            "source_kind": "SYSTEM_INFERENCE",
+            "verification_status": "UNVERIFIED",
+            "data_origin": "SYNTHETIC_FIXTURE",
+            "synthetic": true
+          },
+          {
+            "id": "fx:evidence:01:case_reported_vpa",
+            "case_id": "30000000-0000-4000-8000-000000000001",
+            "from_id": "30000000-0000-4000-8000-000000000001",
+            "to_id": "fx:vpa:01",
+            "relation_type": "CASE_REPORTED_VPA",
+            "fixture_kind": "FICTIONAL_CASE_SCENARIO",
+            "source_kind": "SYSTEM_INFERENCE",
+            "verification_status": "UNVERIFIED",
+            "data_origin": "SYNTHETIC_FIXTURE",
+            "synthetic": true
+          },
+          {
+            "id": "fx:evidence:02:case_reported_vpa",
+            "case_id": "30000000-0000-4000-8000-000000000002",
+            "from_id": "30000000-0000-4000-8000-000000000002",
+            "to_id": "fx:vpa:02",
+            "relation_type": "CASE_REPORTED_VPA",
+            "fixture_kind": "FICTIONAL_CASE_SCENARIO",
+            "source_kind": "SYSTEM_INFERENCE",
+            "verification_status": "UNVERIFIED",
+            "data_origin": "SYNTHETIC_FIXTURE",
+            "synthetic": true
+          },
+          {
+            "id": "fx:evidence:02:vpa_settled_to_account",
+            "case_id": "30000000-0000-4000-8000-000000000002",
+            "from_id": "fx:vpa:02",
+            "to_id": "fx:account:shared-01",
+            "relation_type": "VPA_SETTLED_TO_ACCOUNT",
+            "fixture_kind": "FICTIONAL_SETTLEMENT_SCENARIO",
+            "source_kind": "SYSTEM_INFERENCE",
+            "verification_status": "UNVERIFIED",
+            "data_origin": "SYNTHETIC_FIXTURE",
+            "synthetic": true
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -29,7 +29,7 @@ async function start(){
   const port=Number(process.env.TIGERGRAPH_LOCAL_PORT??'14240');if(!Number.isInteger(port)||port<1024||port>65535)throw new Error('Invalid graph port');
   const module=await Test.createTestingModule({imports:[AppModule]}).overrideProvider(DemoConfig).useValue({enabled:true,ttlMs:1800000})
     .overrideProvider(LOCAL_DATABASE).useValue(connect(database)).overrideProvider(EVIDENCE_DIRECTORY).useValue(join(parent,'evidence'))
-    .overrideProvider(GraphConfig).useValue({enabled:mode==='live',port}).compile();
+    .overrideProvider(GraphConfig).useValue(mode==='live'?{...new GraphConfig(),enabled:true}:{enabled:false,port}).compile();
   app=module.createNestApplication({logger:false});configureHttp(app);await app.listen(13000,'127.0.0.1');
   const {createServer}=await import('vite');
   web=await createServer({configFile:resolve('apps/web/vite.config.ts'),root:resolve('apps/web'),logLevel:'silent',server:{host:'127.0.0.1',port:15173,strictPort:true,proxy:{'/api':'http://127.0.0.1:13000'}}});

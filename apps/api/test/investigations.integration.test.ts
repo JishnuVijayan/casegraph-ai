@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { INestApplication } from '@nestjs/common';
+import { BadGatewayException, INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { randomUUID } from 'node:crypto';
@@ -46,6 +46,13 @@ describe('analyst investigation authorization with explicitly mocked TigerGraph 
     graph.execute.mockImplementation((...args:Parameters<TigerGraphClient['execute']>)=>disabled.execute(...args));
     const unavailable=await http().post(path()).set('Authorization',auth(analyst)).send({maxHops:4}).expect(503);
     expect(unavailable.body.data).toBeUndefined();
+  });
+  it('reports upstream credential failure separately without leaking details or invalidating the analyst session',async()=>{
+    graph.execute.mockRejectedValueOnce(new BadGatewayException('private upstream secret'));
+    const response=await http().post(path()).set('Authorization',auth(analyst)).send({maxHops:4}).expect(502);
+    expect(response.body.error.code).toBe('GRAPH_AUTHENTICATION_FAILED');
+    expect(JSON.stringify(response.body)).not.toContain('private upstream secret');
+    await http().get(path()).set('Authorization',auth(analyst)).expect(200);
   });
   it('derives scope, persists source-validated NEEDS_REVIEW snapshots and authorizes drilldown/review',async()=>{
     grantB=await grant('INVESTIGATE');valid();graph.execute.mockClear();

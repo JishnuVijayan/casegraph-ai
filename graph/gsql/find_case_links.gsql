@@ -1,4 +1,4 @@
-// Candidate GSQL 4.2 source: NOT compiled/installed in this workspace.
+// Savanna V2 edge syntax synchronized with user-reported working logic; this exact file has not been live compiled.
 // Only the future trusted backend may supply allowed_case_ids from active grants.
 // No end-user access to TigerGraph credentials or arbitrary scope parameters.
 USE GRAPH CaseGraphDemoV1
@@ -12,10 +12,10 @@ CREATE OR REPLACE QUERY find_case_links(STRING case_id, INT max_hops, SET<STRING
     Start = {CaseReport.*};
     Start = SELECT s FROM Start:s WHERE s.case_id == case_id AND s.synthetic;
     Matches = SELECT t
-      FROM Start:s -(CASE_REPORTED_VPA:e1)-> UPI_VPA:u1
-        -(VPA_SETTLED_TO_ACCOUNT:e2)-> BankAccount:b
-        -(ACCOUNT_SETTLED_FROM_VPA:e3)-> UPI_VPA:u2
-        -(VPA_REPORTED_BY_CASE:e4)-> CaseReport:t
+      FROM Start:s -(CASE_REPORTED_VPA>:e1)- UPI_VPA:u1
+        -(VPA_SETTLED_TO_ACCOUNT>:e2)- BankAccount:b
+        -(ACCOUNT_SETTLED_FROM_VPA>:e3)- UPI_VPA:u2
+        -(VPA_REPORTED_BY_CASE>:e4)- CaseReport:t
       WHERE t.case_id != s.case_id AND allowed_case_ids.contains(t.case_id)
         AND u1.synthetic AND b.synthetic AND u2.synthetic AND t.synthetic
         AND e1.case_id == s.case_id AND e2.case_id == s.case_id
