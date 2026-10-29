@@ -147,3 +147,16 @@ and each queried section at 1,000 rows; exceeding limits rejects the whole expor
 Browser preview is sandboxed and downloaded HTML has CSP blocking active content and
 network access. Manual print layout and browser Save as PDF remain unverified by E2E.
 Reviewer: implementation under the user's T08 request.
+
+### ADR-020 — T09 supported-host prerequisite and honest diagnostics (2026-10-29)
+Vendor Docker instructions exclude ARM including Apple Silicon. This task's Docker
+reports aarch64; user confirmed no compatible host. Reject unsupported local startup
+rather than represent emulation as supported. Prepare a separate pinned Community
+Compose template with no published ports, internal network and a named volume; do
+not install the software on this host. Add read-only, bounded preflight/health CLI
+with distinct host eligibility, service-response and graph-readiness states. Registry
+manifest inspection is metadata only; actual installed version remains unknown.
+Keep T09 unchecked pending a compatible operator-approved local machine, license
+review, credential hardening and actual startup/seed/persistence checks. No paid VM,
+remote account, benchmark, fake query, runtime success or sponsor permission is inferred.
+Sources and unexecuted host runbook: infra/TIGERGRAPH.md.

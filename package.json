@@ -32,7 +32,10 @@
     "test:ocr": "node infra/extraction-test.mjs",
     "test:claims": "node infra/claims-test.mjs",
     "test:clarifications": "node infra/clarifications-test.mjs",
-    "test:exports": "node infra/exports-test.mjs"
+    "test:exports": "node infra/exports-test.mjs",
+    "graph:preflight": "node infra/tigergraph.mjs preflight",
+    "graph:config": "node infra/tigergraph.mjs config",
+    "graph:health": "node infra/tigergraph.mjs health"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
