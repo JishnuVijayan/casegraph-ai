@@ -4,9 +4,9 @@ CREATE OR REPLACE QUERY get_lead_sources(SET<STRING> evidence_ids, SET<STRING> a
   TYPEDEF TUPLE<STRING id, STRING case_id, STRING from_id, STRING to_id, STRING relation_type, STRING fixture_kind,
     STRING source_kind, STRING verification_status, STRING data_origin, BOOL synthetic> SourceRef;
   SetAccum<SourceRef> @@sources;
-  IF evidence_ids.size() <= 80 AND allowed_case_ids.size() <= 20 THEN
+  IF evidence_ids.size() <= 80 AND allowed_case_ids.size() <= 250 THEN
     Start = {CaseReport.*};
-    Sources = SELECT r FROM Start:c -(RELATION_SUPPORTED_BY_EVIDENCE:e)-> EvidenceRef:r
+    Sources = SELECT r FROM Start:c -(RELATION_SUPPORTED_BY_EVIDENCE>:e)- EvidenceRef:r
       WHERE allowed_case_ids.contains(c.case_id) AND evidence_ids.contains(r.id)
         AND c.synthetic AND r.synthetic AND e.synthetic
         AND r.case_id == c.case_id AND e.case_id == c.case_id AND e.evidence_id == r.id

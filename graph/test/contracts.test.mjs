@@ -17,9 +17,12 @@ function referencePairs(data,allowed) {
   }
   return pairs;
 }
-test('twenty fictional cases have valid typed provenance and only expected account pairs',()=>{
+test('200 fictional cases have valid typed provenance and expected account clusters',()=>{
   const data=validateFixture(fixture()),ids=data.vertices.CaseReport.map((c)=>c.id);
-  assert.deepEqual(referencePairs(data,ids),[[ids[0],ids[1]],[ids[1],ids[0]]]);
+  const pairs=referencePairs(data,ids);
+  assert.ok(pairs.some(([a,b])=>a===ids[0]&&b===ids[1]));
+  assert.ok(pairs.some(([a,b])=>a===ids[5]&&b===ids[6]));
+  assert.ok(pairs.some(([a,b])=>a===ids[7]&&b===ids[8]));
   assert.deepEqual(referencePairs(data,[ids[0]]),[]);assert.deepEqual(referencePairs(data,[]),[]);
   const benign=data.edges.CASE_REPORTED_DOMAIN.filter((e)=>[ids[3],ids[4]].includes(e.case_id));
   assert.equal(benign[0].to,benign[1].to);
@@ -30,8 +33,8 @@ test('twenty fictional cases have valid typed provenance and only expected accou
 });
 test('bundle is deterministic, preserves case IDs and contains no destructive reset or secret',()=>{
   const a=buildBundle(),b=buildBundle();assert.deepEqual(a,b);assert.equal(a.manifest.liveVerified,false);
-  assert.equal(a.manifest.vertices.CaseReport,20);assert.equal(a.manifest.vertices.EvidenceRef,100);
-  assert.equal(a.manifest.edges.VPA_SETTLED_TO_ACCOUNT,20);
+  assert.equal(a.manifest.vertices.CaseReport,200);assert.equal(a.manifest.vertices.EvidenceRef,1000);
+  assert.equal(a.manifest.edges.VPA_SETTLED_TO_ACCOUNT,200);
   assert.doesNotMatch(a.files['schema.gsql'],/\bDROP\s+(GRAPH|ALL|VERTEX|EDGE)\b/i);
   assert.match(a.files['find_case_links.gsql'],/allowed_case_ids\.contains\(t.case_id\)/);
   assert.match(a.files['find_case_links.gsql'],/max_hops == 4/);

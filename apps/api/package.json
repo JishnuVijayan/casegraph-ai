@@ -11,6 +11,8 @@
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.1159.0",
+    "@aws-sdk/client-textract": "^3.1159.0",
     "@nestjs/common": "^11.1.0",
     "@nestjs/core": "^11.1.0",
     "@nestjs/platform-express": "^11.1.0",
