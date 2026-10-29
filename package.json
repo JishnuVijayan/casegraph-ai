@@ -11,9 +11,17 @@
   "scripts": {
     "dev": "concurrently -k -n api,web \"npm run dev -w @casegraph/api\" \"npm run dev -w @casegraph/web\"",
     "build": "npm run build --workspaces",
-    "test": "npm run test --workspaces",
+    "test": "npm run infra:test && npm run test --workspaces",
     "lint": "eslint .",
-    "typecheck": "npm run typecheck --workspaces"
+    "typecheck": "npm run typecheck --workspaces",
+    "infra:init": "node infra/manage.mjs init",
+    "infra:config": "node infra/manage.mjs config",
+    "infra:up": "node infra/manage.mjs up",
+    "infra:down": "node infra/manage.mjs down",
+    "infra:status": "node infra/manage.mjs status",
+    "infra:test": "node --test infra/test/*.test.mjs",
+    "infra:smoke:db": "node infra/db-smoke.mjs",
+    "infra:smoke:storage": "node infra/storage-smoke.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

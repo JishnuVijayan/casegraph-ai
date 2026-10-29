@@ -1,0 +1,31 @@
+# Local synthetic development only. Credentials are generated in ignored .env.
+services:
+  postgres:
+    image: postgres:17-alpine@sha256:266d3c257594e195b309ae9d1805e54c788f1d7b375f56bf6c367aac6c917e7b
+    environment:
+      POSTGRES_USER: casegraph
+      POSTGRES_DB: casegraph
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run npm run infra:init to generate local credentials}
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-55432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U casegraph -d casegraph"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+    cpus: 1.0
+    mem_limit: 512m
+    shm_size: 128m
+    pids_limit: 256
+    stop_grace_period: 15s
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: "2"
+volumes:
+  pgdata:

@@ -27,6 +27,12 @@ Build a local, zero-paid-API **HHGOA 2026 prototype** of CaseGraph AI: a free-to
 - Expose reproducible `dev`, `test`, `lint`, `typecheck`, `seed:synthetic`, and `db:migrate` scripts as the implementation matures; do not claim commands exist before creating them.
 - At the end of each task, summarize changed files, commands executed, actual results, known limitations, next unblocked task.
 
+## Planning and Git workflow
+- Use root `task.md` for the current task plan; keep `docs/TASKS.md` as the overall completion and verification log.
+- Feature branch names must start with `feat/`; fix branch names must start with `fix/`.
+- Do not include `codex` in any branch name or commit message.
+- Use conventional commit types (`feat:`, `fix:`, `chore:`, `docs:`) matching the actual change. Stage only required, reviewed project files.
+
 ## Reading order for Codex
 1. `README.md` — canonical vision and detailed blueprint.
 2. `docs/REQUIREMENTS.md` — scope and acceptance criteria.
