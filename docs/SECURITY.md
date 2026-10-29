@@ -127,3 +127,13 @@ OCR regions, source labels or verification state. OCR observations and recollect
 remain `UNVERIFIED`. Timeline notes describe uncertainty but do not authenticate an
 event. Uploaded strings remain untrusted data and are rendered as text; no browsing,
 execution or privileged action is triggered from them.
+
+## T07 clarification boundary
+
+Only owners can generate questions or answer them. Every write locks/rechecks the
+synthetic owner case, scopes question lookup by case, and writes metadata-only audit
+events transactionally. Analysts read only with a live grant; access is rechecked
+before release. Claim values and answer text are private untrusted content, rendered
+as React text. Prompts are static deterministic rules; no upload text becomes an
+instruction. Answers cannot change source kind, claim values or verification status.
+Superseded and already answered questions reject further writes with 409.

@@ -2,7 +2,7 @@
 
 **How to use:** Ask Codex to implement **one task** at a time, run tests, then mark it `[x]` and attach verification evidence. No single-prompt “build the whole app”. Track failures honestly. Update `docs/DECISIONS.md` when deviating from architecture.
 
-Current detailed plan: [`task.md`](../task.md) — T06 timeline and source-linked claims on `feat/t06-timeline-claims`.
+Current detailed plan: [`task.md`](../task.md) — T07 deterministic clarification questions on `feat/t07-questions`.
 
 ## Phase 0 — Bootstrap (P0)
 - [x] **T00 Repo initialization.** Monorepo `apps/web`, `apps/api`, `infra`, `data/synthetic`, `docs`; copy existing README/docs; `.gitignore`, `.env.example`; lock dependencies. **Done:** both projects start locally and no secrets committed.
@@ -14,7 +14,7 @@ Current detailed plan: [`task.md`](../task.md) — T06 timeline and source-linke
 - [x] **T04 Case and uploads.** Form, bounded upload, SHA-256 stream, immutable original, metadata, audit event. **Done:** byte-equal hash and authorized retrieval.
 - [x] **T05 OCR and provenance.** Local Tesseract TSV word regions and deterministic currency candidate; idempotent engine-versioned runs, safe failures and authorized source crops. **Done:** synthetic INR 2500 OCR links to its actual image crop; blank evidence stays `UNKNOWN`.
 - [x] **T06 Timeline and claims.** Normalized entities and uncertainty status; victim can correct, preserving revision. **Done:** source fact and edited interpretation both traceable.
-- [ ] **T07 Questions.** Missing reference/amount/time conflict rules; `UNKNOWN` answer; optional later Jev. **Done:** conflicting sample asks correct focused question.
+- [x] **T07 Questions.** Missing reference/amount/time conflict rules; `UNKNOWN` answer; optional later Jev. **Done:** conflicting sample asks correct focused question.
 - [ ] **T08 Export.** Reviewable incident draft + chronological index + SHA-256 manifest. **Done:** PDF or print output with no “official complaint filed” claim.
 
 ## Phase 2 — TigerGraph (P0)
@@ -129,3 +129,14 @@ Current detailed plan: [`task.md`](../task.md) — T06 timeline and source-linke
 - Verification: `npm test` passed **24 tests** (4 infrastructure, 11 API, 9 web). `npm run test:auth`: **9 passed**; `npm run test:evidence`: **8 passed**; `npm run test:ocr`: **4 passed**; `npm run test:claims`: **4 passed**. `npm run db:verify` passed fresh/repeat migrations, 16 tables/indexes, seed preservation, foreign-key and timeline constraint checks; temporary verification DB removed. `npm run db:migrate` and `npm run seed:synthetic` passed. `npm run db:generate` reported no pending schema changes. `npm run typecheck`, `npm run lint`, `npm run build` and `npm run infra:smoke:storage` passed; storage smoke found no sentinel disclosure in 21 HTTP probes or production assets.
 - Regression notes: initial workspace tests exposed updated review-panel fetches and duplicate text assertions; fixtures were corrected. Database verification exposed an old invalid timeline fixture; it now uses an allowed event type. An intermediate failed verification was rerun successfully. No failure is marked passed without a successful rerun.
 - Limits: INR-only deterministic normalization; no currency conversion, external bank confirmation, generated questions, exports, TigerGraph, PDF or model-generated interpretation. Timeline events are manually entered and linked to claims; they do not prove event truth. No browser visual E2E. Next unblocked task: **T07 Questions**.
+
+
+### T07 verification details (2026-10-29 IST)
+- Implemented on `feat/t07-questions` from develop after T06 merged as `d0c80e4`; develop was merged into main as `233d3aa` before T07 began.
+- Deterministic questions evaluate claims explicitly linked to the same payment timeline event: missing reference, differing normalized INR amounts, and explicit zoned timestamp disagreements. Separate payments do not create conflicts; ambiguous/unzoned/date-only or invalid dates do not imply a time mismatch.
+- Added owner-only refresh and answer endpoints plus owner/granted-analyst reads. Writes lock/recheck the synthetic owner case and scope every question by case. Audit contains identifiers/actions only. Answers are immutable via the API, labeled VICTIM_RECOLLECTION/UNVERIFIED, and do not rewrite claims, originals or verification status. UNKNOWN stores an explicit null text answer.
+- Migration `0004_clear_ezekiel_stane.sql` adds protected source snapshots, a versioned deterministic fingerprint and case/fingerprint uniqueness. Refresh deduplicates identical snapshots; corrections retain old questions/answers and mark them superseded. Stale or answered question writes return 409. Historical questions remain readable.
+- Added a React question panel with one current open question, supporting event/claim IDs, source labels, an UNKNOWN action and previous-question history. Owner explicitly checks current details; analysts can read history only.
+- `npm test`: **27 passed** (4 infrastructure, 13 API, 10 web). `npm run test:clarifications`: **3 passed**, covering idempotent generation, source snapshots, UNKNOWN, no answer/claim overwrite, stale-source rejection, cross-case/session/role denial and immediate revoked-grant denial. `npm run test:claims`: **4 passed**; `npm run test:auth`: **9 passed**. Rule tests cover normalized/equivalent amounts and times, separate payments, ambiguous/invalid dates and fingerprint stability; component test covers provenance and UNKNOWN payload.
+- `npm run db:migrate`, `npm run db:verify`, `npm run lint`, `npm run typecheck`, `npm run build`, `npm run db:generate` (no pending changes), and whitespace check passed. DB verifier applied five fresh/repeated migrations, checked 16 tables/indexes and preserved repeated synthetic seeds; temporary database removed. Local infrastructure stopped and final status empty; working volume/config preserved.
+- Limits: only explicitly linked payment events are evaluated; no semantic event matching, inferred timezones, Jev, external verification or automatic claim updates. No browser E2E, new OCR or storage smoke run for T07. All data is synthetic. Next unblocked task: **T08 Export**.

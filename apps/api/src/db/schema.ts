@@ -138,9 +138,10 @@ export const eventClaims = pgTable('event_claims', {
 export const clarifications = pgTable('clarifications', {
   id: id(), caseId: uuid('case_id').notNull().references(() => cases.id), kind: text('kind').notNull(),
   prompt: text('prompt').notNull(), answer: jsonb('answer_json'),
+  fingerprint: text('fingerprint'), context: jsonb('context_json'),
   status: clarificationStatus('status').default('OPEN').notNull(), priority: integer('priority').default(0).notNull(),
   createdAt: createdAt(),
-}, (t) => [index('clarifications_case_idx').on(t.caseId)]);
+}, (t) => [index('clarifications_case_idx').on(t.caseId), unique('clarifications_case_fingerprint_unique').on(t.caseId, t.fingerprint)]);
 
 export const graphLeads = pgTable('graph_leads', {
   id: id(), caseId: uuid('case_id').notNull().references(() => cases.id),

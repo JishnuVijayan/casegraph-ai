@@ -956,3 +956,15 @@ OCR does not verify bank transactions or create claims/timeline events. Only
 English OCR is configured; PDFs, handwriting, language guarantees and correction
 history are not implemented. Run `npm run test:ocr` with local PostgreSQL running
 to exercise synthetic success, unreadable, unavailable and revoked-access cases.
+
+### T07 local clarification review
+
+After saving claims and linking them to a payment timeline event, use **Check payment
+details for questions** in the synthetic case view. Review one focused question and
+save a recollection or choose **Unknown / I can’t remember**. Answers remain
+unverified and preserve existing claims. To change an interpreted claim, use the
+T06 correction form and check questions again. Previous answers remain in history.
+Rules detect missing payment references and explicit amount/time conflicts within
+that payment; they do not match unrelated payments or infer missing timestamps.
+Run `npm run test:clarifications` with local PostgreSQL available for the synthetic
+HTTP integration suite. No paid service or local model is required.

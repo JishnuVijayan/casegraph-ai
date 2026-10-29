@@ -1,3 +1,4 @@
+import { QuestionsPanel } from './QuestionsPanel';
 import { useState } from 'react';
 import { EvidencePanel } from './EvidencePanel';
 import { ReviewPanel } from './ReviewPanel';
@@ -91,6 +92,7 @@ export function DemoWorkspace() {
         <p>Uploads are unverified user-supplied material, not bank-verified records.</p>
         <EvidencePanel key={`evidence-${detail.id}`} token={session.token} caseId={detail.id} owner={session.user.role === 'victim'} busy={busy} perform={perform} onClaimAdded={() => setReviewKey((value) => value + 1)} />
         <ReviewPanel key={`review-${detail.id}`} token={session.token} caseId={detail.id} owner={session.user.role === 'victim'} busy={busy} refreshKey={reviewKey} perform={perform} />
+        <QuestionsPanel key={`questions-${detail.id}`} token={session.token} caseId={detail.id} owner={session.user.role === 'victim'} busy={busy} perform={perform} />
         {session.user.role === 'victim' && <div>
           <p>Explicitly share this case with the Fictional Demo Consortium.</p>
           <label htmlFor="share-scope">Permission</label>
