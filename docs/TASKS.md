@@ -2,9 +2,11 @@
 
 **How to use:** Ask Codex to implement **one task** at a time, run tests, then mark it `[x]` and attach verification evidence. No single-prompt “build the whole app”. Track failures honestly. Update `docs/DECISIONS.md` when deviating from architecture.
 
+Current detailed plan: [`task.md`](../task.md) — T01 local infrastructure. T01 implementation and verification are complete; T02 is next.
+
 ## Phase 0 — Bootstrap (P0)
 - [x] **T00 Repo initialization.** Monorepo `apps/web`, `apps/api`, `infra`, `data/synthetic`, `docs`; copy existing README/docs; `.gitignore`, `.env.example`; lock dependencies. **Done:** both projects start locally and no secrets committed.
-- [ ] **T01 Infrastructure.** PostgreSQL via Compose; local private evidence directory or MinIO, smoke checks. **Done:** run startup and clean shutdown; unauthorized file isn't web-accessible.
+- [x] **T01 Infrastructure.** PostgreSQL via Compose; local private evidence directory or MinIO, smoke checks. **Done:** run startup and clean shutdown; unauthorized file isn't web-accessible.
 - [ ] **T02 Database.** Drizzle schema, migrations, seed-demo accounts and 20 synthetic case placeholders. **Done:** migrate twice safely / verify schema and seed idempotence.
 
 ## Phase 1 — Victim reporting (P0)
@@ -38,7 +40,6 @@
 | Date | Task | Code changed | Tests actually run | Result / blocker |
 |---|---|---|---|---|
 | 2026-10-28 | Documentation pack authored | Documentation only | None | Application not scaffolded yet |
-
 | 2026-10-29 | T00 repo initialization | Root AGENTS/README copied from supplied docs; private npm workspaces; React/Vite/Router/Tailwind landing page; NestJS liveness; lockfile; ignore/env/runtime/config files; infra and synthetic-data placeholders | `npm install --no-fund --no-audit`; `npm ls --depth=0`; `npm run lint`; `npm run typecheck`; `npm test`; `npm run build`; `npm run dev`; localhost HTTP smoke requests; `git check-ignore`; whitespace check | Complete. Both servers started on loopback, frontend HTTP 200, API liveness HTTP 200 directly and through Vite proxy. 2 Jest API tests and 1 Vitest/RTL frontend test passed. No paid services or real data. |
 
 ### T00 verification details (2026-10-29 IST)
@@ -50,3 +51,18 @@
 - `.env`, nested app `.env`, `.local/evidence`, and build output are ignored; `.env.example` contains comments only. No secrets or case records were introduced; no commit was made.
 - Limits: dependency installation emitted deprecation warnings for ESLint 9 and Jest's transitive `inflight`/`glob`. Dependency vulnerability audit was not run (install used `--no-audit`). No browser E2E/visual review, Node 22 verification, migration, seed, database, OCR, or TigerGraph checks were performed; these are not implemented in T00.
 - Next unblocked task: **T01**, PostgreSQL Compose and private evidence-storage setup with startup/shutdown and access smoke checks. T02 and all later tasks remain unchecked.
+
+
+### T01 verification details (2026-10-29 IST)
+- Implemented `infra/compose.yaml`, safe private-directory/config initialization, lifecycle commands, PostgreSQL persistence smoke, storage HTTP/build smoke, and four configuration/storage safety tests. Updated local setup docs, current `task.md`, and ADR-012. No new dependencies or lockfile changes.
+- Branch: `feat/t01-local-infrastructure`, based on `main` at `a515812`; existing planning/instruction edits were preserved. Git naming rules now use `feat/` or `fix/` and conventional commits.
+- Prerequisites observed: Node 24.15.0; Docker CLI/server 29.4.1; Compose v5.1.3; Docker linux/arm64 with about 8 GiB available. Node 22 remains untested.
+- `npm run infra:init` and `npm run infra:config`: passed. Init generated ignored `.env` with random credentials and private `.local/evidence`; existing files are preserved. A separate Compose configuration check with an empty password failed as expected without printing expanded configuration.
+- Initial sandbox Docker access was denied; permitted Docker commands worked. Initial `infra:up` failed because 5432 was occupied. Changed this project's default to 55432, preserved the other service, and reran successfully.
+- `npm run infra:up`, `npm run infra:smoke:db`, `npm run infra:status`: passed. Healthy PostgreSQL **17.11**, published only on `127.0.0.1:55432`; password-authenticated TCP `SELECT 1` passed. A unique synthetic table persisted after `down`/`up` container recreation and was dropped by the check.
+- Pinned official image: `postgres:17-alpine@sha256:266d3c257594e195b309ae9d1805e54c788f1d7b375f56bf6c367aac6c917e7b`. No TigerGraph container or benchmark was run.
+- `npm run infra:smoke:storage`: passed. Built both applications while the synthetic sentinel existed; frontend asset scan found no sentinel. All 21 HTTP probes across API, Vite and production preview withheld sentinel bytes; Vite `/@fs` probes returned 403, API probes 404. SPA fallback content was checked rather than interpreting HTTP 200 as a file disclosure. Temporary servers stopped and sentinel removed.
+- Final `npm run lint`, `npm run typecheck`, and `npm test`: passed. Tests: 4 Node infrastructure safety tests, 2 Jest API tests, 1 Vitest/RTL frontend test. `npm run build` passed within storage smoke. Ignore checks and whitespace checks passed. No credentials were printed or added to source.
+- `npm run infra:down` completed cleanly; final `infra:status` listed no project containers. The named database volume and private local configuration were preserved. No task services left running.
+- Limitations: app DB integration, migrations, seeding and dependency readiness remain T02 or later; per-case authorization/upload retrieval remain T03/T04. Filesystem isolation does not establish those controls. Dependency audit, Node 22 verification, browser E2E, OCR and TigerGraph checks were not run. Forced interruption of smoke scripts can leave a uniquely named synthetic marker for manual cleanup.
+- Next unblocked task: **T02**, Drizzle schema/migrations and idempotent synthetic seeding. T02 and later tasks remain unchecked.

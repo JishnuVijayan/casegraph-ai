@@ -1,7 +1,7 @@
 # CaseGraph AI
 
-**Current implementation: T00 scaffold only.** React/Vite and NestJS run locally.
-See [implemented local setup](#implemented-local-scaffold-t00) for commands.
+**Current implementation: T00 scaffold + T01 local infrastructure.** React/Vite and NestJS run locally.
+See [app setup](#implemented-local-scaffold-t00) and [local infrastructure](#implemented-local-infrastructure-t01) for commands.
 The following product blueprint includes future, unimplemented features.
 
 **Evidence-grounded cybercrime reporting, case reconstruction, and authorized graph investigation — built India-first.**
@@ -854,3 +854,26 @@ npm run build
 
 There are no migration or seed commands yet (T02). Infrastructure is T01.
 Evidence, authentication, and graph routes are not exposed by this scaffold.
+
+## Implemented local infrastructure (T01)
+
+PostgreSQL and private local evidence storage are now configured independently
+of the application scaffold. From the repository root with Docker running:
+
+```bash
+npm run infra:init
+npm run infra:config
+npm run infra:up
+npm run infra:status
+npm run infra:smoke:db
+npm run infra:smoke:storage
+npm run infra:down
+```
+
+The database binds to `127.0.0.1:55432`; credentials are generated in ignored
+`.env`. Private evidence belongs in ignored `.local/evidence`, never the frontend.
+The smoke checks use synthetic data; the database check restarts this project's
+container, and the storage check builds and temporarily starts its own servers.
+Shutdown preserves the database volume. See [infra/README.md](infra/README.md) for
+prerequisites, the pinned image, commands, credential handling and limitations.
+Application database integration and migrations remain T02.

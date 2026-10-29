@@ -37,3 +37,18 @@ Consequences and tests: Node 22.12+ is required by Vite; available runtime is No
 24.15.0/npm 11.12.1, so Node 22 itself is not tested in T00. No architecture change
 or additional service is introduced. Actual checks are recorded in TASKS.md.
 Reviewer: Codex implementation under the user's T00 request.
+
+### ADR-012 — T01 local PostgreSQL and private filesystem (2026-10-29)
+Context: T01 requires repeatable local database startup and evidence isolation.
+Alternatives considered: local MinIO; private local filesystem. PostgreSQL stays in Compose.
+Decision: Use the smaller filesystem option with owner-only `.local/evidence`, no
+public mount, and Vite filesystem serving restricted to the frontend. Generate
+local credentials in ignored `.env` without overwriting existing files. Pin the
+observed PostgreSQL image digest and keep the volume on shutdown. Publish on
+127.0.0.1:55432 because the tested machine already uses 5432. Bound database
+resources to 1 CPU/512 MiB for this small synthetic demo.
+Consequences and tests: PostgreSQL 17.11 ran natively on linux/arm64. Functional
+persistence and non-disclosure tests are recorded in TASKS.md. No MinIO dependency,
+cloud service, database schema, application DB access, or auth route is added.
+Per-case access control remains T03/T04; filesystem permissions do not replace it.
+Reviewer: implementation under the user's T01 request.
