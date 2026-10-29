@@ -4,6 +4,7 @@ import { ApiRequest, envelope } from '../common/http';
 import { CaseScopeGuard, RequireCaseScope, Roles } from '../auth/guards';
 import { Transform } from 'class-transformer';
 import { AccessStore } from '../auth/store';
+import { CasesService } from './service';
 
 export class CreateCase {
   @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
@@ -19,12 +20,19 @@ export class ShareCase {
 @Controller('cases')
 @Roles('victim', 'analyst')
 export class CasesController {
-  constructor(private readonly store: AccessStore) {}
+  constructor(private readonly store: AccessStore, private readonly cases: CasesService) {}
 
   @Post()
   @Roles('victim')
   async create(@Body() dto: CreateCase, @Req() request: ApiRequest) {
     return envelope(request, await this.store.createCase(request.actor!, dto.title, dto.category, request.requestId));
+  }
+  @Post(':caseId/submit')
+  @Roles('victim')
+  @RequireCaseScope('OWNER')
+  @UseGuards(CaseScopeGuard)
+  async submit(@Req() request: ApiRequest) {
+    return envelope(request, await this.cases.submit(request));
   }
   @Get()
   async list(@Req() request: ApiRequest) {
