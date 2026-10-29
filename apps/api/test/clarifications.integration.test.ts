@@ -102,11 +102,14 @@ describe('deterministic clarification workflow', () => {
     await http().get(questionPath()).set('Authorization', auth(b)).expect(403);
     await http().post(`${questionPath()}/refresh`).set('Authorization', auth(b)).send({}).expect(403);
     await http().post(`/api/v1/cases/${otherCaseId}/clarifications/${questionId}/answer`).set('Authorization', auth(a)).send({status:'UNKNOWN'}).expect(403);
-    const grant = (await http().post(`/api/v1/cases/${caseId}/shares`).set('Authorization', auth(a)).send({organizationId:fixture.organization.id,scope:'READ'}).expect(201)).body.data;
-    await http().get(questionPath()).set('Authorization', auth(analyst)).expect(200);
+    await http().get(questionPath()).set('Authorization', auth(analyst)).expect(200); // auto INVESTIGATE from create
     await http().post(`${questionPath()}/refresh`).set('Authorization', auth(analyst)).send({}).expect(403);
     await http().post(`${questionPath()}/${questionId}/answer`).set('Authorization', auth(analyst)).send({status:'UNKNOWN'}).expect(403);
-    await http().delete(`/api/v1/cases/${caseId}/shares/${grant.id}`).set('Authorization', auth(a)).expect(200);
+    const active = (await connection.pool.query(
+      'SELECT id FROM case_access_grants WHERE case_id = $1 AND revoked_at IS NULL', [caseId])).rows as { id: string }[];
+    for (const grant of active) {
+      await http().delete(`/api/v1/cases/${caseId}/shares/${grant.id}`).set('Authorization', auth(a)).expect(200);
+    }
     await http().get(questionPath()).set('Authorization', auth(analyst)).expect(403);
   });
 });

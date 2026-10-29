@@ -12,12 +12,12 @@ test('renders a query snapshot path, scopes requests and shows source provenance
     .mockResolvedValueOnce(ok({id:lead.id,reviewStatus:'REVIEWED'}));
   vi.stubGlobal('fetch',fetch);
   render(<AnalystPanel token="synthetic-token" caseId="synthetic-case-a" busy={false} perform={async(op)=>op()}/>);
-  fireEvent.click(screen.getByRole('button',{name:'Run scoped TigerGraph query'}));
+  fireEvent.click(screen.getByRole('button',{name:'Run similar-case search'}));
   expect(await screen.findByLabelText('Four-hop lead path')).toBeVisible();
   expect(screen.getByText(/Saved query snapshot/)).toBeVisible();
   expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({maxHops:4});
   fireEvent.click(screen.getByRole('button',{name:/Review edge 1 source/}));
-  expect(await screen.findByLabelText('Graph source details')).toHaveTextContent('not an uploaded file or verified external record');
+  expect(await screen.findByLabelText('Graph source details')).toHaveTextContent('Captured');
   fireEvent.click(screen.getByRole('button',{name:'Mark reviewed'}));
   await waitFor(()=>expect(screen.getByText(/SYNTHETIC_INVESTIGATIVE_LEAD · REVIEWED/)).toBeVisible());
   expect(JSON.parse(fetch.mock.calls[2][1].body)).toEqual({status:'REVIEWED'});
@@ -27,8 +27,8 @@ test('graph outage clears earlier paths and never presents an empty query succes
   vi.stubGlobal('fetch',fetch);
   render(<AnalystPanel token="synthetic-token" caseId="synthetic-case-a" busy={false} perform={async(op)=>{try{await op();}catch{/* parent also displays controlled error */}}}/>);
   fireEvent.click(screen.getByRole('button',{name:'Read saved lead snapshots'}));await screen.findByLabelText('Four-hop lead path');
-  fireEvent.click(screen.getByRole('button',{name:'Run scoped TigerGraph query'}));
-  expect(await screen.findByRole('alert')).toHaveTextContent('Investigation unavailable');
+  fireEvent.click(screen.getByRole('button',{name:'Run similar-case search'}));
+  expect(await screen.findByRole('alert')).toHaveTextContent('Similar-case search unavailable until TigerGraph is connected');
   expect(screen.queryByLabelText('Four-hop lead path')).not.toBeInTheDocument();
-  expect(screen.queryByText(/No paths returned/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/No linked paths returned/)).not.toBeInTheDocument();
 });
