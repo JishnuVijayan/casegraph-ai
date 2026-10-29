@@ -2,7 +2,7 @@
 
 **How to use:** Ask Codex to implement **one task** at a time, run tests, then mark it `[x]` and attach verification evidence. No single-prompt “build the whole app”. Track failures honestly. Update `docs/DECISIONS.md` when deviating from architecture.
 
-Current detailed plan: [`task.md`](../task.md) — T08 reviewable draft export on `feat/t08-draft-export`.
+Current detailed plan: [`task.md`](../task.md) — T09 TigerGraph prerequisite checks on `feat/t09-tigergraph-setup` (runtime blocked by unsupported ARM host).
 
 ## Phase 0 — Bootstrap (P0)
 - [x] **T00 Repo initialization.** Monorepo `apps/web`, `apps/api`, `infra`, `data/synthetic`, `docs`; copy existing README/docs; `.gitignore`, `.env.example`; lock dependencies. **Done:** both projects start locally and no secrets committed.
@@ -152,3 +152,12 @@ Current detailed plan: [`task.md`](../task.md) — T08 reviewable draft export o
 - `npm test`: **28 passed** (4 infrastructure, 13 API, 11 web). `test:auth`: **9 passed**, `test:claims`: **4 passed**, `test:clarifications`: **3 passed**. Total regular/integration tests run: **49**. Lint, typecheck, production build, db:migrate and db:verify passed; DB verifier checked six fresh/repeated migrations, 16 tables/indexes and seed preservation. `db:generate` reported no pending schema changes; whitespace check passed.
 - `infra:smoke:storage` passed all 21 HTTP probes and asset sentinel scan; temporary servers/sentinel removed. Infrastructure stopped and final status empty, working volume/private config preserved. Isolated synthetic test databases/files removed.
 - Limits: printable HTML with manual browser PDF saving; no automated browser/print E2E, dedicated PDF engine, original-file embedding/reverification, automatic retention or revocation of offline copies. DB administrators can alter snapshots/checksums; integrity checks are not forensic certification. OCR/evidence integration suites were not rerun for T08. Next unblocked task: **T09 TigerGraph Community setup** (license/platform review required).
+
+
+### T09 preparation and platform blocker (2026-10-29 IST) — incomplete
+- All work through T08 merged/pushed: develop `6c1c896`, main `b784c36`. Started `feat/t09-tigergraph-setup` from develop. T09 remains unchecked; no installed graph or seed is claimed.
+- Reviewed vendor Docker requirements, Community image metadata, health API and March 5, 2026 license before installation/testing. Official Docker instructions exclude ARM/M1; local Mac reports arm64 and Docker aarch64, 10 CPUs, 8,321,712,128 memory bytes. User confirmed **no compatible x86-64 host available**. No unsupported emulation, paid host/account or benchmark was used.
+- Prepared separate `infra/tigergraph.compose.yaml` with pinned Community 4.2.5 candidate digest `sha256:190c505bf5c22c90e597b901ea8fcfaf2da7e883b688d7d48c8fe60af0a20ddb`, named volume, internal network and no published ports/host data mounts. Registry metadata inspection succeeded; no image was pulled. Actual installed version is unknown. Runtime configuration is unverified.
+- Added read-only `graph:preflight`, `graph:config`, `graph:health` commands. Preflight distinguishes unsupported/resource/eligible hosts and never declares ready. Health checks bounded local ping/version only on an eligible host and always leaves graphReady false until graph/query verification exists. It never substitutes fixture query paths. App graph integration remains unimplemented.
+- `graph:config` passed syntax validation with runtimeVerified false. Preflight and health both returned expected **UNSUPPORTED_PLATFORM / ready:false**, exit 1. No live TigerGraph ping/version was run. `npm test`: **31 passed** (7 infrastructure, 13 API, 11 web); new tests use explicit mocked diagnostic fixtures and check unsupported hosts, malformed responses and no-port/pinned deployment template. Lint, typecheck and whitespace checks passed.
+- No TigerGraph container/service started or graph/seed/query installed. Credential rotation, runtime/persistence verification, actual graph setup and repeatable seed await a supported operator-approved local host. No production build or database integration regression rerun for these isolated infrastructure scripts. Unexecuted runbook and official references: `infra/TIGERGRAPH.md`. T10 depends on resolving this T09 blocker.

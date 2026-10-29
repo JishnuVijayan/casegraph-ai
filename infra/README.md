@@ -166,3 +166,11 @@ input, unavailable-engine recovery, idempotency and immediate grant revocation,
 then removes its test DB/files. OCR processes verified image bytes on stdin;
 there are no persisted working copies or committed sample images. Tesseract is a
 native subprocess without an OS sandbox; see `docs/SECURITY.md` for its limits.
+
+## T09 TigerGraph prerequisite
+
+See [TIGERGRAPH.md](TIGERGRAPH.md). `graph:preflight`, `graph:config` and `graph:health`
+are available. The isolated Compose template is syntax-validated but has not run:
+this host is ARM, which vendor Docker instructions exclude, and the user confirmed
+no compatible host. T09 remains incomplete; no image/service/graph/seed/query is
+installed. The regular `infra:up` continues to start PostgreSQL only.

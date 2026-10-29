@@ -79,3 +79,13 @@ After migration/seeding, use `npm run dev:demo` to opt into fictional login.
 Regular `npm run dev` leaves login disabled by default. `npm run test:auth`
 requires PostgreSQL and uses/removes an isolated temporary database. No paid
 identity service or API key is needed. Never use demo role selection for real data.
+
+## T09 platform preflight (setup incomplete)
+
+Run `npm run graph:preflight` before any installation. This Apple Silicon workspace
+reports `UNSUPPORTED_PLATFORM`; no compatible host is available. No TigerGraph
+software was installed. `npm run graph:config` validates the isolated candidate
+Compose template only; `graph:health` cannot claim graph readiness. Follow
+[the supported-host runbook](../infra/TIGERGRAPH.md) once an owned x86-64 host exists.
+It records the pinned candidate image, official platform/license references and
+unexecuted setup steps. No paid host or emulation is configured.
