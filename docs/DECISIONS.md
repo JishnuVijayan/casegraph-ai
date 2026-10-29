@@ -256,3 +256,31 @@ and API grant/revoke where UI share controls were removed. Revisit auto-grant be
 real multi-tenant pilot.
 Approved by: User choices B (keep filing flow) and A (auto-grant) for the split-UI plan.
 
+### ADR-026 — User-authorized AWS demo within $20 / ap-south-1 (2026-10-29)
+Context: HHGOA demo needs live TigerGraph, stronger OCR, and LLM-assisted essentials
+questions within ~24 hours. Local-only zero-paid-API rules blocked EC2 Textract/Bedrock.
+Alternatives considered: stay fully local; host entire stack on AWS; include voice/Jev.
+Decision: Keep API/web/Postgres local. Authorize short-lived EC2 (x86 TigerGraph),
+Textract OCR (Tesseract fallback), and Bedrock structured assist gated by deterministic
+essentials rules. Region `ap-south-1`, hard budget **$20**, stop EC2 when idle. Skip Jev,
+voice, and public app hosting for this cut. Feature flags default OFF. Expand synthetic
+bootstrap to **50** fictional cases with clusters A/B/C and officer INVESTIGATE grants for
+older cases (auth fixtures for revoked/expired/never-shared retained on cases 02–05).
+TigerGraph investigation scope remains capped at 20 case IDs per query (ADR-022).
+Consequences and tests: Document runbook in docs/AWS_DEMO.md; never commit AWS keys;
+honest unavailable states remain. Revisit cost and data residency before any pilot.
+Approved by: User (24h core AWS scope, $20 cap, ap-south-1).
+
+### ADR-027 — Victim name+mobile intake and submit package (2026-10-29)
+Context: Fixture “Fictional Victim A/B” and multi-draft case lists confused the demo
+complaint journey. Product intent is one linear filing flow ending in a reviewable case file.
+Alternatives considered: keep demoSubject picker; true OTP auth; submit = export only.
+Decision: `POST /auth/intake` accepts display name + 10-digit Indian mobile under DEMO_MODE,
+upserts synthetic `intake:{mobile}` victims, and issues the existing bearer session (not KYC/OTP).
+Victim UI is a wizard without case lists. `POST /cases/:id/submit` requires evidence, answered
+or UNKNOWN essentials, sets `REVIEW_REQUIRED`, creates the draft export, and captures TigerGraph
+similar-case leads when available (honest UNAVAILABLE otherwise). Officer `/officer` unchanged
+aside from receiving auto-granted submitted cases.
+Consequences and tests: Seeded demo subjects remain for officer and regression fixtures. Update
+web/e2e selectors; auth tests cover intake upsert. Revisit before any real-user pilot.
+Approved by: User request for simple complaint filing UI on develop.
