@@ -35,11 +35,13 @@ test('Savanna config accepts only public HTTPS workspace origins and supported a
   try{
     delete process.env.TIGERGRAPH_ENDPOINT;delete process.env.TIGERGRAPH_AUTH_MODE;
     expect(new GraphConfig().endpoint).toBeUndefined();
-    for(const endpoint of ['http://demo.i.tgcloud.io','https://api.tgcloud.io','https://graph.svc','https://127.0.0.1','https://demo.i.tgcloud.io/path','https://user:secret@demo.i.tgcloud.io','https://demo.i.tgcloud.io?token=secret','https://demo.i.tgcloud.io#secret','https://demo.i.tgcloud.io:9000']){
+    for(const endpoint of ['http://demo.i.tgcloud.io','https://api.tgcloud.io','https://graph.svc','https://127.0.0.1','https://demo.i.tgcloud.io/path','https://user:secret@demo.i.tgcloud.io','https://demo.i.tgcloud.io?token=secret','https://demo.i.tgcloud.io#secret','https://demo.i.tgcloud.io:9000','https://demo.i.tgcloud.io.attacker.invalid','https://-bad.workspace.i.tgcloud.io','https://bad-.workspace.i.tgcloud.io']){
       process.env.TIGERGRAPH_ENDPOINT=endpoint;expect(()=>new GraphConfig()).toThrow();
     }
     process.env.TIGERGRAPH_ENDPOINT='https://demo.i.tgcloud.io/';process.env.TIGERGRAPH_AUTH_MODE='secret';
     expect(new GraphConfig()).toMatchObject({endpoint:'https://demo.i.tgcloud.io',authMode:'secret'});
+    process.env.TIGERGRAPH_ENDPOINT='https://tg-fixture.tg-1234567890.i.tgcloud.io';
+    expect(new GraphConfig().endpoint).toBe('https://tg-fixture.tg-1234567890.i.tgcloud.io');
     process.env.TIGERGRAPH_AUTH_MODE='api-key';expect(()=>new GraphConfig()).toThrow();
   }finally{process.env=previous;}
 });

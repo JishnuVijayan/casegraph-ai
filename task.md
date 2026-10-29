@@ -1,18 +1,13 @@
-# Savanna application integration
+# Fix Savanna workspace hostname validation
 
-Branch: feat/savanna-https-integration
-References: AGENTS, README, REQUIREMENTS, STACK, FREE_SETUP, SECURITY, API, ARCHITECTURE, DATA_MODEL, TEST_PLAN, TASKS, DEMO, DECISIONS and user handoff.
+References: AGENTS, existing Savanna integration runbook, SECURITY, API and TASKS.
+Files: backend graph config, regression tests, integration docs and task logs.
+Definition of done: valid multi-label Savanna public origins accepted, unsafe origins still rejected, targeted tests/lint/typecheck/build pass.
 
-Gap: application scope/source/snapshot/UI workflow exists; transport only supported loopback and GSQL edge syntax differed from user-reported Savanna success.
+- [x] Identify overly narrow single-label hostname validator.
+- [x] Accept valid DNS labels beneath .i.tgcloud.io; preserve remaining origin restrictions.
+- [x] Run checks and record actual results.
 
-- [x] Inspect existing workflow and preserve graph/data and authorization.
-- [x] Synchronize V2 edge syntax without changing query contracts.
-- [x] Add bounded HTTPS workspace transport and controlled credential failure.
-- [x] Add observed-result regression fixtures and negative transport/config tests.
-- [x] Run checks and document actual outcomes, configuration and remaining live acceptance.
+User-reported authenticated inventory returned 218 vertices. No credential used or remote query executed during this fix.
 
-Definition of done: checks pass, no graph mutation or fallback, public integration explicitly pending without local endpoint/credential.
-
-## Actual results
-
-47 regular checks, 6 investigation HTTP checks and 1 real-browser unavailable-mode workflow passed. Lint/typecheck/build/whitespace passed. Private endpoint/credential absent; live Savanna connection and revised local GSQL compilation NOT tested. Existing graph/bundle unchanged. Test resources cleaned; PostgreSQL stopped and working volume preserved. See docs/TASKS.md and docs/tigergraph-savanna-integration.md for evidence and demo commands.
+Results: 7 targeted investigation tests passed; lint, full typecheck, build and whitespace passed. Compiled GraphConfig accepted the supplied public hostname without a network request. No live connection or credential test performed.

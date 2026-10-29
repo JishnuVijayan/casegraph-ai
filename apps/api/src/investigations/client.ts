@@ -18,7 +18,7 @@ export class GraphConfig {
       let url:URL;
       try{url=new URL(endpoint);}catch{throw new Error('Invalid public Savanna workspace origin.');}
       // Public Savanna workspace origin only; never accept internal service URLs.
-      if(url.protocol!=='https:'||!(/^[a-z0-9][a-z0-9-]*\.i\.tgcloud\.io$/.test(url.hostname))||url.port||url.username||url.password||url.pathname!=='/'||url.search||url.hash)throw new Error('Invalid public Savanna workspace origin.');
+      if(url.protocol!=='https:'||!(/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+i\.tgcloud\.io$/.test(url.hostname))||url.port||url.username||url.password||url.pathname!=='/'||url.search||url.hash)throw new Error('Invalid public Savanna workspace origin.');
       this.endpoint=url.origin;
     }
     const port=process.env.TIGERGRAPH_LOCAL_PORT??'14240';this.port=Number(port);

@@ -39,7 +39,7 @@ Graph flags are read from **exported process environment**, not automatically fr
 | Setting | Meaning |
 | --- | --- |
 | `TIGERGRAPH_ENABLED` | `false` default; explicitly `true` to query |
-| `TIGERGRAPH_ENDPOINT` | Optional public origin `https://<workspace-id>.i.tgcloud.io`; no path, query, credentials, fragment or non-443 port |
+| `TIGERGRAPH_ENDPOINT` | Optional public origin `https://<workspace-id>.i.tgcloud.io` or `https://<workspace-id>.<workgroup-id>.i.tgcloud.io`; no path, query, credentials, fragment or non-443 port |
 | `TIGERGRAPH_LOCAL_PORT` | Default 14240; numeric 1024–65535, used only when no public endpoint |
 | `TIGERGRAPH_AUTH_MODE` | `bearer` default or `secret` |
 
