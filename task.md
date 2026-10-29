@@ -1,41 +1,28 @@
-# Current task — T04 cases and immutable evidence originals
+# Current task — T06 timeline and source-linked claims
 
-Updated: 2026-10-29 IST. Status: T04 complete and verified on feat/t04-case-uploads.
+Updated: 2026-10-29 IST. Branch: `feat/t06-timeline-claims` from updated `develop` (`07fa125` includes T05).
 
-References: README, REQUIREMENTS, STACK, API, DATA_MODEL, SECURITY and TEST_PLAN.
-Expected changes: cases/evidence services and controllers, private storage,
-React intake/retrieval UI, isolated PostgreSQL/filesystem integration tests and docs.
+References: `AGENTS.md`, `README.md`, `docs/REQUIREMENTS.md`, `docs/STACK.md`, `docs/ARCHITECTURE.md`, `docs/DATA_MODEL.md`, `docs/API.md`, `docs/SECURITY.md`, `docs/TASKS.md`, and `docs/TEST_PLAN.md`.
 
-- [x] Create victim-owned synthetic drafts; reject owner/role injection.
-- [x] Accept one bounded PNG/JPEG through streaming multipart after authorization.
-- [x] Validate declared MIME, signature and bounded image decode; reject PDF/SVG/invalid content.
-- [x] Preserve exact bytes, streamed SHA-256, UUID source ID and metadata; never overwrite originals.
-- [x] Serve/list only after live case authorization; audit creation/upload/read.
-- [x] UI creation/upload/source manifest/protected original download after urgent guidance.
-- [x] Test bytes/hash, duplicate preservation, IDOR, revoked grants, limits and failure cleanup.
-- [x] Run existing checks and regressions; record actual results; stop services.
+Expected changes: T06-only Drizzle migration for claim-to-OCR-region reference and timeline precision constraints; protected claim/revision/timeline endpoints and deterministic amount normalization; victim review UI plus analyst read-only timeline; isolated synthetic PostgreSQL HTTP tests, component tests, and documentation. Preserve original files and T05 extraction output. No T07 clarification rules or T08 exports.
 
-Limits: synthetic only; no OCR, safe PDF parser, malware scan, graph or exports.
-Done: authorized retrieval returns exact original bytes; invalid/unauthorized uploads
-leave no committed metadata or original file. Next is T05 OCR/provenance.
+- [x] Promote a stored OCR amount region into an `OBSERVED_IN_UPLOAD`, `UNVERIFIED` claim; derive its text/source coordinates from persisted OCR, never request-supplied values.
+- [x] Let a victim add a `VICTIM_RECOLLECTION` claim without implying external confirmation; normalize simple INR amounts deterministically.
+- [x] List source-backed claims with original region and revision history; correct only the interpreted current value by appending before/after history without changing source or verification status.
+- [x] Create/list timeline events linked to one or more claims from the same case; accept exact zoned timestamp, date-only, or explicit unknown time and preserve uncertainty.
+- [x] Enforce owner-only writes, owner/granted-analyst reads, cross-case denial and immediate revocation for all claim/timeline routes.
+- [x] Test source-region derivation, correction history, normalization, date precision/unknown, event-claim linkage, bad IDs, role/IDOR/revocation, and UI provenance labels using synthetic data.
+- [x] Run migrations, all existing regression suites, T06 integration and component tests, lint/typecheck/build/storage checks; update `docs/TASKS.md` with actual results.
 
+Definition of done: a synthetic OCR amount can be saved as a source-linked observation, a victim correction leaves the source and an append-only revision trace, and a chronological event links to its supporting same-case claim(s). Analyst access remains read-only and scoped. T07 clarification questions and T08 exports remain separate.
 
-## Actual results — 2026-10-29 IST
+## Actual results (2026-10-29 IST)
 
-- Lint/typecheck passed; both builds passed within infra:smoke:storage.
-- npm test: 18 tests passed (4 infrastructure, 7 API/session/fixtures, 7 frontend).
-- test:evidence: 8 isolated PostgreSQL/filesystem HTTP tests passed.
-- test:auth: 9 PostgreSQL HTTP regression tests passed.
-- All 21 non-disclosure probes, frontend asset scan and db:verify passed.
-- Oversize test initially exposed an EBADF stream teardown that masked 413 as 503;
-  preserved the limit exception and handled already-closed descriptors; rerun passed.
-- Frontend file-input test needed explicit form submission because JSDOM's injected
-  files do not update native input validity. The corrected component test passed.
-- No migration needed; T02 evidence/audit tables reused. No OCR/PDF/graph implementation.
-- Services stopped and temporary DB/files removed. Working volume/originals preserved.
-- Limits: local synthetic-only demo, no malware scan, no browser E2E run, Node 22 and
-  dependency audit unverified. Crashes/uncertain commits may leave private orphan
-  files requiring deliberate reconciliation. Administrators can still alter files/DB.
-
-Next unblocked task: T05 local Tesseract OCR with extraction version/errors and
-source text spans/bounding boxes. Do not start it as part of T04.
+- `npm run db:generate`: passed; no schema changes remain after migration `0003_tiresome_sentinels.sql`.
+- `npm run db:migrate`, `npm run seed:synthetic`, `npm run db:verify`: passed; fresh/repeat migration, 16 tables/indexes, synthetic seed preservation, cross-case constraints and timeline precision checks verified; temporary verification DB removed.
+- `npm run test:claims`: 4 HTTP/PostgreSQL integration tests passed. `npm run test:auth`: 9 passed. `npm run test:evidence`: 8 passed. `npm run test:ocr`: 4 passed.
+- `npm test`: 24 tests passed (4 infrastructure, 11 API, 9 web). Frontend component tests: 9 passed across 4 files.
+- `npm run lint`, `npm run typecheck`, `npm run build`: passed. `npm run infra:smoke:storage`: passed 21 HTTP probes and frontend asset scan; temporary servers and synthetic sentinel were cleaned up.
+- Database verification first failed on an outdated synthetic timeline fixture. The fixture was corrected to an allowed event type and the full verifier passed on rerun. No tests or failures are represented as passed without a successful rerun.
+- Limits: no browser visual E2E, OCR language guarantees, bank verification, T07 question generation, T08 export or graph integration. Only synthetic records were used.
+- Next unblocked task: **T07 Questions**.

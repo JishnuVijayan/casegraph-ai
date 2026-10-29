@@ -69,8 +69,22 @@ export const extractionRuns = pgTable('extraction_runs', {
   id: id(), evidenceFileId: uuid('evidence_file_id').notNull().references(() => evidenceFiles.id),
   engine: text('engine').notNull(), version: text('version').notNull(),
   status: processingStatus('status').default('PENDING').notNull(),
-  errorCode: text('error_code'), createdAt: createdAt(),
-}, (t) => [index('extraction_evidence_idx').on(t.evidenceFileId)]);
+  errorCode: text('error_code'), outputText: text('output_text'), createdAt: createdAt(),
+}, (t) => [index('extraction_evidence_idx').on(t.evidenceFileId),
+  unique('extraction_file_engine_version_unique').on(t.evidenceFileId, t.engine, t.version)]);
+
+export const extractionRegions = pgTable('extraction_regions', {
+  id: id(), runId: uuid('run_id').notNull().references(() => extractionRuns.id),
+  kind: text('kind').notNull(), text: text('text').notNull(),
+  textSpan: jsonb('text_span').$type<{ start: number; end: number }>().notNull(),
+  boundingBox: jsonb('bbox_json').$type<{ x: number; y: number; width: number; height: number }>().notNull(),
+  confidence: integer('confidence').notNull(),
+}, (t) => [index('extraction_regions_run_idx').on(t.runId),
+  check('extraction_regions_kind', sql`${t.kind} IN ('TEXT', 'AMOUNT')`),
+  check('extraction_regions_confidence', sql`${t.confidence} >= 0 AND ${t.confidence} <= 100`),
+  check('extraction_regions_text_nonempty', sql`length(${t.text}) > 0`),
+  check('extraction_regions_span_bounds', sql`CASE WHEN jsonb_typeof(${t.textSpan}) = 'object' AND ${t.textSpan} ?& ARRAY['start','end'] AND (${t.textSpan}->>'start') ~ '^[0-9]+$' AND (${t.textSpan}->>'end') ~ '^[0-9]+$' THEN (${t.textSpan}->>'start')::bigint >= 0 AND (${t.textSpan}->>'end')::bigint > (${t.textSpan}->>'start')::bigint ELSE false END`),
+  check('extraction_regions_bbox_bounds', sql`CASE WHEN jsonb_typeof(${t.boundingBox}) = 'object' AND ${t.boundingBox} ?& ARRAY['x','y','width','height'] AND (${t.boundingBox}->>'x') ~ '^-?([0-9]+([.][0-9]*)?|[.][0-9]+)$' AND (${t.boundingBox}->>'y') ~ '^-?([0-9]+([.][0-9]*)?|[.][0-9]+)$' AND (${t.boundingBox}->>'width') ~ '^-?([0-9]+([.][0-9]*)?|[.][0-9]+)$' AND (${t.boundingBox}->>'height') ~ '^-?([0-9]+([.][0-9]*)?|[.][0-9]+)$' THEN (${t.boundingBox}->>'x')::numeric >= 0 AND (${t.boundingBox}->>'y')::numeric >= 0 AND (${t.boundingBox}->>'width')::numeric > 0 AND (${t.boundingBox}->>'height')::numeric > 0 AND (${t.boundingBox}->>'x')::numeric + (${t.boundingBox}->>'width')::numeric <= 1 AND (${t.boundingBox}->>'y')::numeric + (${t.boundingBox}->>'height')::numeric <= 1 ELSE false END`)]);
 
 export const claims = pgTable('claims', {
   id: id(), caseId: uuid('case_id').notNull().references(() => cases.id), type: text('type').notNull(),
@@ -83,11 +97,13 @@ export const claims = pgTable('claims', {
 export const claimSources = pgTable('claim_sources', {
   id: id(), caseId: uuid('case_id').notNull(), claimId: uuid('claim_id').notNull(),
   evidenceFileId: uuid('evidence_file_id').notNull(), page: integer('page'),
+  extractionRegionId: uuid('extraction_region_id').references(() => extractionRegions.id),
   textSpan: jsonb('text_span').$type<{ start: number; end: number }>(),
   boundingBox: jsonb('bbox_json').$type<{ x: number; y: number; width: number; height: number }>(),
   audioOffsetMs: integer('audio_offset_ms'),
 }, (t) => [
   index('claim_sources_claim_idx').on(t.claimId),
+  unique('claim_sources_region_unique').on(t.extractionRegionId),
   foreignKey({ name: 'source_claim_same_case', columns: [t.claimId, t.caseId], foreignColumns: [claims.id, claims.caseId] }),
   foreignKey({ name: 'source_evidence_same_case', columns: [t.evidenceFileId, t.caseId], foreignColumns: [evidenceFiles.id, evidenceFiles.caseId] }),
   check('source_page_positive', sql`${t.page} IS NULL OR ${t.page} > 0`),
@@ -105,7 +121,11 @@ export const timelineEvents = pgTable('timeline_events', {
   id: id(), caseId: uuid('case_id').notNull().references(() => cases.id),
   eventType: text('event_type').notNull(), occurredAt: timestamp('occurred_at', { withTimezone: true }),
   precision: text('precision').notNull(), uncertainty: text('uncertainty').notNull(), createdAt: createdAt(),
-}, (t) => [index('timeline_case_idx').on(t.caseId), unique('events_id_case_unique').on(t.id, t.caseId)]);
+}, (t) => [index('timeline_case_idx').on(t.caseId), unique('events_id_case_unique').on(t.id, t.caseId),
+  check('timeline_event_type_allowed', sql`${t.eventType} IN ('payment', 'contact', 'account_action', 'other')`),
+  check('timeline_precision_allowed', sql`${t.precision} IN ('EXACT', 'APPROXIMATE', 'DATE_ONLY', 'UNKNOWN')`),
+  check('timeline_precision_timestamp_consistent', sql`CASE WHEN ${t.precision} = 'UNKNOWN' THEN ${t.occurredAt} IS NULL WHEN ${t.precision} = 'DATE_ONLY' THEN ${t.occurredAt} IS NOT NULL AND ${t.occurredAt} = (date_trunc('day', ${t.occurredAt} AT TIME ZONE 'UTC') AT TIME ZONE 'UTC') ELSE ${t.occurredAt} IS NOT NULL END`),
+  check('timeline_uncertainty_nonempty', sql`length(btrim(${t.uncertainty})) > 0`)]);
 
 export const eventClaims = pgTable('event_claims', {
   caseId: uuid('case_id').notNull(), eventId: uuid('event_id').notNull(), claimId: uuid('claim_id').notNull(),

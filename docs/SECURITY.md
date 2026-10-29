@@ -90,3 +90,40 @@ is application-level preservation, not tamper-proof or forensic certification.
 Sharp validation is not malware scanning or provenance/authenticity verification.
 No PDF parser, OCR worker sandbox, aggregate storage quota/retention mechanism or
 real-data pilot is implemented by T04.
+
+## T05 OCR boundary
+
+Extraction handlers use the global session and role checks plus current
+case-scope guard. The service verifies source-case linkage, original mode/size and
+SHA-256 before starting Tesseract, then rechecks live case permission before
+persisting or returning results. Source crops verify the same original, use only a
+persisted normalized box constrained in application code and PostgreSQL, and
+recheck permission before release. Revoking a grant blocks the next result/crop
+request. Extraction audit entries contain actor/action/resource/request IDs only.
+
+Tesseract is spawned with `shell:false`, receives verified image bytes on stdin,
+and has bounded concurrency, runtime, output bytes, word count and text size.
+Stderr is drained but never returned or logged; safe error codes are stored. OCR
+text and candidate amounts are untrusted `OBSERVED_IN_UPLOAD` content and stay
+`UNVERIFIED`; no OCR response constitutes bank verification.
+
+The native Tesseract process does not run inside an OS sandbox. It handles only
+T04-validated PNG/JPEG in the local synthetic demo, with a 5 MiB/16 MP limit and
+the process bounds above. There is no PDF parsing, external URL fetch, model tool
+access, language guarantee, correction or real-data pilot. Treat OCR output as
+potentially adversarial text; never interpret it as instructions.
+
+## T06 claims and timeline
+
+Claim and timeline routes recheck current owner/grant scope. Only the victim case
+owner can create or correct claims and events; analysts can read within an active
+grant. Each write locks and confirms the synthetic owner case, and claim/event
+references are constrained to that case. Promoting an observed amount accepts only
+a stored `SUCCEEDED` OCR `AMOUNT` region for the requested evidence and derives all
+source values server-side. The unique region link prevents duplicate promotion.
+
+Corrections append interpreted before/after values; they cannot edit original bytes,
+OCR regions, source labels or verification state. OCR observations and recollections
+remain `UNVERIFIED`. Timeline notes describe uncertainty but do not authenticate an
+event. Uploaded strings remain untrusted data and are rendered as text; no browsing,
+execution or privileged action is triggered from them.

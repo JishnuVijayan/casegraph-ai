@@ -10,7 +10,8 @@ All primary keys use UUID or stable opaque strings, with explicit created/update
 | `cases` | `id`, `owner_id`, `organization_id?`, `status`, `category`, `created_at`, `updated_at` |
 | `case_access_grants` | `case_id`, `organization_id`, `scope`, `granted_by`, `revoked_at?`, `expires_at?` |
 | `evidence_files` | `id`, `case_id`, `object_key`, `sha256`, `mime_type`, `size_bytes`, `created_at`, `uploader_id` |
-| `extraction_runs` | `id`, `evidence_file_id`, `engine`, `version`, `status`, `created_at`, `error_code?` |
+| `extraction_runs` | `id`, `evidence_file_id`, `engine`, `version`, `status`, `created_at`, `error_code?`, `output_text?` |
+| `extraction_regions` | `id`, `run_id`, `kind`, `text`, `text_span`, `bbox_json`, `confidence` |
 | `claims` | `id`, `case_id`, `type`, `raw_value`, `normalized_value_json?`, `source_kind`, `verification_status`, `created_at` |
 | `claim_sources` | `claim_id`, `evidence_file_id`, `page?`, `text_span?`, `bbox_json?`, `audio_offset_ms?` |
 | `claim_revisions` | `id`, `claim_id`, `before_json`, `after_json`, `changed_by`, `changed_at`, `reason?` |
@@ -74,9 +75,10 @@ Role, case state, source kind, verification, processing, review, sharing scope a
 clarification state are PostgreSQL enums. Hash format, positive evidence size,
 page/audio offsets, export version, incident date order, and expected unique keys
 have database constraints. Timestamp columns are timezone-aware. New claims default
-to `UNVERIFIED`. These constraints do not implement file immutability, JSON-region
-validation, per-case authorization, or independent verification; those remain
-responsibilities of the later ingestion/review/auth modules.
+to `UNVERIFIED`. At T02, these constraints did not implement file immutability,
+JSON-region validation, per-case authorization or independent verification.
+T04 implements application-level original preservation and access; T05 adds bounded
+OCR-region JSON checks and protected extraction access as described below.
 
 `data/synthetic/bootstrap.json` defines 1 fictional organization, 3 demo identities,
 20 empty cases and active/revoked/expired sharing examples. Seeding uses fixed UUIDs
@@ -92,3 +94,34 @@ streamed SHA-256, validated MIME, byte size, uploader, ingestion success and cre
 time. Source filenames are not persisted. Public manifests omit private keys and
 uploader identity. Upload/read audit events contain identifiers/actions only.
 No new schema or automatic verification status is introduced.
+
+## T05 extraction metadata
+
+`extraction_runs` stores engine (`tesseract`), detected executable version,
+processing status, bounded safe error code and protected OCR output text. A unique
+evidence/engine/version key makes retries idempotent. `extraction_regions` stores
+one OCR word or a deterministic currency-prefixed amount candidate, its joined
+text span, confidence and normalized `{x,y,width,height}` source box in [0,1].
+Database checks reject malformed spans and boxes outside the original image.
+Region rows reference a run, which references the evidence file. API authorization
+also verifies that evidence belongs to the requested case before returning text or
+an original-derived crop. OCR values remain unverified observations; T06 claim
+creation/corrections are separate.
+
+## T06 claim and timeline constraints
+
+`claim_sources.extraction_region_id` optionally links a claim source to the exact
+persisted OCR region. The reference is unique, so promoting the same amount region
+again returns the existing claim. The API derives text, span, box, evidence and
+case linkage from the successful OCR run; clients cannot supply replacement source
+content. Recollections need no upload source row. Every created claim defaults to
+`UNVERIFIED`.
+
+`claim_revisions` stores before/after interpreted values, actor, time and optional
+reason. Corrections do not rewrite source references or verification state.
+Timeline event checks restrict event type and precision, require nonempty
+uncertainty, require timestamps for exact/approximate/date-only precision, require
+UTC midnight for date-only and require a null timestamp for unknown precision.
+`event_claims` composite keys enforce that each linked support claim belongs to the
+same case. These database constraints complement, but do not replace, per-request
+case authorization.

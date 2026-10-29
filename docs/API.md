@@ -1,4 +1,4 @@
-# REST API Contract (Proposed, Not Implemented)
+# REST API Contract
 
 All application endpoints use `/api/v1` unless noted. JSON success format: `{"data":...,"requestId":"..."}`. Errors: `{"error":{"code":"...","message":"..."},"requestId":"..."}`. No stack traces or evidence content in error details.
 
@@ -12,9 +12,11 @@ All application endpoints use `/api/v1` unless noted. JSON success format: `{"da
 | GET | `/cases/:id/evidence` | authorized | evidence metadata only |
 | GET | `/cases/:id/evidence/:evidenceId/view` | authorized | controlled binary stream with safe headers |
 | POST | `/cases/:id/extractions` | authorized | queue/run extraction |
-| GET | `/cases/:id/claims` | authorized | claims plus source refs and status |
-| PATCH | `/cases/:id/claims/:claimId` | owner/reviewer | revision added; no source overwrite |
-| GET | `/cases/:id/timeline` | authorized | ordered events/conflicts |
+| GET | `/cases/:caseId/claims` | owner/granted analyst | claims plus source refs, revisions and status |
+| POST | `/cases/:caseId/claims` | owner | OCR amount promotion or recollection |
+| PATCH | `/cases/:caseId/claims/:claimId` | owner | revision appended; no source overwrite |
+| GET | `/cases/:caseId/timeline` | owner/granted analyst | ordered events linked to claims |
+| POST | `/cases/:caseId/timeline` | owner | event linked to one or more supporting claims |
 | GET | `/cases/:id/clarifications` | authorized | open questions |
 | POST | `/cases/:id/clarifications/:questionId/answer` | owner | answer/UNKNOWN recorded |
 | POST | `/cases/:id/exports` | authorized | versioned draft export |
@@ -53,6 +55,20 @@ All application endpoints use `/api/v1` unless noted. JSON success format: `{"da
 
 Request/response DTOs should be generated in code and reflected here after implementation rather than leaving stale examples.
 
+## Implemented T06 claim and timeline routes
+
+Paths below are under `/api/v1`. All require a valid session and current case scope.
+
+| Method/path | Access | Request and behavior |
+|---|---|---|
+| `GET /cases/:caseId/claims` | owner or granted analyst | Lists values, source observations, verification status and append-only revision history. |
+| `POST /cases/:caseId/claims` | owner | `{type, sourceKind, rawValue}` for a recollection, or `{type:"payment_amount", sourceKind:"OBSERVED_IN_UPLOAD", evidenceId, regionId}` to promote stored OCR. Text and coordinates come from the database, not the client. |
+| `PATCH /cases/:caseId/claims/:claimId` | owner | `{rawValue, reason?}`; appends before/after revision and changes interpreted value only. |
+| `GET /cases/:caseId/timeline` | owner or granted analyst | Lists events chronologically with linked same-case claim summaries. |
+| `POST /cases/:caseId/timeline` | owner | `{eventType, precision, occurredAt?, uncertainty, claimIds}`. Requires supporting claims; exact/approximate times require a timezone, `DATE_ONLY` takes `YYYY-MM-DD`, and `UNKNOWN` omits `occurredAt`. |
+
+T06 claims remain `UNVERIFIED`. Deterministic INR normalization returns integer minor units only for supported INR-prefixed amount strings. A screenshot and user recollection do not establish bank verification.
+
 ## T00 implementation status
 Only `GET /api/v1/health/live` is implemented. It returns HTTP 200 with
 `data: { status: "ok", scope: "process-only", mode: "local-synthetic" }` and a
@@ -81,8 +97,8 @@ without SQL, stack traces or parameters. Unknown routes remain 404.
 
 Roles and synthetic membership are checked against the DB on every private
 request. Grant validity includes organization, scope, current owner as grantor,
-revocation and expiration. Public health remains process-only; readiness, case
-creation, evidence, OCR, export and graph endpoints remain unimplemented.
+revocation and expiration. Public health remains process-only; readiness, export
+and graph endpoints remain unimplemented.
 
 ## Implemented T04 routes
 
@@ -103,4 +119,27 @@ or invalid image, 429 concurrent upload busy, 503 local storage/database unavail
 Missing/substituted evidence IDs return generic 403 after case authorization.
 There are no evidence replacement/deletion endpoints. Duplicate uploads receive
 new source IDs without overwriting earlier originals. PDFs/SVGs and remote URLs
-are not accepted. No OCR, automatic verification or authenticity claim is made.
+are not accepted. T04 does not alter originals or claim authenticity; OCR is
+implemented separately in T05 below and remains unverified.
+
+## Implemented T05 extraction routes
+
+- `POST /cases/:caseId/extractions` (owner or granted analyst): JSON
+  `{evidenceId}`. Runs local Tesseract synchronously on verified original bytes via
+  stdin. Returns 201 with run ID, engine/version, status, safe error code, protected
+  OCR text, word regions, normalized boxes, text spans and
+  `verificationStatus: UNVERIFIED`. Repeats for the same evidence/engine/version
+  return the same persisted run. Concurrent OCR returns `RUNNING` with no content.
+- `GET /cases/:caseId/extractions/:evidenceId`: returns the latest authorized run,
+  or `PENDING` if not run. Unreadable text has no amount regions and reports
+  `amountStatus: UNKNOWN`. Missing Tesseract records `FAILED / OCR_UNAVAILABLE`.
+- `GET /cases/:caseId/extractions/:evidenceId/regions/:regionId/crop`: returns a
+  PNG crop derived from the exact SHA-256-verified original and persisted bounded
+  box. Current case access is rechecked before crop bytes are returned.
+
+Regions are `TEXT` or deterministic `AMOUNT` candidates that require a recognized
+currency token. They are observations in uploaded synthetic files, not claims,
+bank records or independently verified values. Defaults are English, 8 seconds,
+512 KiB TSV output, 1,000 words, 64 KiB joined text and one OCR subprocess per API
+process. Uploaded text and stderr diagnostics are never logged. There is no
+PDF/ASR extraction, background queue or correction endpoint.

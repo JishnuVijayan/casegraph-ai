@@ -28,7 +28,9 @@
     "db:verify": "npm run build -w @casegraph/api && node infra/database.mjs verify",
     "test:auth": "node infra/auth-test.mjs",
     "dev:demo": "DEMO_MODE=true npm run dev",
-    "test:evidence": "node infra/evidence-test.mjs"
+    "test:evidence": "node infra/evidence-test.mjs",
+    "test:ocr": "node infra/extraction-test.mjs",
+    "test:claims": "node infra/claims-test.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
