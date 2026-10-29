@@ -12,7 +12,6 @@ import { DemoConfig } from '../src/auth/config';
 import { LOCAL_DATABASE } from '../src/auth/store';
 import { configureHttp } from '../src/common/http';
 import { connect } from '../src/db/connection';
-import { loadFixtures } from '../src/db/fixtures';
 import { migrateDatabase } from '../src/db/migrate';
 import { seedSynthetic } from '../src/db/seed';
 import { EVIDENCE_DIRECTORY } from '../src/evidence/storage';
@@ -21,7 +20,6 @@ import { tesseractTsv } from '../src/extraction/tesseract';
 
 describe('local Tesseract extraction and source-region access', () => {
   const database = `casegraph_t05_test_${randomUUID().replaceAll('-', '')}`;
-  const fixture = loadFixtures();
   let app: INestApplication;
   let admin: ReturnType<typeof connect>; let connection: ReturnType<typeof connect>;
   let parent: string; let directory: string; let created = false;
@@ -112,10 +110,12 @@ describe('local Tesseract extraction and source-region access', () => {
     const extraction = (await run(id).expect(201)).body.data;
     const amount = extraction.regions.find((region: { kind: string }) => region.kind === 'AMOUNT');
     await run(id, b).expect(403); await read(id, b).expect(403);
-    const share = await http().post(`/api/v1/cases/${caseId}/shares`).set('Authorization', auth(a))
-      .send({ organizationId: fixture.organization.id, scope: 'READ' }).expect(201);
-    await read(id, analyst).expect(200);
-    await http().delete(`/api/v1/cases/${caseId}/shares/${share.body.data.id}`).set('Authorization', auth(a)).expect(200);
+    await read(id, analyst).expect(200); // auto INVESTIGATE from createCase
+    const active = (await connection.pool.query(
+      'SELECT id FROM case_access_grants WHERE case_id = $1 AND revoked_at IS NULL', [caseId])).rows as { id: string }[];
+    for (const grant of active) {
+      await http().delete(`/api/v1/cases/${caseId}/shares/${grant.id}`).set('Authorization', auth(a)).expect(200);
+    }
     await read(id, analyst).expect(403);
     await http().get(`/api/v1/cases/${caseId}/extractions/${id}/regions/${amount.id}/crop`).set('Authorization', auth(analyst)).expect(403);
   });

@@ -73,9 +73,9 @@ export function ReviewPanel({ token, caseId, owner, busy, refreshKey, perform }:
     setClaims(nextClaims); setEvents(nextEvents);
   }
 
-  return <section aria-label="Claims and timeline review" className="my-4 rounded border p-4">
-    <h3 className="text-lg font-bold">Claims and timeline review</h3>
-    <p>Source observations and recollections are unverified. Corrections change only the interpretation; the source and revision history remain visible.</p>
+  return <section aria-label="Claims and timeline review">
+    <h3 className="text-lg font-bold m-0">Review claims and timeline</h3>
+    <p className="mt-2" style={{ color: 'var(--muted)' }}>Correct extracted facts and build a chronological timeline. Original observations stay in history.</p>
     {loading && <p role="status">Loading claims and timeline…</p>}
     {error && <p role="alert">{error}</p>}
     {owner && <form onSubmit={(event) => { event.preventDefault(); void run(async () => {
@@ -89,11 +89,11 @@ export function ReviewPanel({ token, caseId, owner, busy, refreshKey, perform }:
       </select>
       <label htmlFor="claim-value">What do you recall?</label>
       <input id="claim-value" value={claimValue} maxLength={500} required disabled={busy} onChange={(event) => setClaimValue(event.target.value)} />
-      <button type="submit" disabled={busy}>Save unverified recollection</button>
+      <button className="btn-primary" type="submit" disabled={busy}>Save unverified recollection</button>
     </form>}
     <h4 className="mt-4 font-semibold">Claims</h4>
-    {!loading && claims.length === 0 && <p>No claims recorded. Run local OCR to save an observed amount or add a recollection.</p>}
-    <ul>{claims.map((claim) => <li key={claim.id} className="my-3 rounded border p-3">
+    {!loading && claims.length === 0 && <p>No claims yet. Run OCR on evidence or add a recollection.</p>}
+    <ul>{claims.map((claim) => <li key={claim.id} className="my-3 rounded border p-3" style={{ borderColor: 'var(--line)' }}>
       <p>{claim.type.replaceAll('_', ' ')}: <strong>{claim.rawValue}</strong></p>
       <p>{claim.sourceKind} · {claim.verificationStatus}</p>
       {Boolean(claim.normalizedValue) && <p>Deterministic normalized value: <code>{JSON.stringify(claim.normalizedValue)}</code></p>}
@@ -159,7 +159,7 @@ export function ReviewPanel({ token, caseId, owner, busy, refreshKey, perform }:
             onChange={(event) => setSelectedClaims((current) => event.target.checked ? [...current, claim.id] : current.filter((id) => id !== claim.id))} />
           {claim.rawValue} · {claim.sourceKind}
         </label>)}</fieldset>
-        <button type="submit" disabled={busy || selectedClaims.length === 0}>Add linked timeline event</button>
+        <button className="btn-primary" type="submit" disabled={busy || selectedClaims.length === 0}>Add linked timeline event</button>
       </form>}
     </section>
   </section>;

@@ -139,10 +139,26 @@ describe('PostgreSQL-backed HTTP authorization', () => {
     finally { clock.mockRestore(); }
     a = await login('synthetic-victim-a');
   });
+  it('auto-grants INVESTIGATE to the demo consortium when a victim creates a case', async () => {
+    a = await login('synthetic-victim-a');
+    analyst = await login('synthetic-analyst');
+    const created = await http().post('/api/v1/cases').set('Authorization', auth(a))
+      .send({ title: 'auto-share inbox case', category: 'payment', syntheticAcknowledged: true }).expect(201);
+    const id = created.body.data.id as string;
+    const listed = (await http().get('/api/v1/cases').set('Authorization', auth(analyst)).expect(200)).body.data as { id: string }[];
+    expect(listed.map((row) => row.id)).toContain(id);
+    await http().get(`/api/v1/cases/${id}`).set('Authorization', auth(analyst)).expect(200);
+    await http().get(`/api/v1/test/${id}/investigate`).set('Authorization', auth(analyst)).expect(200);
+    const audits = (await connection.pool.query(
+      "SELECT action FROM audit_events WHERE resource_type = 'grant' AND action = 'CASE_AUTO_SHARED'",
+    )).rows;
+    expect(audits.length).toBeGreaterThan(0);
+  });
   it('writes only redacted audit metadata and returns a structured unavailable state', async () => {
     const audits = (await connection.pool.query('SELECT * FROM audit_events')).rows;
     expect(audits.some((row) => row.action === 'CASE_READ')).toBe(true);
     expect(audits.some((row) => row.action === 'SHARE_GRANTED')).toBe(true);
+    expect(audits.some((row) => row.action === 'CASE_AUTO_SHARED')).toBe(true);
     expect(audits.some((row) => row.action === 'SHARE_REVOKED')).toBe(true);
     expect(JSON.stringify(audits)).not.toContain(a);
     expect(Object.keys(audits[0]).sort()).toEqual(['action','actor_id','created_at','id','request_id','resource_id','resource_type']);

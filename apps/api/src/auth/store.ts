@@ -26,8 +26,18 @@ export class AccessStore implements OnModuleDestroy {
   async createCase(actor: Actor, title: string, category: string, requestId: string) {
     if (actor.role !== 'victim') throw new ForbiddenException();
     return this.available((db) => db.transaction(async (tx) => {
+      const organizationId = this.fixtures.organization.id;
+      if (!organizationId) throw new ServiceUnavailableException();
       const [row] = await tx.insert(cases).values({ ownerId: actor.id, title: `Synthetic ${title}`, category, synthetic: true }).returning();
       await tx.insert(auditEvents).values({ actorId: actor.id, action: 'CASE_CREATED', resourceType: 'case', resourceId: row.id, requestId });
+      // Hackathon officer inbox: new complaints are auto-shared for investigation with the demo consortium.
+      const [grant] = await tx.insert(caseAccessGrants).values({
+        caseId: row.id, scope: 'INVESTIGATE', organizationId, grantedBy: actor.id, expiresAt: null,
+      }).onConflictDoUpdate({
+        target: [caseAccessGrants.caseId, caseAccessGrants.organizationId, caseAccessGrants.scope],
+        set: { grantedBy: actor.id, revokedAt: null, expiresAt: null, createdAt: new Date() },
+      }).returning();
+      await tx.insert(auditEvents).values({ actorId: actor.id, action: 'CASE_AUTO_SHARED', resourceType: 'grant', resourceId: grant.id, requestId });
       return { id: row.id, title: row.title, category: row.category, status: row.status, synthetic: row.synthetic };
     }));
   }
@@ -71,8 +81,9 @@ export class AccessStore implements OnModuleDestroy {
       .where(and(eq(cases.synthetic,true),this.permitted(actor,'INVESTIGATE'))).orderBy(cases.id).limit(21)).map((row)=>row.id));
   }
   async list(actor: Actor) {
-    return this.available((db) => db.select({ id: cases.id, title: cases.title, status: cases.status, synthetic: cases.synthetic })
-      .from(cases).where(and(eq(cases.synthetic, true), this.permitted(actor, 'READ'))).orderBy(cases.id));
+    return this.available((db) => db.select({
+      id: cases.id, title: cases.title, status: cases.status, category: cases.category, synthetic: cases.synthetic,
+    }).from(cases).where(and(eq(cases.synthetic, true), this.permitted(actor, 'READ'))).orderBy(cases.id));
   }
   async audit(actor: Actor, action: string, resourceType: string, resourceId: string, requestId: string) {
     await this.available(async (db) => {
