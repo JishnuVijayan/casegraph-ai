@@ -93,3 +93,14 @@ commit status is unknown rather than risk deleting a committed original.
 Download only after live authorization and byte/hash verification, as an attachment.
 Reuse the canonical evidence schema without a migration. No client-controlled
 storage path, source overwrite, OCR, malware-scan or authenticity promise is added.
+
+### ADR-016 — T05 local Tesseract and exact-source regions (2026-10-29)
+Run the installed Tesseract binary with `shell:false`, passing only the verified
+PNG/JPEG bytes on stdin; store bounded TSV-derived word text, exclusive text spans,
+normalized source boxes, engine version and safe status/error in PostgreSQL. Use a
+unique evidence/engine/version key for repeatability. Derive requested crops from
+the SHA-256-verified original, never from OCR-transformed bytes. Deterministic
+currency-prefix detection labels only review candidates; it does not create claims
+or verify bank records. This avoids paid endpoints and temporary OCR files, but
+Tesseract remains a native unsandboxed subprocess and the initial implementation
+supports English only. Keep correction/timeline semantics in T06.

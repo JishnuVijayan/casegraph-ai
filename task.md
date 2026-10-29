@@ -1,41 +1,30 @@
-# Current task — T04 cases and immutable evidence originals
+# Current task — T05 local OCR and provenance
 
-Updated: 2026-10-29 IST. Status: T04 complete and verified on feat/t04-case-uploads.
+Updated: 2026-10-29 IST. Branch: `feat/t05-local-ocr` from `develop` after T04 was merged into `develop` and `main`.
 
-References: README, REQUIREMENTS, STACK, API, DATA_MODEL, SECURITY and TEST_PLAN.
-Expected changes: cases/evidence services and controllers, private storage,
-React intake/retrieval UI, isolated PostgreSQL/filesystem integration tests and docs.
+References: `README.md`, `docs/REQUIREMENTS.md`, `docs/STACK.md`, `docs/FREE_SETUP.md`, `docs/ARCHITECTURE.md`, `docs/DATA_MODEL.md`, `docs/API.md`, `docs/SECURITY.md`, `docs/TASKS.md`, and `docs/TEST_PLAN.md`.
 
-- [x] Create victim-owned synthetic drafts; reject owner/role injection.
-- [x] Accept one bounded PNG/JPEG through streaming multipart after authorization.
-- [x] Validate declared MIME, signature and bounded image decode; reject PDF/SVG/invalid content.
-- [x] Preserve exact bytes, streamed SHA-256, UUID source ID and metadata; never overwrite originals.
-- [x] Serve/list only after live case authorization; audit creation/upload/read.
-- [x] UI creation/upload/source manifest/protected original download after urgent guidance.
-- [x] Test bytes/hash, duplicate preservation, IDOR, revoked grants, limits and failure cleanup.
-- [x] Run existing checks and regressions; record actual results; stop services.
+Expected changes: a Drizzle migration for OCR output regions, bounded local Tesseract adapter and protected extraction endpoints, an image-region review panel, synthetic OCR fixtures/tests, and documentation. Preserve T04 originals and access rules.
 
-Limits: synthetic only; no OCR, safe PDF parser, malware scan, graph or exports.
-Done: authorized retrieval returns exact original bytes; invalid/unauthorized uploads
-leave no committed metadata or original file. Next is T05 OCR/provenance.
+- [x] Record engine version, status and safe error code for each extraction run; reruns of the same file/version are idempotent.
+- [x] Run Tesseract locally on a verified, authorized original with bounded time, output and process concurrency.
+- [x] Save OCR text spans and image coordinates as observed-in-upload candidates only; do not claim bank verification.
+- [x] Let an authorized user click a sample amount and inspect the corresponding crop from the exact original.
+- [x] Show `UNKNOWN` when text is unreadable and a clear unavailable state when Tesseract is absent.
+- [x] Test synthetic sample recognition/provenance, unreadable evidence, denied/revoked access and unavailable OCR.
+- [x] Run lint, typecheck, unit/integration/database/storage checks and record actual results in `docs/TASKS.md`.
 
+Definition of done: the synthetic amount opens its true source region, unreadable evidence yields no invented value, all stored regions are bounded to the uploaded image, and authorized access is enforced at every endpoint. T06 timeline and editable claims remain separate.
 
 ## Actual results — 2026-10-29 IST
 
-- Lint/typecheck passed; both builds passed within infra:smoke:storage.
-- npm test: 18 tests passed (4 infrastructure, 7 API/session/fixtures, 7 frontend).
-- test:evidence: 8 isolated PostgreSQL/filesystem HTTP tests passed.
-- test:auth: 9 PostgreSQL HTTP regression tests passed.
-- All 21 non-disclosure probes, frontend asset scan and db:verify passed.
-- Oversize test initially exposed an EBADF stream teardown that masked 413 as 503;
-  preserved the limit exception and handled already-closed descriptors; rerun passed.
-- Frontend file-input test needed explicit form submission because JSDOM's injected
-  files do not update native input validity. The corrected component test passed.
-- No migration needed; T02 evidence/audit tables reused. No OCR/PDF/graph implementation.
-- Services stopped and temporary DB/files removed. Working volume/originals preserved.
-- Limits: local synthetic-only demo, no malware scan, no browser E2E run, Node 22 and
-  dependency audit unverified. Crashes/uncertain commits may leave private orphan
-  files requiring deliberate reconciliation. Administrators can still alter files/DB.
+- Local Tesseract 5.5.4 recognized synthetic “INR 2500”; persisted word spans and normalized boxes point to the source image. Candidate amount stays `OBSERVED_IN_UPLOAD` / `UNVERIFIED`; no OCR-derived claim or external verification was created.
+- Added protected run/read/crop endpoints and UI source crop preview. Region crops are produced from the hash-verified original after current authorization checks. Run results persist engine/version/status/safe error; same file/version reruns are idempotent.
+- Added two Drizzle migrations for extraction regions/output, version uniqueness and DB-level text-span/bounding-box constraints. `db:verify` checked 16 tables and rejected out-of-image boxes and invalid confidence.
+- `npm test`: 19 passed; `npm run test:auth`: 9 passed; `npm run test:evidence`: 8 passed; `npm run test:ocr`: 4 passed. Total: 40 tests. `npm run db:verify` passed with three migrations, 16 tables, seed preservation, and bounded OCR span/box constraints. `npm run lint`, `npm run typecheck`, `npm run build`, and `npm run db:generate` (no pending changes) passed. `npm run infra:smoke:storage` passed all 21 HTTP probes and asset scan; its synthetic sentinel and servers were removed. `git diff --check` passed.
+- Tesseract missing case returned `FAILED / OCR_UNAVAILABLE`, and later retry with Tesseract installed succeeded. Blank synthetic image produced no regions and `UNKNOWN`. Unauthorized and revoked analyst reads/crops returned 403.
+- Test suites use temporary synthetic DBs and files, which were removed. No user evidence was processed or committed.
 
-Next unblocked task: T05 local Tesseract OCR with extraction version/errors and
-source text spans/bounding boxes. Do not start it as part of T04.
+Limitations: local native OCR has no OS sandbox; input/output/time/process bounds apply. English only; no Malayalam/handwriting, PDF, timeline/claim editing, correction history or background queue. No browser visual E2E; component and HTTP integration coverage is present. No authenticity or bank-verification claim. Node 22 and dependency audit unverified.
+
+Next unblocked task: **T06 timeline and editable claims**.

@@ -8,6 +8,20 @@
       "when": 1793238900795,
       "tag": "0000_bootstrap",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793242820176,
+      "tag": "0001_gigantic_longshot",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793243004144,
+      "tag": "0002_early_robbie_robertson",
+      "breakpoints": true
     }
   ]
 }

@@ -35,7 +35,7 @@ export function DemoWorkspace() {
   return <section aria-labelledby="demo-title">
     <h2 id="demo-title" className="text-xl font-bold">Local synthetic demo</h2>
     <p>Fictional role simulation only. Choosing an identity is not real identity verification. No real victim data.</p>
-    <p>Create synthetic cases and upload original PNG/JPEG evidence. OCR, exports and TigerGraph investigation are not implemented yet.</p>
+    <p>Create synthetic cases, upload original PNG/JPEG evidence and review local OCR candidates. Exports and TigerGraph investigation are not implemented yet.</p>
     {!session ? <form onSubmit={(event) => { event.preventDefault(); void perform(async () => {
       clear();
       const next = await api<Session>('/auth/demo', undefined, { demoSubject: subject }, 'POST');

@@ -81,8 +81,8 @@ without SQL, stack traces or parameters. Unknown routes remain 404.
 
 Roles and synthetic membership are checked against the DB on every private
 request. Grant validity includes organization, scope, current owner as grantor,
-revocation and expiration. Public health remains process-only; readiness, case
-creation, evidence, OCR, export and graph endpoints remain unimplemented.
+revocation and expiration. Public health remains process-only; readiness, export
+and graph endpoints remain unimplemented.
 
 ## Implemented T04 routes
 
@@ -103,4 +103,27 @@ or invalid image, 429 concurrent upload busy, 503 local storage/database unavail
 Missing/substituted evidence IDs return generic 403 after case authorization.
 There are no evidence replacement/deletion endpoints. Duplicate uploads receive
 new source IDs without overwriting earlier originals. PDFs/SVGs and remote URLs
-are not accepted. No OCR, automatic verification or authenticity claim is made.
+are not accepted. T04 does not alter originals or claim authenticity; OCR is
+implemented separately in T05 below and remains unverified.
+
+## Implemented T05 extraction routes
+
+- `POST /cases/:caseId/extractions` (owner or granted analyst): JSON
+  `{evidenceId}`. Runs local Tesseract synchronously on verified original bytes via
+  stdin. Returns 201 with run ID, engine/version, status, safe error code, protected
+  OCR text, word regions, normalized boxes, text spans and
+  `verificationStatus: UNVERIFIED`. Repeats for the same evidence/engine/version
+  return the same persisted run. Concurrent OCR returns `RUNNING` with no content.
+- `GET /cases/:caseId/extractions/:evidenceId`: returns the latest authorized run,
+  or `PENDING` if not run. Unreadable text has no amount regions and reports
+  `amountStatus: UNKNOWN`. Missing Tesseract records `FAILED / OCR_UNAVAILABLE`.
+- `GET /cases/:caseId/extractions/:evidenceId/regions/:regionId/crop`: returns a
+  PNG crop derived from the exact SHA-256-verified original and persisted bounded
+  box. Current case access is rechecked before crop bytes are returned.
+
+Regions are `TEXT` or deterministic `AMOUNT` candidates that require a recognized
+currency token. They are observations in uploaded synthetic files, not claims,
+bank records or independently verified values. Defaults are English, 8 seconds,
+512 KiB TSV output, 1,000 words, 64 KiB joined text and one OCR subprocess per API
+process. Uploaded text and stderr diagnostics are never logged. There is no
+PDF/ASR extraction, background queue or correction endpoint.

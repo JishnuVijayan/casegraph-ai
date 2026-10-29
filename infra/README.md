@@ -116,7 +116,7 @@ integration remains later work.
 
 `db:verify` creates its own uniquely named `casegraph_t02_test_*` database on the
 local container. It migrates twice, seeds repeatedly, compares complete row
-snapshots, preserves manual edits/revocations, checks 15 tables/indexes and
+snapshots, preserves manual edits/revocations, checks the current schema/tables/indexes and
 constraint rejections, then drops only that temporary database. The local demo
 role needs database-creation permission for this check (the image bootstrap role
 has it); this is not a production privilege design. On forced interruption, a
@@ -153,4 +153,16 @@ Working originals live in `.local/evidence/<source-UUID>.original` with mode 040
 A forced crash may leave `.part` or unreferenced `.original` files. Do not auto-delete
 these: inspect metadata and reconcile deliberately, especially after uncertain DB
 commit acknowledgements. Client filenames are not retained or used for paths.
-No additional migration is needed: T02's evidence/audit tables hold upload metadata.
+No additional migration was needed for T04: its evidence/audit tables hold upload metadata.
+
+## T05 local OCR checks
+
+Install local Tesseract (English trained data) and check `tesseract --version`;
+the API default executable is `tesseract` on `PATH`, with `TESSERACT_BINARY` as an
+optional local override. It uses no paid API. With PostgreSQL running,
+`npm run test:ocr` executes real HTTP requests against a temporary synthetic DB and
+private evidence directory. The suite checks source spans/crops, blank unreadable
+input, unavailable-engine recovery, idempotency and immediate grant revocation,
+then removes its test DB/files. OCR processes verified image bytes on stdin;
+there are no persisted working copies or committed sample images. Tesseract is a
+native subprocess without an OS sandbox; see `docs/SECURITY.md` for its limits.
