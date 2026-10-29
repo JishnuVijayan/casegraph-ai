@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api } from './api';
 
 type Question = {
@@ -7,14 +7,17 @@ type Question = {
   answer: { text: string | null } | null;
 };
 
-export function QuestionsPanel({ token, caseId, owner, busy, perform }: {
+export function QuestionsPanel({ token, caseId, owner, busy, perform, autoRefresh = false, compact = false }: {
   token: string; caseId: string; owner: boolean; busy: boolean;
   perform: (operation: () => Promise<void>) => Promise<void>;
+  autoRefresh?: boolean; compact?: boolean;
 }) {
   const [rows, setRows] = useState<Question[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [text, setText] = useState('');
   const next = rows.find((q) => q.isCurrent && q.status === 'OPEN');
+  const performRef = useRef(perform);
+  useEffect(() => { performRef.current = perform; });
 
   async function load(refresh: boolean) {
     setRows([]); setLoaded(false);
@@ -26,6 +29,11 @@ export function QuestionsPanel({ token, caseId, owner, busy, perform }: {
     );
     setRows(result); setLoaded(true); setText('');
   }
+
+  useEffect(() => {
+    if (!autoRefresh || !owner) return;
+    void performRef.current(() => load(true));
+  }, [autoRefresh, owner, caseId, token]);
 
   async function answer(status: 'UNKNOWN' | 'ANSWERED') {
     if (!next) return;
@@ -39,22 +47,28 @@ export function QuestionsPanel({ token, caseId, owner, busy, perform }: {
   }
 
   return (
-    <section aria-label="Clarification questions">
-      <h3 className="text-lg font-bold m-0">Fill in missing details</h3>
-      <p className="mt-2" style={{ color: 'var(--muted)' }}>
-        Answer focused questions about payment amounts, references, or timing. You can mark a detail unknown.
-      </p>
-      <button disabled={busy} onClick={() => void perform(() => load(owner))}>
-        {owner ? 'Check payment details for questions' : 'Read clarification history'}
-      </button>
-      {loaded && !next && <p>No current unanswered questions.</p>}
+    <section className={compact ? 'panel-block' : undefined} aria-label="Clarification questions">
+      {!compact && <h3 className="text-lg font-bold m-0">Fill in missing details</h3>}
+      {!compact && (
+        <p className="mt-2" style={{ color: 'var(--muted)' }}>
+          Answer focused questions about payment amounts, references, or timing. You can mark a detail unknown.
+        </p>
+      )}
+      {!compact && (
+        <button className="btn-ghost" disabled={busy} onClick={() => void perform(() => load(owner))}>
+          {owner ? 'Check payment details for questions' : 'Read clarification history'}
+        </button>
+      )}
+      {loaded && !next && <p className="empty-hint empty-hint-ok">No current unanswered questions.</p>}
       {next && (
-        <form onSubmit={(event) => { event.preventDefault(); void perform(() => answer('ANSWERED')); }}>
-          <p>{next.prompt}</p>
-          <p>Payment event: {next.context.eventId}</p>
-          <ul>
+        <form className="question-card" onSubmit={(event) => { event.preventDefault(); void perform(() => answer('ANSWERED')); }}>
+          <p className="question-prompt">{next.prompt}</p>
+          {!compact && <p className="evidence-meta">Payment event: {next.context.eventId}</p>}
+          <ul className="claim-chip-list">
             {next.context.claims.map((c) => (
-              <li key={c.id}>Claim {c.id}: {c.rawValue} · {c.sourceKind} · UNVERIFIED</li>
+              <li key={c.id} className="claim-chip">
+                {c.rawValue} · {c.sourceKind} · UNVERIFIED
+              </li>
             ))}
           </ul>
           {owner && (
@@ -68,16 +82,18 @@ export function QuestionsPanel({ token, caseId, owner, busy, perform }: {
                 disabled={busy}
                 onChange={(e) => setText(e.target.value)}
               />
-              <button className="btn-primary" type="submit" disabled={busy}>Save recollection</button>
-              <button type="button" disabled={busy} onClick={() => void perform(() => answer('UNKNOWN'))}>
-                Unknown / I can’t remember
-              </button>
+              <div className="action-row">
+                <button className="btn-primary" type="submit" disabled={busy}>Save recollection</button>
+                <button className="btn-ghost" type="button" disabled={busy} onClick={() => void perform(() => answer('UNKNOWN'))}>
+                  Unknown / I can’t remember
+                </button>
+              </div>
             </>
           )}
         </form>
       )}
       {rows.some((q) => q.status !== 'OPEN' || !q.isCurrent) && (
-        <details>
+        <details className="history-details">
           <summary>Previous questions and answers</summary>
           <ul>
             {rows.filter((q) => q.status !== 'OPEN' || !q.isCurrent).map((q) => (

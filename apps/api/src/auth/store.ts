@@ -31,16 +31,39 @@ export class AccessStore implements OnModuleDestroy {
       return { id: row.id, title: row.title, category: row.category, status: row.status, synthetic: row.synthetic };
     }));
   }
+  /** Demo intake: upsert a synthetic victim keyed by mobile. Not real KYC/OTP. */
+  async upsertIntakeVictim(displayName: string, mobile: string): Promise<Actor> {
+    const demoSubject = `intake:${mobile}`;
+    return this.available(async (db) => {
+      const [existing] = await db.select().from(users).where(eq(users.demoSubject, demoSubject));
+      if (existing) {
+        if (!existing.synthetic || existing.role !== 'victim' || existing.organizationId !== null) throw new ForbiddenException();
+        const [updated] = await db.update(users).set({ displayName }).where(eq(users.id, existing.id)).returning();
+        return { id: updated.id, role: 'victim' as const, organizationId: null, displayName: updated.displayName };
+      }
+      const [inserted] = await db.insert(users).values({
+        role: 'victim', organizationId: null, demoSubject, displayName, synthetic: true,
+      }).returning();
+      return { id: inserted.id, role: 'victim' as const, organizationId: null, displayName: inserted.displayName };
+    });
+  }
   async actor(id: string): Promise<Actor | undefined> {
     return this.available(async (db) => {
       const [row] = await db.select().from(users).where(eq(users.id, id));
+      if (!row || !row.synthetic) return;
       const fixture = this.fixtures.users.find((user) => user.id === id);
-      if (!row || !fixture || !row.synthetic || row.role !== fixture.role || row.demoSubject !== fixture.demoSubject || row.organizationId !== fixture.organizationId) return;
-      if (row.organizationId) {
-        const [org] = await db.select({ synthetic: organizations.synthetic }).from(organizations).where(eq(organizations.id, row.organizationId));
-        if (!org?.synthetic) return;
+      if (fixture) {
+        if (row.role !== fixture.role || row.demoSubject !== fixture.demoSubject || row.organizationId !== fixture.organizationId) return;
+        if (row.organizationId) {
+          const [org] = await db.select({ synthetic: organizations.synthetic }).from(organizations).where(eq(organizations.id, row.organizationId));
+          if (!org?.synthetic) return;
+        }
+        return { id: row.id, role: row.role, organizationId: row.organizationId, displayName: row.displayName };
       }
-      return { id: row.id, role: row.role, organizationId: row.organizationId, displayName: row.displayName };
+      // Ephemeral intake victims created via POST /auth/intake (demo only).
+      if (row.role === 'victim' && row.demoSubject.startsWith('intake:') && row.organizationId === null) {
+        return { id: row.id, role: row.role, organizationId: null, displayName: row.displayName };
+      }
     });
   }
   private permitted(actor: Actor, permission: CasePermission) {

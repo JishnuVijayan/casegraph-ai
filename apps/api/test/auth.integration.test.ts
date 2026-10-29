@@ -66,6 +66,7 @@ describe('PostgreSQL-backed HTTP authorization', () => {
     config.enabled = false;
     try {
       await http().post('/api/v1/auth/demo').send({ demoSubject: 'synthetic-victim-a' }).expect(403);
+      await http().post('/api/v1/auth/intake').send({displayName:'Synthetic Demo',mobile:'9876543210'}).expect(403);
       await http().get('/api/v1/cases').set('Authorization', auth(a)).expect(403);
     } finally { config.enabled = true; }
   });
@@ -76,6 +77,8 @@ describe('PostgreSQL-backed HTTP authorization', () => {
     await http().get('/api/v1/test/unguarded').set('Authorization', auth(a)).expect(403);
     await http().post('/api/v1/auth/demo').send({ demoSubject: 'synthetic-victim-a', role: 'analyst', userId: fixture.users[2].id }).expect(400);
     await http().post('/api/v1/auth/demo').send({ demoSubject: 'not-seeded' }).expect(400);
+    await http().post('/api/v1/auth/intake').set('Origin','https://foreign.invalid').send({displayName:'Synthetic Demo',mobile:'9876543210'}).expect(403);
+    await http().post('/api/v1/auth/intake').send({displayName:'Synthetic Demo',mobile:'9876543210',role:'analyst'}).expect(400);
     await http().post('/api/v1/auth/demo').set('Origin', 'https://foreign.invalid').send({ demoSubject: 'synthetic-victim-a' }).expect(403);
   });
   it('allows each owner and scopes list/read from DB, ignoring claimed user headers', async () => {
@@ -138,6 +141,20 @@ describe('PostgreSQL-backed HTTP authorization', () => {
     try { await http().get('/api/v1/auth/me').set('Authorization', auth(b)).expect(401); }
     finally { clock.mockRestore(); }
     a = await login('synthetic-victim-a');
+  });
+  it('accepts name+mobile intake, upserts a synthetic victim, and reuses the same subject', async () => {
+    const first = await http().post('/api/v1/auth/intake')
+      .send({ displayName: 'Priya Demo', mobile: '9876543210' }).expect(200);
+    expect(first.body.data.user.role).toBe('victim');
+    expect(first.body.data.user.displayName).toBe('Priya Demo');
+    expect(first.body.data.token).toMatch(/^[a-f0-9]{64}$/);
+    await http().post('/api/v1/auth/intake').send({ displayName: 'P', mobile: '123' }).expect(400);
+    const second = await http().post('/api/v1/auth/intake')
+      .send({ displayName: 'Priya Updated', mobile: '9876543210' }).expect(200);
+    expect(second.body.data.user.id).toBe(first.body.data.user.id);
+    expect(second.body.data.user.displayName).toBe('Priya Updated');
+    const me = await http().get('/api/v1/auth/me').set('Authorization', auth(second.body.data.token)).expect(200);
+    expect(me.body.data.displayName).toBe('Priya Updated');
   });
   it('writes only redacted audit metadata and returns a structured unavailable state', async () => {
     const audits = (await connection.pool.query('SELECT * FROM audit_events')).rows;

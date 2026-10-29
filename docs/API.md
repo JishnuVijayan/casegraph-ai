@@ -230,3 +230,9 @@ these routes still awaits the compatible TigerGraph installation and query compi
 ## Savanna transport update (2026-10-29)
 
 Existing investigation endpoints and backend-derived INVESTIGATE scope are unchanged. Upstream graph HTTP 401/403 now return sanitized 502 `GRAPH_AUTHENTICATION_FAILED`; they do not invalidate an application session. Disabled/unreachable/timed-out/malformed graph responses remain 503 `UNAVAILABLE`. See [Savanna configuration, contracts and live evidence limits](tigergraph-savanna-integration.md).
+
+## Synthetic intake wizard (2026-10-30)
+
+- `POST /auth/intake`: DEMO_MODE-only, loopback-origin-checked and throttled name/mobile role simulation. Body `displayName` (1–80 characters), `mobile` (10 digits beginning 6–9). Use invented test values only. Reusing a mobile resumes the synthetic identity; this is deliberately not verified mobile authentication, OTP or KYC and is unsuitable for real data.
+- `POST /cases/:caseId/submit`: current victim OWNER only, at least one original and no current unanswered essential questions. Creates a reviewable export then marks REVIEW_REQUIRED. Export failure leaves draft retryable; repeat finalized submission is 409. Case stays private until an existing share API is explicitly invoked. Response includes caseId/status/exportId/exportVersion and `leadsStatus: NOT_REQUESTED`, `similarCaseCount: 0`; no victim-scope graph query. Analyst graph endpoints retain the 20-case limit and current grant/source checks.
+- Export generation and status update are separate transactions; concurrent submissions can leave an additional immutable draft export before one finalization wins. Existing export serialisation and transaction authorization remain in force. No exactly-once submission or workflow-wide atomicity is claimed.

@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, ServiceUnavailableException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import sharp from 'sharp';
@@ -7,6 +7,8 @@ import { createHash, randomUUID } from 'node:crypto';
 import { mkdtemp, readdir, readFile, rm, stat, chmod, writeFile, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { ExportsService } from '../src/exports/service';
+import { TigerGraphClient } from '../src/investigations/client';
 import { AppModule } from '../src/app.module';
 import { DemoConfig } from '../src/auth/config';
 import { LOCAL_DATABASE } from '../src/auth/store';
@@ -58,6 +60,25 @@ describe('immutable synthetic image evidence over HTTP', () => {
     caseId = res.body.data.id;
     expect(res.body.data.title).toBe('Synthetic Fictional image test');
     expect((await connection.pool.query('SELECT owner_id FROM cases WHERE id=$1', [caseId])).rows[0].owner_id).toBe(fixture.users[0].id);
+  });
+  it('submits only an owned evidenced case, preserves private scope and leaves report failure retryable',async()=>{
+    const created=await http().post('/api/v1/cases').set('Authorization',auth(a)).send({title:'Synthetic submit regression',category:'payment',syntheticAcknowledged:true}).expect(201);
+    const id=created.body.data.id as string;
+    const submit=(token=a)=>http().post(`/api/v1/cases/${id}/submit`).set('Authorization',auth(token)).send({});
+    await submit(b).expect(403);await submit(analyst).expect(403);await submit().expect(400);
+    await upload(png,'image/png',id).expect(201);
+    const failing=jest.spyOn(app.get(ExportsService),'create').mockRejectedValueOnce(new ServiceUnavailableException());
+    try{await submit().expect(503);}finally{failing.mockRestore();}
+    expect((await connection.pool.query('SELECT status FROM cases WHERE id=$1',[id])).rows[0].status).toBe('DRAFT');
+    const graph=jest.spyOn(app.get(TigerGraphClient),'execute');
+    try{
+      const result=await submit().expect(201);
+      expect(result.body.data).toMatchObject({status:'REVIEW_REQUIRED',leadsStatus:'NOT_REQUESTED',similarCaseCount:0,exportVersion:1});
+      expect(graph).not.toHaveBeenCalled();
+      await http().get(`/api/v1/cases/${id}`).set('Authorization',auth(analyst)).expect(403);
+      await submit().expect(409);
+      expect((await connection.pool.query('SELECT id FROM exports WHERE case_id=$1',[id])).rows).toHaveLength(1);
+    }finally{graph.mockRestore();}
   });
   it('preserves exact PNG bytes, SHA-256 and private read-only original metadata', async () => {
     const res = await upload(png).expect(201); evidenceId = res.body.data.id;

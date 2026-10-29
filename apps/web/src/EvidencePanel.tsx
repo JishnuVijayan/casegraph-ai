@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api, ApiFailure } from './api';
 
 type Evidence = { id: string; mimeType: string; sizeBytes: number; sha256: string; createdAt: string };
 type Region = { id: string; kind: 'TEXT' | 'AMOUNT'; text: string; confidence: number };
 type Extraction = { status: string; errorCode?: string | null; outputText?: string | null; amountStatus: string; regions: Region[] };
 
-export function EvidencePanel({ token, caseId, owner, busy, perform, onClaimAdded }: {
+export function EvidencePanel({ token, caseId, owner, busy, perform, onClaimAdded, autoOcr = false, autoLoad = false, compact = false }: {
   token: string; caseId: string; owner: boolean; busy: boolean; perform: (operation: () => Promise<void>) => Promise<void>;
-  onClaimAdded?: () => void;
+  onClaimAdded?: () => void; autoOcr?: boolean; autoLoad?: boolean; compact?: boolean;
 }) {
   const [rows, setRows] = useState<Evidence[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -15,6 +15,8 @@ export function EvidencePanel({ token, caseId, owner, busy, perform, onClaimAdde
   const [extractions, setExtractions] = useState<Record<string, Extraction>>({});
   const [savedRegions, setSavedRegions] = useState<Record<string, boolean>>({});
   const [crop, setCrop] = useState<{ url: string; text: string } | null>(null);
+  const performRef = useRef(perform);
+  useEffect(() => { performRef.current = perform; });
   useEffect(() => { if (!crop) return; return () => URL.revokeObjectURL(crop.url); }, [crop?.url]);
 
   const refresh = async () => {
@@ -23,13 +25,20 @@ export function EvidencePanel({ token, caseId, owner, busy, perform, onClaimAdde
     setRows(result); setLoaded(true);
   };
 
+  useEffect(() => {
+    if (!autoLoad) return;
+    void performRef.current(refresh);
+  }, [autoLoad, caseId, token]);
+
   return (
-    <section aria-label="Evidence originals">
-      <h3 className="text-lg font-bold m-0">Add evidence</h3>
-      <p className="mt-2" style={{ color: 'var(--muted)' }}>Upload PNG or JPEG screenshots (max 5 MiB). Run OCR to pull out amounts and text.</p>
+    <section className={compact ? 'panel-block' : undefined} aria-label="Evidence originals">
+      {!compact && <h3 className="text-lg font-bold m-0">Add evidence</h3>}
+      <p className={compact ? 'panel-lead' : 'mt-2'} style={compact ? undefined : { color: 'var(--muted)' }}>
+        Upload PNG or JPEG screenshots (max 5 MiB). OCR runs after each upload to pull out amounts and text.
+      </p>
 
       {owner && (
-        <form onSubmit={(event) => {
+        <form className="upload-zone" onSubmit={(event) => {
           event.preventDefault();
           void perform(async () => {
             if (!file || !['image/png', 'image/jpeg'].includes(file.type) || file.size > 5 * 1024 * 1024) {
@@ -37,9 +46,13 @@ export function EvidencePanel({ token, caseId, owner, busy, perform, onClaimAdde
             }
             const data = new FormData();
             data.append('file', file);
-            await api(`/cases/${caseId}/evidence`, token, data, 'POST');
+            const uploaded = await api<{ id: string }>(`/cases/${caseId}/evidence`, token, data, 'POST');
             setFile(null);
             await refresh();
+            if (autoOcr && uploaded?.id) {
+              const result = await api<Extraction>(`/cases/${caseId}/extractions`, token, { evidenceId: uploaded.id }, 'POST');
+              setExtractions((current) => ({ ...current, [uploaded.id]: result }));
+            }
           });
         }}>
           <label htmlFor="evidence-file">Image file</label>
@@ -51,21 +64,34 @@ export function EvidencePanel({ token, caseId, owner, busy, perform, onClaimAdde
             required
             onChange={(event) => setFile(event.target.files?.[0] ?? null)}
           />
-          <div className="mt-2">
+          <p className="upload-hint m-0">
+            {file ? `Selected: ${file.name}` : 'PNG or JPEG · up to 5 MiB'}
+          </p>
+          <div className="action-row">
             <button className="btn-primary" type="submit" disabled={busy || !file}>Upload</button>
+            {!compact && (
+              <button className="btn-ghost" type="button" disabled={busy} onClick={() => void perform(refresh)}>
+                Refresh evidence
+              </button>
+            )}
           </div>
         </form>
       )}
 
-      <button disabled={busy} onClick={() => void perform(refresh)}>Refresh evidence</button>
-      {loaded && !rows.length && <p>No evidence uploaded yet.</p>}
+      {!owner && (
+        <button className="btn-ghost" disabled={busy} onClick={() => void perform(refresh)}>Refresh evidence</button>
+      )}
+      {loaded && !rows.length && <p className="empty-hint">No evidence uploaded yet.</p>}
 
-      <ul>
+      <ul className="evidence-list">
         {rows.map((row) => (
-          <li key={row.id} className="my-3 break-all rounded border p-3" style={{ borderColor: 'var(--line)' }}>
-            <p className="m-0">Source ID: {row.id} · {row.mimeType} · {row.sizeBytes} bytes</p>
-            <p className="m-1">SHA-256: <code>{row.sha256}</code></p>
-            <p className="m-1">Uploaded: {row.createdAt}</p>
+          <li key={row.id} data-evidence-id={row.id} className="evidence-card">
+            <p className="m-0 evidence-card-title">
+              {compact ? 'Uploaded screenshot' : `Source ID: ${row.id}`}
+              {' · '}{row.mimeType} · {(row.sizeBytes / 1024).toFixed(1)} KiB
+            </p>
+            {!compact && <p className="m-1">SHA-256: <code>{row.sha256}</code></p>}
+            <p className="m-1 evidence-meta">Uploaded: {row.createdAt}</p>
             <button disabled={busy} onClick={() => void perform(async () => {
               const result = await api<Extraction>(`/cases/${caseId}/extractions`, token, { evidenceId: row.id }, 'POST');
               setExtractions((current) => ({ ...current, [row.id]: result }));

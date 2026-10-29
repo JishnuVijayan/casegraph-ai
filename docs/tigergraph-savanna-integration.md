@@ -1,5 +1,7 @@
 # TigerGraph Savanna application integration
 
+**2026-10-30 wizard update:** local browser/security checks pass. Latest required-live rerun returned 503; separate fixed-query transport probe timed out. Recheck workspace connectivity and rerun live mode before demo. The successful 2026-10-29 run below is historical evidence for the previous split UI, not a pass for this wizard revision.
+
 **Latest verification (2026-10-29):** the merged split UI passed `test:e2e:live` independently from this workspace against the configured public Savanna endpoint (12.2 seconds): actual path/source/review/revocation with no graph mocks. T11/T12 acceptance now passes. No graph installation/loading or exact-source compiler verification was performed; T09/T10 operator checks remain pending. The initial-state evidence below is historical.
 
 ## Evidence and current status (2026-10-29)

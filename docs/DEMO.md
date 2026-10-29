@@ -1,3 +1,9 @@
+# Current wizard integration (2026-10-30)
+
+Victim `/` now asks for fictional name/mobile, short description, uploads, review, essentials and local submission. Use invented demo details only; no OTP/KYC or official submission. After submission use **Share for investigation** explicitly, then open the officer workspace. The generated draft is available in **Draft export**. Graph lookup occurs only under analyst grants; it is not performed as a victim on submit. Existing seeded case-pair graph demonstration remains separate from new uploads. **Current verification:** local wizard browser passed; latest required-live query returned 503 and a separate client probe timed out. Recheck Savanna availability and rerun live mode before stage use. The previous split UI had a successful live run.
+
+The rest of this document records the prior split-UI rehearsal and capability limits; the old victim case picker is replaced by this wizard.
+
 # Current split-UI rehearsal (2026-10-29)
 
 Victim filing is at `/`; the fictional analyst/officer inbox is at `/officer`. Both show urgent bank/1930/cybercrime.gov.in guidance before intake. The badge identifies synthetic demo data; the officer role is fictional, not a government login. New drafts are private until the victim clicks **Share for investigation**. **Revoke investigation access** revokes the grant created in the current case view; other active grants still apply. Existing backend APIs remain authoritative.
