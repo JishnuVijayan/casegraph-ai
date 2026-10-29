@@ -1,3 +1,37 @@
+# Current split-UI rehearsal (2026-10-29)
+
+Victim filing is at `/`; the fictional analyst/officer inbox is at `/officer`. Both show urgent bank/1930/cybercrime.gov.in guidance before intake. The badge identifies synthetic demo data; the officer role is fictional, not a government login. New drafts are private until the victim clicks **Share for investigation**. **Revoke investigation access** revokes the grant created in the current case view; other active grants still apply. Existing backend APIs remain authoritative.
+
+## Six-step demo capability
+
+| Proposed step | Current implementation | Limit |
+| --- | --- | --- |
+| Report a cybercrime | Create a synthetic draft; urgent guidance visible first | No official submission or FIR |
+| Upload evidence/account | PNG/JPEG screenshots/receipts and typed recollections | No audio recording/transcription or PDF/chat-export ingestion |
+| Reconstruct timeline | Local OCR amount candidates with source crop; reviewed claims/corrections and manually linked chronological events | No automatic event/date/time extraction or model-generated chronology |
+| Resolve details | Missing-reference and conflicting amount/explicit timestamp questions, correction history and UNKNOWN | Time conflicts require explicit timestamp claims linked to a payment; no inference from arbitrary prose |
+| Investigate with TigerGraph | Existing seeded Kochi/Bengaluru four-hop synthetic path with four source refs and active grants | New uploads/cases do not automatically project to TigerGraph |
+| Generate report | Versioned HTML complaint draft, chronology, evidence/hash index; browser Print/Save as PDF | No server-generated PDF certification or automatic filing |
+
+## Manual rehearsal
+
+1. Start local PostgreSQL; migrate/seed the local app if needed. Configure the private credential and exported Savanna flags as in `tigergraph-savanna-integration.md`; start `npm run dev:demo`. Do not reload the graph.
+2. Open `/`, show urgent guidance, continue as Fictional Victim A. Open Synthetic Kochi-01 (case UUID ending 001) for the combined graph demonstration. A newly created case can demonstrate filing but has no graph projection.
+3. Upload two clearly labeled synthetic PNG receipts, later date first: INR 2500 on 2026-10-29 and INR 800 on 2026-10-28. Run local OCR; review the actual amount crop and save observed claims.
+4. Correct interpreted INR 2500 to INR 2600 with a note; show original observation and revision history. Add a payment-amount recollection INR 2700. Link both amounts to a date-only payment event on 2026-10-29 and INR 800 to 2026-10-28; show chronological ordering.
+5. Optional time-conflict demonstration: add two `incident_time` recollections (`2026-10-29T16:12:00+05:30` and `2026-10-29T18:00:00+05:30`) and link both to a payment event; the rule flags the disagreeing explicit timestamps. Check payment details for questions; resolve the amount conflict as UNKNOWN. Generate/review/download the draft. Labels remain unverified and draft-only.
+6. Share Kochi-01 for investigation. In a second victim tab continue as Fictional Victim B, open Synthetic Bengaluru-04 (UUID ending 002) and share for investigation. Keep this tab open for revocation.
+7. Open `/officer` in another tab, continue as officer, choose Kochi-01 and run **Run similar-case search**. Show the actual five-node path, four edge sources, synthetic/unverified labels and human review. These graph scenarios are separate from uploaded receipts, not independent bank verification.
+8. Revoke Bengaluru's grant from its victim tab; retry source access and saved snapshots as the officer. Confirm denial/withholding. Ensure there is no other active grant if testing total revocation.
+
+For stage use, show one crop, one correction/UNKNOWN, one real graph query and one report; keep the complete denial scenario for questions.
+
+`npm run test:security` exercises local safeguards and the updated browser flow with graph unavailable. `TIGERGRAPH_ENDPOINT=<public-origin> TIGERGRAPH_AUTH_MODE=secret npm run test:e2e:live` requires real path/source/review/revocation against the existing graph. The user reported a successful live run before this merge; this integration independently passed the updated live browser scenario (12.2 seconds). See TASKS.md for full evidence and remaining operator checks.
+
+## Earlier blueprint and verification history
+
+The script below is historical planning, not a claim that every proposed extraction feature is implemented. The capability table above describes the current flow.
+
 # HHGOA Live Demo Script — Honest, Reproducible
 
 ## Demo goal (approx. 3 minutes)

@@ -226,3 +226,39 @@ layout produced honest UNKNOWN. This is not OCR accuracy evaluation or a benchma
 ## 2026-10-29 — Savanna data-plane integration
 
 User explicitly selected an existing Savanna graph, superseding the Community-only local deployment preference for this demo connection. No resources or costs were introduced here. Restrict public origins to HTTPS *.i.tgcloud.io, retain loopback, and read either bearer token or GSQL-Secret from the existing private backend credential file. Do not use control-plane API keys or automatic secret exchange. Upstream HTTP credential rejection is 502, separate from end-user session failure and generic unavailable 503. The handoff's successful runtime observations are attributed to the user; exact local source compilation and public app/live scope tests remain pending. Preserve existing graph and bundle. See tigergraph-savanna-integration.md.
+### ADR-024 — Hackathon demo UI drops pre-intake safety friction (2026-10-29)
+Context: The local HHGOA prototype is not launching to real victims; acknowledgment
+checkboxes and the amber 1930 banner added friction without serving a production user.
+Alternatives considered: keep 1930 banner + checkboxes; keep one-line footer guidance only.
+Decision: Restyle the web app as a bold complaint-filing demo. Remove the 1930 amber
+banner, synthetic/draft acknowledgment checkboxes, and long disclaimer paragraphs.
+Show a persistent `Hackathon demo · synthetic data` badge. The client still auto-sends
+`syntheticAcknowledged: true` and `draftAcknowledged: true` so NestJS DTO validation is
+unchanged. Timeline claim-selection checkboxes remain. Export HTML guidance in
+`apps/api/src/exports/render.ts` is unchanged for this pass.
+Consequences and tests: Softens AGENTS.md “show 1930 before intake” for the hackathon
+UI only. Revisit before any real-user or institutional pilot. Update App/Demo/Evidence
+unit tests and Playwright selectors accordingly.
+Approved by: User request for demo UI cleanup on develop.
+
+### ADR-025 — Split victim filing and officer report UIs with auto-grant (2026-10-29)
+Context: Product intent is a victim complaint-filing surface and a separate officer
+inbox/report that can later include TigerGraph similar-case findings. Manual share UI
+and Case-ID tooling cluttered the victim flow.
+Alternatives considered: keep shared DemoWorkspace with role toggles; require explicit
+victim share before officer visibility.
+Decision: Routes `/` (victim filing) and `/officer` (officer inbox + case report).
+Victim keeps evidence→OCR→claims→timeline→questions→export without share/Case-ID/analyst
+controls. On case create, backend auto-grants the demo consortium `INVESTIGATE` and
+audits `CASE_AUTO_SHARED`. Officer report reuses read-only panels plus draft export and
+similar-case search (honest unavailable without TigerGraph). Explicit share/revoke APIs
+remain for tests and future use.
+Consequences and tests: Newly created cases appear in the officer inbox immediately.
+Seeded grants unchanged. Auth integration asserts auto-grant; Playwright uses `/officer`
+and API grant/revoke where UI share controls were removed. Revisit auto-grant before any
+real multi-tenant pilot.
+Approved by: User choices B (keep filing flow) and A (auto-grant) for the split-UI plan.
+
+
+### 2026-10-29 — Integrate split UI with safety guidance and explicit sharing
+The UI integration supersedes ADR-024's removed urgent guidance and ADR-025's automatic investigation grant. Current user explicitly wants urgent 1930/bank guidance; project instructions retain explicit permission scope. Preserve the new routes/style, restore guidance before intake and add deliberate victim share/revoke actions using existing backend APIs. New drafts remain private until shared. No new graph synchronization, speech service or automatic event/date extraction is implied. User-reported live browser pass before this UI merge remains historical evidence; rerun live acceptance after UI integration.

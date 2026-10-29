@@ -4,24 +4,34 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 const caseA='30000000-0000-4000-8000-000000000001';
 const caseB='30000000-0000-4000-8000-000000000002';
+const orgId='10000000-0000-4000-8000-000000000001';
 const live=process.env.E2E_GRAPH_MODE==='live';
 const baseURL='http://127.0.0.1:15173';
 function response(page:Page,path:string,method='POST'){return page.waitForResponse((r)=>r.url().endsWith('/api/v1'+path)&&r.request().method()===method);}
-async function login(page:Page,subject:string){
+async function loginVictim(page:Page,subject:string){
   await page.goto('/');await page.getByLabel('Fictional identity').selectOption(subject);
-  const pending=response(page,'/auth/demo');await page.getByRole('button',{name:'Sign in to local demo'}).click();
+  const pending=response(page,'/auth/demo');await page.getByRole('button',{name:'Continue'}).click();
   const result=await pending;expect(result.status()).toBe(200);const token=(await result.json()).data.token as string;
-  await expect(page.getByText(/Signed in as/)).toBeVisible();await expect(page.getByRole('button',{name:'Sign out'})).toBeEnabled();return token;
+  await expect(page.getByRole('button',{name:'Sign out'})).toBeEnabled();return token;
 }
-async function readCase(page:Page,id:string){
-  await page.getByLabel('Case ID',{exact:true}).fill(id);await page.getByRole('button',{name:'Read case',exact:true}).click();
-  await expect(page.getByRole('article',{name:'Case details'})).toBeVisible();
+async function loginOfficer(page:Page){
+  await page.goto('/officer');
+  const pending=response(page,'/auth/demo');await page.getByRole('button',{name:'Continue as officer'}).click();
+  const result=await pending;expect(result.status()).toBe(200);const token=(await result.json()).data.token as string;
+  await expect(page.getByRole('button',{name:'Sign out'})).toBeEnabled();return token;
+}
+async function openCase(page:Page,id:string,article:'Case details'|'Case report'='Case details'){
+  await page.locator(`[data-case-id="${id}"]`).click();
+  await expect(page.getByRole('article',{name:article})).toBeVisible();
   await expect(page.getByText('Loading claims and timeline…')).toHaveCount(0);
 }
-async function grant(page:Page,id:string){
-  await page.getByLabel('Permission',{exact:true}).selectOption('INVESTIGATE');
-  const pending=response(page,`/cases/${id}/shares`);await page.getByRole('button',{name:'Grant access',exact:true}).click();
-  expect((await pending).status()).toBe(201);await expect(page.getByRole('button',{name:'Revoke last grant'})).toBeEnabled();
+async function grantApi(page:Page,token:string,id:string){
+  const result=await page.request.post(`/api/v1/cases/${id}/shares`,{headers:{Authorization:`Bearer ${token}`},data:{organizationId:orgId,scope:'INVESTIGATE'}});
+  expect(result.status()).toBe(201);return (await result.json()).data.id as string;
+}
+async function revokeApi(page:Page,token:string,caseId:string,grantId:string){
+  const result=await page.request.delete(`/api/v1/cases/${caseId}/shares/${grantId}`,{headers:{Authorization:`Bearer ${token}`}});
+  expect(result.status()).toBe(200);
 }
 test(`fresh-seed browser workflow with real OCR and ${live?'required live TigerGraph':'truthful graph unavailability'}`,async({page,browser})=>{
   const parent=process.env.E2E_DIRECTORY;if(!parent)throw new Error('Use the isolated root test:e2e wrapper.');
@@ -29,19 +39,19 @@ test(`fresh-seed browser workflow with real OCR and ${live?'required live TigerG
   try{
     await page.goto('/');
     await expect(page.getByRole('link',{name:'1930',exact:true})).toHaveAttribute('href','tel:1930');
-    await expect(page.getByRole('link',{name:'cybercrime.gov.in',exact:true})).toHaveAttribute('href','https://cybercrime.gov.in/');
     await expect(page.getByText(/Contact your bank immediately/)).toBeVisible();
-    await expect(page.getByLabel('Synthetic PNG/JPEG file')).toHaveCount(0);
-    await login(page,'synthetic-victim-a');await readCase(page,caseA);
+    await expect(page.getByRole('heading',{name:'CaseGraph AI'})).toBeVisible();
+    await expect(page.getByText('Hackathon demo · synthetic data')).toBeVisible();
+    await expect(page.getByRole('link',{name:'Officer workspace'})).toBeVisible();
+    await expect(page.getByLabel('Image file')).toHaveCount(0);
+    const victimToken=await loginVictim(page,'synthetic-victim-a');await openCase(page,caseA);
     const evidence=page.getByRole('region',{name:'Evidence originals'});
     const outbound:string[]=[];
     page.on('request',(request)=>{if(request.url().startsWith('https://casegraph-attack.invalid'))outbound.push(request.url());});
     const uploaded:{id:string;sha256:string}[]=[];
-    // Later dated receipt first, earlier receipt second, then four fictional notes.
     for(let n=1;n<=6;n++){
-      await evidence.getByLabel('Synthetic PNG/JPEG file').setInputFiles(join(parent,'fixtures',`synthetic-${n}.png`));
-      await evidence.getByRole('checkbox',{name:'This file is entirely fictional/synthetic.'}).check();
-      const pending=response(page,`/cases/${caseA}/evidence`);await evidence.getByRole('button',{name:'Upload immutable original'}).click();
+      await evidence.getByLabel('Image file').setInputFiles(join(parent,'fixtures',`synthetic-${n}.png`));
+      const pending=response(page,`/cases/${caseA}/evidence`);await evidence.getByRole('button',{name:'Upload',exact:true}).click();
       const result=await pending;expect(result.status()).toBe(201);uploaded.push((await result.json()).data);
       await expect(evidence.getByText(/^Source ID:/)).toHaveCount(n);
     }
@@ -100,7 +110,6 @@ test(`fresh-seed browser workflow with real OCR and ${live?'required live TigerG
     await review.getByRole('button',{name:'Save unverified recollection'}).click();
     await expect(review.getByText(hostile,{exact:true})).toBeVisible();
     const exports=page.getByRole('region',{name:'Draft export'});
-    await exports.getByRole('checkbox',{name:'I understand this is a synthetic draft for human review.'}).check();
     const created=response(page,`/cases/${caseA}/exports`);await exports.getByRole('button',{name:'Generate draft version'}).click();
     const exported=(await (await created).json()).data as {id:string;sha256:string};
     await exports.getByRole('button',{name:'Review draft v1'}).click();
@@ -113,35 +122,45 @@ test(`fresh-seed browser workflow with real OCR and ${live?'required live TigerG
     const pendingDownload=page.waitForEvent('download');await exports.getByRole('button',{name:'Download reviewed HTML'}).click();
     const download=await pendingDownload;const html=await readFile((await download.path())!);
     expect(download.suggestedFilename()).toBe('casegraph-draft-v1.html');expect(createHash('sha256').update(html).digest('hex')).toBe(exported.sha256);
+    await exports.getByRole('button',{name:'Close draft preview'}).click();
+    await expect(page.locator('iframe[title="Draft preview v1"]')).toHaveCount(0);
     const first=evidence.getByRole('listitem').filter({hasText:`Source ID: ${uploaded[0].id}`});
-    const pendingOriginal=page.waitForEvent('download');await first.getByRole('button',{name:'Download original'}).click();
+    const pendingOriginal=page.waitForEvent('download');
+    const originalResponse=response(page,`/cases/${caseA}/evidence/${uploaded[0].id}/view`,'GET');
+    await first.getByRole('button',{name:'Download original'}).click();
+    expect((await originalResponse).status()).toBe(200);
     const original=await pendingOriginal;expect((await readFile((await original.path())!)).equals(await readFile(join(parent,'fixtures','synthetic-1.png')))).toBe(true);
-    await grant(page,caseA);
-    const bContext=await browser.newContext({baseURL});contexts.push(bContext);const b=await bContext.newPage();const bToken=await login(b,'synthetic-victim-b');
+    await grantApi(page,victimToken,caseA);
+    const bContext=await browser.newContext({baseURL});contexts.push(bContext);const b=await bContext.newPage();const bToken=await loginVictim(b,'synthetic-victim-b');
     expect((await b.request.get(`/api/v1/cases/${caseA}/evidence/${uploaded[0].id}/view`,{headers:{Authorization:`Bearer ${bToken}`}})).status()).toBe(403);
     expect((await b.request.get(`/api/v1/cases/${caseA}/exports/${exported.id}/download`,{headers:{Authorization:`Bearer ${bToken}`}})).status()).toBe(403);
-    await readCase(b,caseB);await grant(b,caseB);
-    const analystContext=await browser.newContext({baseURL});contexts.push(analystContext);const analyst=await analystContext.newPage();await login(analyst,'synthetic-analyst');await readCase(analyst,caseA);
+    await openCase(b,caseB);const grantB=await grantApi(b,bToken,caseB);
+    const analystContext=await browser.newContext({baseURL});contexts.push(analystContext);const analyst=await analystContext.newPage();const analystToken=await loginOfficer(analyst);await openCase(analyst,caseA,'Case report');
     const panel=analyst.getByRole('region',{name:'Analyst investigation'});
-    await panel.getByRole('button',{name:'Run scoped TigerGraph query'}).click();
+    await analyst.bringToFront();
+    const queried=response(analyst,`/investigations/${caseA}/graph-leads`);
+    await panel.getByRole('button',{name:'Run similar-case search'}).click();
+    expect((await queried).status()).toBe(live?201:503);
     if(live){
-      // No API interception, mocked provider, route fulfillment or skip in this mode.
       await expect(panel.getByLabel('Four-hop lead path')).toHaveCount(1);
       await expect(panel.getByLabel('Four-hop lead path')).toContainText('fx:account:shared-01');
       await expect(panel.getByText(/SYNTHETIC_INVESTIGATIVE_LEAD · NEEDS_REVIEW/)).toBeVisible();
       await panel.getByRole('button',{name:/Review edge 1 source/}).click();await expect(panel.getByLabel('Graph source details')).toContainText('SYSTEM_INFERENCE');
       await panel.getByRole('button',{name:'Mark reviewed',exact:true}).click();await expect(panel.getByText(/SYNTHETIC_INVESTIGATIVE_LEAD · REVIEWED/)).toBeVisible();
-      await b.getByRole('button',{name:'Revoke last grant'}).click();await expect(b.getByText(/Grant revoked\./)).toBeVisible();
+      await revokeApi(b,bToken,caseB,grantB);
       await panel.getByRole('button',{name:/Review edge 1 source/}).click();await expect(panel.getByRole('alert')).toContainText('Access denied');
       await expect(panel.getByLabel('Four-hop lead path')).toHaveCount(0);await expect(panel.getByLabel('Graph source details')).toHaveCount(0);
       await panel.getByRole('button',{name:'Read saved lead snapshots'}).click();await expect(panel.getByText(/Saved query snapshots loaded/)).toBeVisible();await expect(panel.getByLabel('Four-hop lead path')).toHaveCount(0);
     }else{
-      await expect(panel.getByRole('alert')).toContainText('Investigation unavailable');await expect(panel.getByLabel('Four-hop lead path')).toHaveCount(0);
-      await expect(panel.getByText(/TigerGraph query executed/)).toHaveCount(0);
-      await b.getByRole('button',{name:'Revoke last grant'}).click();await expect(b.getByText(/Grant revoked\./)).toBeVisible();
+      await expect(panel.getByRole('alert')).toContainText('Similar-case search unavailable until TigerGraph is connected');
+      await expect(panel.getByLabel('Four-hop lead path')).toHaveCount(0);
+      await expect(panel.getByText(/Similar-case search completed/)).toHaveCount(0);
+      await revokeApi(b,bToken,caseB,grantB);
     }
-    await analyst.getByLabel('Case ID',{exact:true}).fill(caseB);await analyst.getByRole('button',{name:'Read case',exact:true}).click();
-    await expect(analyst.getByRole('alert')).toContainText('Access denied');await expect(analyst.getByRole('article',{name:'Case details'})).toHaveCount(0);
-    await page.getByRole('button',{name:'Sign out',exact:true}).click();await expect(page.getByLabel('Synthetic PNG/JPEG file')).toHaveCount(0);
+    expect((await analyst.request.get(`/api/v1/cases/${caseB}`,{headers:{Authorization:`Bearer ${analystToken}`}})).status()).toBe(403);
+    await analyst.getByRole('button',{name:'Refresh inbox'}).click();
+    await expect(analyst.locator(`[data-case-id="${caseB}"]`)).toHaveCount(0);
+    await expect(analyst.getByRole('article',{name:'Case report'})).toHaveCount(0);
+    await page.getByRole('button',{name:'Sign out',exact:true}).click();await expect(page.getByLabel('Image file')).toHaveCount(0);
   }finally{for(const context of contexts)await context.close();}
 });

@@ -1,5 +1,7 @@
 # TigerGraph Savanna application integration
 
+**Latest verification (2026-10-29):** the merged split UI passed `test:e2e:live` independently from this workspace against the configured public Savanna endpoint (12.2 seconds): actual path/source/review/revocation with no graph mocks. T11/T12 acceptance now passes. No graph installation/loading or exact-source compiler verification was performed; T09/T10 operator checks remain pending. The initial-state evidence below is historical.
+
 ## Evidence and current status (2026-10-29)
 
 The user reports successfully creating, loading, compiling, installing and executing the three core queries on Savanna for `CaseGraphDemoV1`. This is user-provided runtime evidence, not a run independently performed from this workspace. Returned metadata was `edition: enterprise`, `api: v2`, `schema: 4`; these fields do **not** establish the server version. The local Community 4.2.5 deployment candidate is not proof of Savanna's version.
@@ -102,3 +104,6 @@ TIGERGRAPH_ENDPOINT=https://YOUR-WORKSPACE.i.tgcloud.io TIGERGRAPH_AUTH_MODE=bea
 ```
 
 Default E2E forces graph disabled. Required-live mode uses the public configuration, executes actual queries and must pass path/source/review/revocation assertions; no interception or success fallback. Do not report the default E2E or mocked transport suite as this live test. Confirm actual server version, exact installed GSQL and all negative-scope cases before closing remaining live acceptance. Stop local PostgreSQL with `npm run infra:down` when finished; its working volume is preserved.
+
+## Split UI update
+Victim filing is `/`; fictional analyst/officer view is `/officer`. Victims deliberately use **Share for investigation** and can revoke the resulting grant. New cases are not automatically shared or projected to TigerGraph. Show urgent guidance before intake. Use **Run similar-case search** for a new live query; distinguish it from saved snapshots. See DEMO.md for current button names and supported extraction limits.

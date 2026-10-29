@@ -71,8 +71,9 @@ export class AccessStore implements OnModuleDestroy {
       .where(and(eq(cases.synthetic,true),this.permitted(actor,'INVESTIGATE'))).orderBy(cases.id).limit(21)).map((row)=>row.id));
   }
   async list(actor: Actor) {
-    return this.available((db) => db.select({ id: cases.id, title: cases.title, status: cases.status, synthetic: cases.synthetic })
-      .from(cases).where(and(eq(cases.synthetic, true), this.permitted(actor, 'READ'))).orderBy(cases.id));
+    return this.available((db) => db.select({
+      id: cases.id, title: cases.title, status: cases.status, category: cases.category, synthetic: cases.synthetic,
+    }).from(cases).where(and(eq(cases.synthetic, true), this.permitted(actor, 'READ'))).orderBy(cases.id));
   }
   async audit(actor: Actor, action: string, resourceType: string, resourceId: string, requestId: string) {
     await this.available(async (db) => {

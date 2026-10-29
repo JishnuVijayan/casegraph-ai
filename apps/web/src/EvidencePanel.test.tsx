@@ -18,10 +18,9 @@ test('uploads one FormData file with bearer authorization and displays the retur
   const failures = vi.fn();
   render(<EvidencePanel token="synthetic-token" caseId="synthetic-case" owner busy={false} perform={async (operation) => { try { await operation(); } catch (e) { failures(e); } }} />);
   const file = new File(['synthetic-mocked-file'], 'synthetic.png', { type: 'image/png' });
-  fireEvent.change(screen.getByLabelText('Synthetic PNG/JPEG file'), { target: { files: [file] } });
-  fireEvent.click(screen.getByRole('checkbox'));
+  fireEvent.change(screen.getByLabelText('Image file'), { target: { files: [file] } });
   // JSDOM does not update native file-input validity when files are injected.
-  fireEvent.submit(screen.getByRole('button', { name: 'Upload immutable original' }).closest('form')!);
+  fireEvent.submit(screen.getByRole('button', { name: 'Upload' }).closest('form')!);
   await screen.findByText(/Source ID: synthetic-source-id/);
   expect(fetch.mock.calls[0][1].body).toBeInstanceOf(FormData);
   expect(fetch.mock.calls[0][1].body.get('file').name).toBe('synthetic.png');
@@ -36,10 +35,10 @@ test('analysts get manifest/download controls without an upload control; failed 
   vi.stubGlobal('fetch', fetch);
   const failures = vi.fn();
   render(<EvidencePanel token="synthetic-token" caseId="synthetic-case" owner={false} busy={false} perform={async (operation) => { try { await operation(); } catch (e) { failures(e); } }} />);
-  expect(screen.queryByLabelText('Synthetic PNG/JPEG file')).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: 'Refresh evidence manifest' }));
+  expect(screen.queryByLabelText('Image file')).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Refresh evidence' }));
   await screen.findByText(/Source ID: synthetic-source-id/);
-  fireEvent.click(screen.getByRole('button', { name: 'Refresh evidence manifest' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Refresh evidence' }));
   await waitFor(() => expect(failures).toHaveBeenCalled());
   expect(screen.queryByText(/Source ID: synthetic-source-id/)).not.toBeInTheDocument();
 });
@@ -58,7 +57,7 @@ test('runs local OCR and opens an authenticated crop for an unverified amount ca
   Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: create });
   Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: revoke });
   render(<EvidencePanel token="synthetic-token" caseId="synthetic-case" owner busy={false} onClaimAdded={onClaimAdded} perform={async (operation) => operation()} />);
-  fireEvent.click(screen.getByRole('button', { name: 'Refresh evidence manifest' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Refresh evidence' }));
   await screen.findByText(/Source ID: synthetic-source-id/);
   fireEvent.click(screen.getByRole('button', { name: 'Run local OCR' }));
   fireEvent.click(await screen.findByRole('button', { name: /Review source region for INR 2500/ }));
