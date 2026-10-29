@@ -204,3 +204,21 @@ fixed get_lead_sources query so source references cannot be attached to differen
 path endpoints. Extend the future live verifier accordingly. Tests inject graph
 responses only into isolated test modules; application runtime has no fixture mode.
 Offline test success does not establish GSQL correctness or a demonstrated live lead.
+
+### ADR-023 — T12 real browser isolation and required-live mode (2026-10-29)
+Use pinned free Playwright with installed Chrome, real NestJS/Vite, PostgreSQL and
+Tesseract for a reproducible reporting workflow. A test-only bootstrap replaces
+configuration/DB/storage providers, not application controllers, guards, OCR or graph
+results. Fixed separate loopback ports refuse existing listeners; every run owns a
+unique migrated/seeded temporary database and private synthetic files. Never reset
+working data or add an E2E control endpoint to production code.
+
+Keep default graph-unavailable and explicit required-live modes separate. No network
+interception or mock graph provider exists in browser E2E. The future live mode
+requires private app credentials, actual installed queries, source drilldown/review
+and revoked target-path denial; missing prerequisites fail nonzero without skip.
+Leave T12 unchecked until that live run succeeds. The local graph-disabled run can
+prove only reporting/OCR/export and honest unavailability. No EC2 or paid API work.
+Disable trace/video/screenshots; keep any error context in ignored private test
+artifacts. Controlled OCR fixture uses clear uniform text after an initial mixed-size
+layout produced honest UNKNOWN. This is not OCR accuracy evaluation or a benchmark.

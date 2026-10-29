@@ -42,3 +42,15 @@ Use **synthetic fixtures only**. Never represent controlled examples as proof of
 5. Test revoked authorization and unavailable integration.
 
 **Licensing note:** TigerGraph Community Edition is free but its 2026 license restricts benchmarking. Do not run or publish TigerGraph speed/throughput benchmarks under that license without appropriate permission; focus on functional correctness and authorized demonstrations. See `docs/FREE_SETUP.md`.
+
+## T12 browser automation commands
+
+- `npm run test:e2e`: isolated real Chrome/PostgreSQL/Tesseract reporting flow with
+  TigerGraph disabled; asserts 503/unavailable, never substitutes a path.
+- `npm run test:e2e:live`: same flow plus required actual TigerGraph path/source/
+  review and revocation checks through the configured private loopback/tunnel. No
+  silent skip or mocked response in this mode; future deployment is still pending.
+
+See [E2E runbook](../e2e/README.md) for prerequisites, fixed isolated ports, temporary
+DB/file ownership, cleanup, credential privacy and observed coverage. Browser test
+success in default mode must not be recorded as installed-query E2E acceptance.
