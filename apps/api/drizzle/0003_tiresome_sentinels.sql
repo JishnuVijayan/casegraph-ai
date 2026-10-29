@@ -1,0 +1,7 @@
+ALTER TABLE "claim_sources" ADD COLUMN "extraction_region_id" uuid;--> statement-breakpoint
+ALTER TABLE "claim_sources" ADD CONSTRAINT "claim_sources_extraction_region_id_extraction_regions_id_fk" FOREIGN KEY ("extraction_region_id") REFERENCES "public"."extraction_regions"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "claim_sources" ADD CONSTRAINT "claim_sources_region_unique" UNIQUE("extraction_region_id");--> statement-breakpoint
+ALTER TABLE "timeline_events" ADD CONSTRAINT "timeline_event_type_allowed" CHECK ("timeline_events"."event_type" IN ('payment', 'contact', 'account_action', 'other'));--> statement-breakpoint
+ALTER TABLE "timeline_events" ADD CONSTRAINT "timeline_precision_allowed" CHECK ("timeline_events"."precision" IN ('EXACT', 'APPROXIMATE', 'DATE_ONLY', 'UNKNOWN'));--> statement-breakpoint
+ALTER TABLE "timeline_events" ADD CONSTRAINT "timeline_precision_timestamp_consistent" CHECK (CASE WHEN "timeline_events"."precision" = 'UNKNOWN' THEN "timeline_events"."occurred_at" IS NULL WHEN "timeline_events"."precision" = 'DATE_ONLY' THEN "timeline_events"."occurred_at" IS NOT NULL AND "timeline_events"."occurred_at" = (date_trunc('day', "timeline_events"."occurred_at" AT TIME ZONE 'UTC') AT TIME ZONE 'UTC') ELSE "timeline_events"."occurred_at" IS NOT NULL END);--> statement-breakpoint
+ALTER TABLE "timeline_events" ADD CONSTRAINT "timeline_uncertainty_nonempty" CHECK (length(btrim("timeline_events"."uncertainty")) > 0);

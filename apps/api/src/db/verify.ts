@@ -18,7 +18,7 @@ export async function verifyDatabase() {
     const { pool, db } = test;
     await migrateDatabase(db);
     const journal = (await pool.query('SELECT * FROM drizzle.__drizzle_migrations ORDER BY id')).rows;
-    assert.equal(journal.length, 3);
+    assert.equal(journal.length, 4);
     await migrateDatabase(db);
     assert.deepEqual((await pool.query('SELECT * FROM drizzle.__drizzle_migrations ORDER BY id')).rows, journal);
     const expectedTables = [
@@ -75,11 +75,14 @@ export async function verifyDatabase() {
     await pool.query('INSERT INTO extraction_runs (id, evidence_file_id, engine, version, status) VALUES ($1,$2,$3,$4,$5)', [extraction, evidence, 'tesseract', 'test', 'SUCCEEDED']);
     await rejects('INSERT INTO extraction_regions (run_id, kind, text, text_span, bbox_json, confidence) VALUES ($1,$2,$3,$4,$5,$6)', [extraction, 'TEXT', 'synthetic', JSON.stringify({ start: 0, end: 8 }), JSON.stringify({ x: 0.9, y: 0, width: 0.2, height: 0.5 }), 90], '23514');
     await rejects('INSERT INTO extraction_regions (run_id, kind, text, text_span, bbox_json, confidence) VALUES ($1,$2,$3,$4,$5,$6)', [extraction, 'TEXT', 'synthetic', JSON.stringify({ start: 0, end: 8 }), JSON.stringify({ x: 0, y: 0, width: 0.5, height: 0.5 }), 101], '23514');
+    await rejects('INSERT INTO timeline_events (case_id, event_type, precision, uncertainty, occurred_at) VALUES ($1,$2,$3,$4,$5)', [firstCase, 'payment', 'SOMEDAY', 'synthetic uncertainty', null], '23514');
+    await rejects('INSERT INTO timeline_events (case_id, event_type, precision, uncertainty, occurred_at) VALUES ($1,$2,$3,$4,$5)', [firstCase, 'payment', 'UNKNOWN', 'synthetic uncertainty', new Date()], '23514');
+    await rejects('INSERT INTO timeline_events (case_id, event_type, precision, uncertainty, occurred_at) VALUES ($1,$2,$3,$4,$5)', [firstCase, 'payment', 'DATE_ONLY', 'synthetic uncertainty', new Date('2026-10-29T12:00:00Z')], '23514');
     await pool.query('INSERT INTO claims (id, case_id, type, raw_value, source_kind) VALUES ($1,$2,$3,$4,$5)', [claim, secondCase, 'synthetic', 'synthetic-value', 'OBSERVED_IN_UPLOAD']);
     assert.equal((await pool.query('SELECT verification_status FROM claims WHERE id=$1', [claim])).rows[0].verification_status, 'UNVERIFIED');
     await rejects('INSERT INTO claim_sources (case_id, claim_id, evidence_file_id) VALUES ($1,$2,$3)', [secondCase, claim, evidence], '23503');
     const event = randomUUID();
-    await pool.query('INSERT INTO timeline_events (id, case_id, event_type, precision, uncertainty) VALUES ($1,$2,$3,$4,$5)', [event, firstCase, 'synthetic', 'UNKNOWN', 'UNKNOWN']);
+    await pool.query('INSERT INTO timeline_events (id, case_id, event_type, precision, uncertainty) VALUES ($1,$2,$3,$4,$5)', [event, firstCase, 'other', 'UNKNOWN', 'UNKNOWN']);
     await rejects('INSERT INTO event_claims (case_id, event_id, claim_id) VALUES ($1,$2,$3)', [firstCase, event, claim], '23503');
     await rejects('INSERT INTO case_access_grants (case_id, organization_id, scope, granted_by) VALUES ($1,$2,$3,$4)', [firstCase, fixture.organization.id, 'INVESTIGATE', victim], '23505');
     await rejects('INSERT INTO exports (case_id, version, object_key, created_by) VALUES ($1,$2,$3,$4)', [firstCase, 0, 'synthetic-export', victim], '23514');

@@ -97,11 +97,13 @@ export const claims = pgTable('claims', {
 export const claimSources = pgTable('claim_sources', {
   id: id(), caseId: uuid('case_id').notNull(), claimId: uuid('claim_id').notNull(),
   evidenceFileId: uuid('evidence_file_id').notNull(), page: integer('page'),
+  extractionRegionId: uuid('extraction_region_id').references(() => extractionRegions.id),
   textSpan: jsonb('text_span').$type<{ start: number; end: number }>(),
   boundingBox: jsonb('bbox_json').$type<{ x: number; y: number; width: number; height: number }>(),
   audioOffsetMs: integer('audio_offset_ms'),
 }, (t) => [
   index('claim_sources_claim_idx').on(t.claimId),
+  unique('claim_sources_region_unique').on(t.extractionRegionId),
   foreignKey({ name: 'source_claim_same_case', columns: [t.claimId, t.caseId], foreignColumns: [claims.id, claims.caseId] }),
   foreignKey({ name: 'source_evidence_same_case', columns: [t.evidenceFileId, t.caseId], foreignColumns: [evidenceFiles.id, evidenceFiles.caseId] }),
   check('source_page_positive', sql`${t.page} IS NULL OR ${t.page} > 0`),
@@ -119,7 +121,11 @@ export const timelineEvents = pgTable('timeline_events', {
   id: id(), caseId: uuid('case_id').notNull().references(() => cases.id),
   eventType: text('event_type').notNull(), occurredAt: timestamp('occurred_at', { withTimezone: true }),
   precision: text('precision').notNull(), uncertainty: text('uncertainty').notNull(), createdAt: createdAt(),
-}, (t) => [index('timeline_case_idx').on(t.caseId), unique('events_id_case_unique').on(t.id, t.caseId)]);
+}, (t) => [index('timeline_case_idx').on(t.caseId), unique('events_id_case_unique').on(t.id, t.caseId),
+  check('timeline_event_type_allowed', sql`${t.eventType} IN ('payment', 'contact', 'account_action', 'other')`),
+  check('timeline_precision_allowed', sql`${t.precision} IN ('EXACT', 'APPROXIMATE', 'DATE_ONLY', 'UNKNOWN')`),
+  check('timeline_precision_timestamp_consistent', sql`CASE WHEN ${t.precision} = 'UNKNOWN' THEN ${t.occurredAt} IS NULL WHEN ${t.precision} = 'DATE_ONLY' THEN ${t.occurredAt} IS NOT NULL AND ${t.occurredAt} = (date_trunc('day', ${t.occurredAt} AT TIME ZONE 'UTC') AT TIME ZONE 'UTC') ELSE ${t.occurredAt} IS NOT NULL END`),
+  check('timeline_uncertainty_nonempty', sql`length(btrim(${t.uncertainty})) > 0`)]);
 
 export const eventClaims = pgTable('event_claims', {
   caseId: uuid('case_id').notNull(), eventId: uuid('event_id').notNull(), claimId: uuid('claim_id').notNull(),

@@ -107,3 +107,21 @@ Region rows reference a run, which references the evidence file. API authorizati
 also verifies that evidence belongs to the requested case before returning text or
 an original-derived crop. OCR values remain unverified observations; T06 claim
 creation/corrections are separate.
+
+## T06 claim and timeline constraints
+
+`claim_sources.extraction_region_id` optionally links a claim source to the exact
+persisted OCR region. The reference is unique, so promoting the same amount region
+again returns the existing claim. The API derives text, span, box, evidence and
+case linkage from the successful OCR run; clients cannot supply replacement source
+content. Recollections need no upload source row. Every created claim defaults to
+`UNVERIFIED`.
+
+`claim_revisions` stores before/after interpreted values, actor, time and optional
+reason. Corrections do not rewrite source references or verification state.
+Timeline event checks restrict event type and precision, require nonempty
+uncertainty, require timestamps for exact/approximate/date-only precision, require
+UTC midnight for date-only and require a null timestamp for unknown precision.
+`event_claims` composite keys enforce that each linked support claim belongs to the
+same case. These database constraints complement, but do not replace, per-request
+case authorization.

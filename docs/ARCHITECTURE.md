@@ -22,6 +22,11 @@ TigerGraph Community (synthetic, scoped graph projection)
 3. `POST /api/v1/cases/:caseId/extractions` runs bounded local Tesseract on SHA-256-verified original bytes via stdin and stores OCR runs plus exact source regions. T05 does not create claims; T06 handles claim/timeline review separately.
 4. API computes missing-field/conflict rules; optional model/decision adapter can propose a question. Data is never declared true by model output alone.
 5. Victim confirms/corrects without changing original source data. Timeline events link to source claims.
+
+T06 implements this review path for stored OCR amount regions, victim recollections,
+non-destructive claim corrections and manually created, uncertainty-labeled timeline
+events. Claim and event data stay case-scoped; this does not provide external
+verification or generate investigative conclusions.
 6. Exports include verified status distinctions, chronology, remaining unknowns and hash manifest.
 7. Victim explicitly grants an organization access. Analyst permissions are checked before **and after** graph queries.
 8. Graph projection uses minimal pseudonymized case/indicator nodes; no unrestricted raw screenshots, personal chat text or secrets in graph.

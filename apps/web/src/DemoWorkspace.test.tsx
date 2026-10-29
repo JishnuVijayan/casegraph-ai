@@ -35,9 +35,15 @@ test('shows unavailable sign-in truthfully without invented case data', async ()
 });
 
 test('clears an earlier case detail before a denied read', async () => {
-  const fetch = vi.fn().mockResolvedValueOnce(success({ token, user })).mockResolvedValueOnce(success([row]))
-    .mockResolvedValueOnce(success({ ...row, category: 'synthetic' }))
-    .mockResolvedValueOnce({ ok: false, status: 403, json: async () => ({ error: { message: 'Access denied.' } }) });
+  let caseReads = 0;
+  const fetch = vi.fn().mockImplementation((url: string) => {
+    if (url.endsWith('/auth/demo')) return success({ token, user });
+    if (url.endsWith('/cases')) return success([row]);
+    if (url.includes('/claims') || url.includes('/timeline')) return success([]);
+    caseReads += 1;
+    return caseReads === 1 ? success({ ...row, category: 'synthetic' })
+      : { ok: false, status: 403, json: async () => ({ error: { message: 'Access denied.' } }) };
+  });
   vi.stubGlobal('fetch', fetch);
   render(<DemoWorkspace />);
   fireEvent.click(screen.getByRole('button', { name: 'Sign in to local demo' }));
