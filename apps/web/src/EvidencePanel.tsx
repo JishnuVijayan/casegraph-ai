@@ -1,13 +1,18 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api, ApiFailure } from './api';
 
 type Evidence = { id: string; mimeType: string; sizeBytes: number; sha256: string; createdAt: string };
+type Region = { id: string; kind: 'TEXT' | 'AMOUNT'; text: string; confidence: number };
+type Extraction = { status: string; errorCode?: string | null; outputText?: string | null; amountStatus: string; regions: Region[] };
 export function EvidencePanel({ token, caseId, owner, busy, perform }: {
   token: string; caseId: string; owner: boolean; busy: boolean; perform: (operation: () => Promise<void>) => Promise<void>;
 }) {
   const [rows, setRows] = useState<Evidence[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const [extractions, setExtractions] = useState<Record<string, Extraction>>({});
+  const [crop, setCrop] = useState<{ url: string; text: string } | null>(null);
+  useEffect(() => { if (!crop) return; return () => URL.revokeObjectURL(crop.url); }, [crop?.url]);
   const refresh = async () => {
     setRows([]); setLoaded(false);
     const result = await api<Evidence[]>(`/cases/${caseId}/evidence`, token);
@@ -15,7 +20,7 @@ export function EvidencePanel({ token, caseId, owner, busy, perform }: {
   };
   return <section aria-label="Evidence originals">
     <h4 className="font-bold">Original evidence — synthetic files only</h4>
-    <p>PNG/JPEG, maximum 5 MiB and 16 million pixels. No real financial records or personal images. PDF and OCR are not available.</p>
+    <p>PNG/JPEG, maximum 5 MiB and 16 million pixels. Use synthetic files only. Local OCR may be unavailable; OCR text is unverified source content.</p>
     <p>SHA-256 records integrity after upload; it does not prove screenshot authenticity.</p>
     {owner && <form onSubmit={(event) => { event.preventDefault(); void perform(async () => {
       if (!file || !['image/png', 'image/jpeg'].includes(file.type) || file.size > 5 * 1024 * 1024) throw new Error('Choose a PNG/JPEG up to 5 MiB.');
@@ -35,6 +40,24 @@ export function EvidencePanel({ token, caseId, owner, busy, perform }: {
       <p>SHA-256: <code>{row.sha256}</code></p>
       <p>Uploaded: {row.createdAt}</p>
       <button disabled={busy} onClick={() => void perform(async () => {
+        const result = await api<Extraction>(`/cases/${caseId}/extractions`, token, { evidenceId: row.id }, 'POST');
+        setExtractions((current) => ({ ...current, [row.id]: result }));
+      })}>Run local OCR</button>
+      {extractions[row.id] && <div aria-label={`OCR review ${row.id}`}>
+        <p>OCR status: {extractions[row.id].status}{extractions[row.id].errorCode ? ` · ${extractions[row.id].errorCode}` : ''}</p>
+        <p>Candidate status: {extractions[row.id].amountStatus} · verification: UNVERIFIED</p>
+        {extractions[row.id].outputText && <p>Text observed in upload: {extractions[row.id].outputText}</p>}
+        {!extractions[row.id].regions.some((region) => region.kind === 'AMOUNT') && <p>Amount: UNKNOWN — no readable amount candidate was found.</p>}
+        {extractions[row.id].regions.filter((region) => region.kind === 'AMOUNT').map((region) => <button key={region.id} disabled={busy} onClick={() => void perform(async () => {
+          const response = await fetch(`/api/v1/cases/${caseId}/extractions/${row.id}/regions/${region.id}/crop`, {
+            headers: { Authorization: `Bearer ${token}` }, cache: 'no-store',
+          });
+          if (!response.ok) throw new ApiFailure(response.status, response.status === 403 ? 'Access denied.' : 'Source region unavailable.');
+          const url = URL.createObjectURL(await response.blob());
+          setCrop({ url, text: region.text });
+        })}>Review source region for {region.text} (OBSERVED_IN_UPLOAD · UNVERIFIED)</button>)}
+      </div>}
+      <button disabled={busy} onClick={() => void perform(async () => {
         const response = await fetch(`/api/v1/cases/${caseId}/evidence/${row.id}/view`, {
           headers: { Authorization: `Bearer ${token}` }, cache: 'no-store',
         });
@@ -48,5 +71,9 @@ export function EvidencePanel({ token, caseId, owner, busy, perform }: {
         anchor.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
       })}>Download original</button>
     </li>)}</ul>
+    {crop && <figure><figcaption>Original evidence crop for “{crop.text}” — OCR candidate, unverified.</figcaption>
+      <img src={crop.url} alt={`Source crop containing ${crop.text}`} />
+      <button onClick={() => setCrop(null)}>Close source crop</button>
+    </figure>}
   </section>;
 }

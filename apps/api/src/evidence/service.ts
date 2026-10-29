@@ -51,6 +51,12 @@ export class EvidenceService {
     return rows;
   }
   async original(request: ApiRequest, id: string) {
+    const { row, bytes } = await this.readVerified(request, id);
+    await this.access.audit(request.actor!, 'EVIDENCE_READ', 'evidence', row.id, request.requestId);
+    return new StreamableFile(bytes, { type: 'application/octet-stream',
+      disposition: `attachment; filename="${row.id}.${row.mimeType === 'image/png' ? 'png' : 'jpg'}"`, length: bytes.length });
+  }
+  async readVerified(request: ApiRequest, id: string) {
     if (!/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(id)) throw new ForbiddenException();
     const row = await this.access.available(async (db) => {
       const [record] = await db.select().from(evidenceFiles).where(and(eq(evidenceFiles.id, id), eq(evidenceFiles.caseId, request.caseRecord!.id)));
@@ -68,9 +74,7 @@ export class EvidenceService {
       const bytes = await handle.readFile();
       if (bytes.length > 5 * 1024 * 1024 || createHash('sha256').update(bytes).digest('hex') !== row.sha256) throw new ServiceUnavailableException();
       await this.access.findCase(request.actor!, request.caseRecord!.id, 'READ');
-      await this.access.audit(request.actor!, 'EVIDENCE_READ', 'evidence', row.id, request.requestId);
-      return new StreamableFile(bytes, { type: 'application/octet-stream',
-        disposition: `attachment; filename="${row.id}.${row.mimeType === 'image/png' ? 'png' : 'jpg'}"`, length: bytes.length });
+      return { row, bytes };
     } finally { await handle.close(); }
   }
 }

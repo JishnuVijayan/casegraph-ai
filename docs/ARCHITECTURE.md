@@ -19,7 +19,7 @@ TigerGraph Community (synthetic, scoped graph projection)
 ## Event flow
 1. `POST /api/v1/cases` creates victim-owned draft.
 2. `POST /api/v1/cases/:id/evidence` streams bounded file, computes SHA-256 **before transformations**, stores original, inserts evidence metadata and audit event.
-3. `POST /api/v1/cases/:id/extractions` runs OCR on isolated, normalized working copies, writes candidate claims and exact source regions.
+3. `POST /api/v1/cases/:caseId/extractions` runs bounded local Tesseract on SHA-256-verified original bytes via stdin and stores OCR runs plus exact source regions. T05 does not create claims; T06 handles claim/timeline review separately.
 4. API computes missing-field/conflict rules; optional model/decision adapter can propose a question. Data is never declared true by model output alone.
 5. Victim confirms/corrects without changing original source data. Timeline events link to source claims.
 6. Exports include verified status distinctions, chronology, remaining unknowns and hash manifest.

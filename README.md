@@ -1,6 +1,6 @@
 # CaseGraph AI
 
-**Current implementation: T00 scaffold, T01 local infrastructure, T02 database bootstrap, T03 demo authorization, T04 controlled uploads.** React/Vite and NestJS run locally.
+**Current implementation: T00 scaffold, T01 local infrastructure, T02 database bootstrap, T03 demo authorization, T04 controlled uploads, T05 local OCR/provenance.** React/Vite and NestJS run locally.
 See [app setup](#implemented-local-scaffold-t00) and [local infrastructure](#implemented-local-infrastructure-t01) for commands.
 The following product blueprint includes future, unimplemented features.
 
@@ -889,13 +889,13 @@ npm run db:verify
 npm run infra:down
 ```
 
-Drizzle now defines the 15 canonical tables with a reviewed SQL migration. Seeds
+Drizzle initially defined the 15 canonical tables with a reviewed SQL migration. Seeds
 create one fictional consortium, two victim identities, one analyst, 20 synthetic
 case placeholders and three sharing examples. Repeating seeds preserves edits.
 `db:verify` uses a separate temporary local database and removes it afterward.
 `npm run db:generate` generates future migrations offline. See
 [infrastructure instructions](infra/README.md) and [data model](docs/DATA_MODEL.md).
-T03 adds demo authentication and protected case reads; T04 adds original evidence ingestion; OCR remains unimplemented. No fixture is a real victim record or live investigation result.
+T03 adds demo authentication and protected case reads; T04 adds original evidence ingestion; T05 adds local OCR and protected source-region review. No fixture is a real victim record or live investigation result.
 
 ## Local demo login and authorization (T03)
 
@@ -932,9 +932,27 @@ upload; revoking their last active grant denies the next manifest or original re
 
 Files are limited to 5 MiB and validated before commit. Originals are private,
 read-only, never replaced, and SHA-256 checked before download. Hashes establish
-post-ingest integrity, not authenticity. There is no PDF ingestion, OCR, automated
+post-ingest integrity, not authenticity. There is no PDF ingestion, automated
 report or live graph result yet. Never upload real records or personal images.
 
 With local PostgreSQL running, `npm run test:evidence` creates an isolated synthetic
 database/private directory, runs 8 upload/authorization tests and removes its own
 fixtures. `npm run test:auth` remains the separate 9-test authorization regression.
+
+## Local OCR and provenance (T05)
+
+Install Tesseract locally and verify with `tesseract --version`; on macOS with
+Homebrew, `brew install tesseract` is one local option. The API defaults to the
+`tesseract` executable on PATH; set `TESSERACT_BINARY` to another local executable
+if needed. No API key or network OCR service is used. The OCR action is available
+on a permitted case's evidence entry. It records Tesseract version and safe
+status/error, shows word text and normalized source boxes, and offers deterministic
+currency-prefixed amount candidates. Click a candidate to inspect the matching
+crop from the hash-verified original.
+
+OCR candidates are untrusted `OBSERVED_IN_UPLOAD` text and remain `UNVERIFIED`.
+Unreadable evidence shows `UNKNOWN`; a missing executable shows `OCR_UNAVAILABLE`.
+OCR does not verify bank transactions or create claims/timeline events. Only
+English OCR is configured; PDFs, handwriting, language guarantees and correction
+history are not implemented. Run `npm run test:ocr` with local PostgreSQL running
+to exercise synthetic success, unreadable, unavailable and revoked-access cases.

@@ -18,12 +18,12 @@ export async function verifyDatabase() {
     const { pool, db } = test;
     await migrateDatabase(db);
     const journal = (await pool.query('SELECT * FROM drizzle.__drizzle_migrations ORDER BY id')).rows;
-    assert.equal(journal.length, 1);
+    assert.equal(journal.length, 3);
     await migrateDatabase(db);
     assert.deepEqual((await pool.query('SELECT * FROM drizzle.__drizzle_migrations ORDER BY id')).rows, journal);
     const expectedTables = [
       'audit_events', 'case_access_grants', 'cases', 'claim_revisions', 'claim_sources', 'claims',
-      'clarifications', 'event_claims', 'evidence_files', 'exports', 'extraction_runs', 'graph_leads',
+      'clarifications', 'event_claims', 'evidence_files', 'exports', 'extraction_regions', 'extraction_runs', 'graph_leads',
       'organizations', 'timeline_events', 'users',
     ];
     assert.deepEqual((await pool.query("SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename")).rows.map((row) => row.tablename), expectedTables);
@@ -31,7 +31,7 @@ export async function verifyDatabase() {
     for (const name of ['cases_owner_idx', 'evidence_case_idx', 'claims_case_idx', 'claim_sources_claim_idx', 'grants_case_organization_scope_unique', 'audit_created_idx']) {
       assert(indexes.includes(name), `Missing required index ${name}`);
     }
-    console.log('PASS: fresh migration, repeat no-op, 15 tables and required indexes.');
+    console.log('PASS: fresh migration, repeat no-op, 16 tables and required indexes.');
     await seedSynthetic(db);
     const snapshot = async () => {
       const result: Record<string, unknown> = {};
@@ -71,6 +71,10 @@ export async function verifyDatabase() {
     await rejects('INSERT INTO evidence_files (case_id, uploader_id, object_key, sha256, mime_type, size_bytes) VALUES ($1,$2,$3,$4,$5,$6)', [firstCase, victim, 'synthetic-invalid', 'not-a-hash', 'image/png', 1], '23514');
     await rejects('INSERT INTO evidence_files (case_id, uploader_id, object_key, sha256, mime_type, size_bytes) VALUES ($1,$2,$3,$4,$5,$6)', [firstCase, victim, 'synthetic-invalid', 'a'.repeat(64), 'image/png', 0], '23514');
     await pool.query('INSERT INTO evidence_files (id, case_id, uploader_id, object_key, sha256, mime_type, size_bytes) VALUES ($1,$2,$3,$4,$5,$6,$7)', [evidence, firstCase, victim, 'synthetic-test-only', 'a'.repeat(64), 'image/png', 1]);
+    const extraction = randomUUID();
+    await pool.query('INSERT INTO extraction_runs (id, evidence_file_id, engine, version, status) VALUES ($1,$2,$3,$4,$5)', [extraction, evidence, 'tesseract', 'test', 'SUCCEEDED']);
+    await rejects('INSERT INTO extraction_regions (run_id, kind, text, text_span, bbox_json, confidence) VALUES ($1,$2,$3,$4,$5,$6)', [extraction, 'TEXT', 'synthetic', JSON.stringify({ start: 0, end: 8 }), JSON.stringify({ x: 0.9, y: 0, width: 0.2, height: 0.5 }), 90], '23514');
+    await rejects('INSERT INTO extraction_regions (run_id, kind, text, text_span, bbox_json, confidence) VALUES ($1,$2,$3,$4,$5,$6)', [extraction, 'TEXT', 'synthetic', JSON.stringify({ start: 0, end: 8 }), JSON.stringify({ x: 0, y: 0, width: 0.5, height: 0.5 }), 101], '23514');
     await pool.query('INSERT INTO claims (id, case_id, type, raw_value, source_kind) VALUES ($1,$2,$3,$4,$5)', [claim, secondCase, 'synthetic', 'synthetic-value', 'OBSERVED_IN_UPLOAD']);
     assert.equal((await pool.query('SELECT verification_status FROM claims WHERE id=$1', [claim])).rows[0].verification_status, 'UNVERIFIED');
     await rejects('INSERT INTO claim_sources (case_id, claim_id, evidence_file_id) VALUES ($1,$2,$3)', [secondCase, claim, evidence], '23503');
@@ -83,7 +87,7 @@ export async function verifyDatabase() {
     await pool.query('INSERT INTO claims (id, case_id, type, raw_value, source_kind) VALUES ($1,$2,$3,$4,$5)', [sameCaseClaim, firstCase, 'synthetic', 'synthetic-value', 'OBSERVED_IN_UPLOAD']);
     await pool.query('INSERT INTO claim_sources (case_id, claim_id, evidence_file_id) VALUES ($1,$2,$3)', [firstCase, sameCaseClaim, evidence]);
     await pool.query('INSERT INTO event_claims (case_id, event_id, claim_id) VALUES ($1,$2,$3)', [firstCase, event, sameCaseClaim]);
-    console.log('PASS: foreign keys, uniqueness, role enum, hash/size/version checks, UNVERIFIED default, cross-case rejection and valid same-case provenance.');
+    console.log('PASS: foreign keys, uniqueness, role enum, hash/size/version checks, bounded OCR spans/boxes, UNVERIFIED default, cross-case rejection and valid same-case provenance.');
   } finally {
     if (test) await test.pool.end();
     if (created) {
