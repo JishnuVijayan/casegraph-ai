@@ -2,7 +2,7 @@
 
 **How to use:** Ask Codex to implement **one task** at a time, run tests, then mark it `[x]` and attach verification evidence. No single-prompt “build the whole app”. Track failures honestly. Update `docs/DECISIONS.md` when deviating from architecture.
 
-Current detailed plan: [`task.md`](../task.md) — T07 deterministic clarification questions on `feat/t07-questions`.
+Current detailed plan: [`task.md`](../task.md) — T08 reviewable draft export on `feat/t08-draft-export`.
 
 ## Phase 0 — Bootstrap (P0)
 - [x] **T00 Repo initialization.** Monorepo `apps/web`, `apps/api`, `infra`, `data/synthetic`, `docs`; copy existing README/docs; `.gitignore`, `.env.example`; lock dependencies. **Done:** both projects start locally and no secrets committed.
@@ -15,7 +15,7 @@ Current detailed plan: [`task.md`](../task.md) — T07 deterministic clarificati
 - [x] **T05 OCR and provenance.** Local Tesseract TSV word regions and deterministic currency candidate; idempotent engine-versioned runs, safe failures and authorized source crops. **Done:** synthetic INR 2500 OCR links to its actual image crop; blank evidence stays `UNKNOWN`.
 - [x] **T06 Timeline and claims.** Normalized entities and uncertainty status; victim can correct, preserving revision. **Done:** source fact and edited interpretation both traceable.
 - [x] **T07 Questions.** Missing reference/amount/time conflict rules; `UNKNOWN` answer; optional later Jev. **Done:** conflicting sample asks correct focused question.
-- [ ] **T08 Export.** Reviewable incident draft + chronological index + SHA-256 manifest. **Done:** PDF or print output with no “official complaint filed” claim.
+- [x] **T08 Export.** Reviewable incident draft + chronological index + SHA-256 manifest. **Done:** PDF or print output with no “official complaint filed” claim.
 
 ## Phase 2 — TigerGraph (P0)
 - [ ] **T09 TigerGraph Community setup.** Independent supported container/host, connection health, version documented. **Done:** installed graph and seed script repeatable. **Check license before tests or publishing any performance benchmarks.**
@@ -140,3 +140,15 @@ Current detailed plan: [`task.md`](../task.md) — T07 deterministic clarificati
 - `npm test`: **27 passed** (4 infrastructure, 13 API, 10 web). `npm run test:clarifications`: **3 passed**, covering idempotent generation, source snapshots, UNKNOWN, no answer/claim overwrite, stale-source rejection, cross-case/session/role denial and immediate revoked-grant denial. `npm run test:claims`: **4 passed**; `npm run test:auth`: **9 passed**. Rule tests cover normalized/equivalent amounts and times, separate payments, ambiguous/invalid dates and fingerprint stability; component test covers provenance and UNKNOWN payload.
 - `npm run db:migrate`, `npm run db:verify`, `npm run lint`, `npm run typecheck`, `npm run build`, `npm run db:generate` (no pending changes), and whitespace check passed. DB verifier applied five fresh/repeated migrations, checked 16 tables/indexes and preserved repeated synthetic seeds; temporary database removed. Local infrastructure stopped and final status empty; working volume/config preserved.
 - Limits: only explicitly linked payment events are evaluated; no semantic event matching, inferred timezones, Jev, external verification or automatic claim updates. No browser E2E, new OCR or storage smoke run for T07. All data is synthetic. Next unblocked task: **T08 Export**.
+
+
+### T08 verification details (2026-10-29 IST)
+- Merged/pushed T07 to develop as `feaa544` (`chore: merge clarification workflow into develop`); implemented T08 on `feat/t08-draft-export`. Main remains at its prior merge.
+- Added authorized create/list/download export endpoints and immutable-through-API versioned printable HTML in private PostgreSQL. Migration `0005_sloppy_ezekiel_stane.sql` adds content/checksum fields; logical DB locators never appear in public metadata. No new paid service or dependency.
+- Reports contain DRAFT/synthetic and urgent guidance, chronology with precision, claims, original OCR text/regions/spans, correction before/after history, question state/answers/unknowns and source-ID/ingest-hash manifest. Current rule gaps are included even before T07 refresh. Unknowns are not resolved automatically. Exports never claim official filing, bank verification, recovery or court admissibility.
+- Case locks serialize version allocation and case data changes. Every endpoint checks scope, downloads verify snapshot SHA-256 and recheck permission before release; audit stores identifiers/actions only. Server escapes all strings; CSP blocks active/network content. UI provides sandboxed preview and HTML download with manual browser Print / Save as PDF instructions. Output bounded to 2 MiB and sections to 1,000 queried rows; no partial export on overflow.
+- `npm run test:exports`: **5 passed** — original/edited claims and revisions, source IDs/boxes, ingest hash, unknowns, escaped hostile text, old-version preservation, concurrent distinct versions, scoped generation/list/download, cross-case ID denial, analyst grant/revocation, oversize rollback and corrupt-content failure. UI component test covers authenticated sandbox preview and clearing content on denied reread.
+- Initial concurrent export test returned 503 from pool starvation when a transaction reserved a second connection for authorization. Refactored the existing scope query into `findCaseIn` for transaction reuse; rerun passed concurrent generation plus authorization regressions.
+- `npm test`: **28 passed** (4 infrastructure, 13 API, 11 web). `test:auth`: **9 passed**, `test:claims`: **4 passed**, `test:clarifications`: **3 passed**. Total regular/integration tests run: **49**. Lint, typecheck, production build, db:migrate and db:verify passed; DB verifier checked six fresh/repeated migrations, 16 tables/indexes and seed preservation. `db:generate` reported no pending schema changes; whitespace check passed.
+- `infra:smoke:storage` passed all 21 HTTP probes and asset sentinel scan; temporary servers/sentinel removed. Infrastructure stopped and final status empty, working volume/private config preserved. Isolated synthetic test databases/files removed.
+- Limits: printable HTML with manual browser PDF saving; no automated browser/print E2E, dedicated PDF engine, original-file embedding/reverification, automatic retention or revocation of offline copies. DB administrators can alter snapshots/checksums; integrity checks are not forensic certification. OCR/evidence integration suites were not rerun for T08. Next unblocked task: **T09 TigerGraph Community setup** (license/platform review required).

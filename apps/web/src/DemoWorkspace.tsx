@@ -1,3 +1,4 @@
+import { ExportPanel } from './ExportPanel';
 import { QuestionsPanel } from './QuestionsPanel';
 import { useState } from 'react';
 import { EvidencePanel } from './EvidencePanel';
@@ -38,7 +39,7 @@ export function DemoWorkspace() {
   return <section aria-labelledby="demo-title">
     <h2 id="demo-title" className="text-xl font-bold">Local synthetic demo</h2>
     <p>Fictional role simulation only. Choosing an identity is not real identity verification. No real victim data.</p>
-    <p>Create synthetic cases, review local OCR, save source-linked claims and build a sourced timeline. Exports and TigerGraph investigation are not implemented yet.</p>
+    <p>Create synthetic cases, review local OCR, save source-linked claims and build a sourced timeline. Review and download a draft export. TigerGraph investigation is not implemented yet.</p>
     {!session ? <form onSubmit={(event) => { event.preventDefault(); void perform(async () => {
       clear();
       const next = await api<Session>('/auth/demo', undefined, { demoSubject: subject }, 'POST');
@@ -92,6 +93,7 @@ export function DemoWorkspace() {
         <p>Uploads are unverified user-supplied material, not bank-verified records.</p>
         <EvidencePanel key={`evidence-${detail.id}`} token={session.token} caseId={detail.id} owner={session.user.role === 'victim'} busy={busy} perform={perform} onClaimAdded={() => setReviewKey((value) => value + 1)} />
         <ReviewPanel key={`review-${detail.id}`} token={session.token} caseId={detail.id} owner={session.user.role === 'victim'} busy={busy} refreshKey={reviewKey} perform={perform} />
+        <ExportPanel key={`export-${detail.id}`} token={session.token} caseId={detail.id} busy={busy} perform={perform} />
         <QuestionsPanel key={`questions-${detail.id}`} token={session.token} caseId={detail.id} owner={session.user.role === 'victim'} busy={busy} perform={perform} />
         {session.user.role === 'victim' && <div>
           <p>Explicitly share this case with the Fictional Demo Consortium.</p>

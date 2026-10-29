@@ -98,7 +98,7 @@ A caller using a keypad phone calls an **existing verified bank/authorized partn
 - [x] Structured chronological timeline with provenance/uncertainty labels (T06 synthetic demo).
 - [ ] Deterministic field checks and conflict detection; targeted questions.
 - [ ] Victim correction/confirmation without overwriting source facts.
-- [ ] Downloadable complaint draft, evidence index, uncertainty notes and hash manifest.
+- [x] Downloadable complaint draft, evidence index, uncertainty notes and hash manifest (T08 printable HTML).
 - [ ] **Real TigerGraph GSQL query** identifying multi-hop relationships in labeled synthetic cases.
 - [ ] Analyst view that opens both graph edges and underlying evidence references.
 - [ ] Test results demonstrating factual/source accuracy, errors and graph false positives.
@@ -968,3 +968,16 @@ Rules detect missing payment references and explicit amount/time conflicts withi
 that payment; they do not match unrelated payments or infer missing timestamps.
 Run `npm run test:clarifications` with local PostgreSQL available for the synthetic
 HTTP integration suite. No paid service or local model is required.
+
+### T08 local draft export
+
+In an accessible synthetic case, acknowledge the draft notice and select **Generate
+draft version**. Review a version in the sandboxed preview, then **Download reviewed
+HTML**. Open the saved HTML and use your browser's Print / Save as PDF command.
+Every version preserves the claims, source observations, correction history,
+chronological index, question unknowns and ingest SHA-256 manifest at generation.
+Later corrections require a new version. The draft does not submit an official
+complaint. Export hashes do not authenticate screenshots or bank records. Keep saved
+copies private. Owners and currently granted analysts can generate/read exports;
+revocation blocks future server requests. Run `npm run test:exports` against local
+PostgreSQL for the isolated synthetic HTTP suite.

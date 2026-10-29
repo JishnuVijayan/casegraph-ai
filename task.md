@@ -1,24 +1,23 @@
-# Current task — T07 deterministic questions
+# Current task — T08 reviewable draft export
 
-Branch: `feat/t07-questions` from develop (T06 merge `d0c80e4`; main merge `233d3aa`).
+Branch: `feat/t08-draft-export` from develop after T07 merge `feaa544`.
+References: AGENTS.md, README.md, REQUIREMENTS, STACK, FREE_SETUP, ARCHITECTURE, DATA_MODEL, API, SECURITY, TASKS, TEST_PLAN and DEMO.
 
-References: AGENTS.md, README.md, REQUIREMENTS, STACK, FREE_SETUP, API, DATA_MODEL, SECURITY, TEST_PLAN and TASKS.
+Expected files: export renderer/controller/service, schema/migration, AppModule, React export panel, synthetic rule/HTTP/component tests, wrapper/scripts and docs.
 
-Expected files: clarification rules/controller/service, schema and migration, AppModule, question review UI, synthetic rule/HTTP/component tests, test wrapper and docs.
+- [x] Generate a frozen versioned printable HTML draft containing chronology, claims, sources, revisions, question answers/unknowns and ingest-hash manifest.
+- [x] Enforce case scope for generation/list/download, recheck live grants, and retain audit metadata without content.
+- [x] Escape all private strings, prohibit active content/network access, bound output, and persist snapshots privately in PostgreSQL.
+- [x] Provide preview and HTML download with browser Print / Save as PDF instructions.
+- [x] Verify synthetic export provenance, version preservation after corrections, unknowns, malicious text, authorization and revocation; run checks and record actual results.
 
-- [x] Detect missing payment reference and amount/time disagreements within an explicitly linked payment event.
-- [x] Persist source snapshots and stable question identity; preserve historical answers and mark superseded questions.
-- [x] Owner generates/questions answers with ANSWERED or UNKNOWN; granted analysts read only; backend scopes every operation.
-- [x] Show one focused open question at a time with source context and UNKNOWN option.
-- [x] Run relevant checks and record actual results.
-
-Done: a conflicting synthetic payment asks a focused source-linked question, an UNKNOWN answer persists without changing claims, and unauthorized access is denied. T08 export remains next.
+Done: a corrected synthetic claim exports with original observation and revision still traceable, UNKNOWN remains visible, manifest hashes match ingest metadata, and revoked access fails. T09 graph setup stays separate.
 
 ## Actual results — 2026-10-29 IST
 
-- Added deterministic rules, protected refresh/read/answer endpoints, source snapshots and stable fingerprints; superseded/answered questions retain history and reject overwrites.
-- Added migration `0004_clear_ezekiel_stane.sql`; `db:migrate` and `db:verify` passed. Fresh/repeated five-migration verification, 16 tables/indexes and seed preservation passed; temporary DB removed.
-- `npm test`: 27 passed (4 infrastructure, 13 API, 10 web). `test:clarifications`: 3 passed; `test:claims`: 4 passed; `test:auth`: 9 passed. T07 tests cover source snapshots, stable IDs, conflicting amounts/times, separate payments, equivalent timestamps, invalid/ambiguous dates, UNKNOWN, immutable answers, stale snapshots, cross-case denial, analyst write denial and revoked-grant reads.
-- `lint`, `typecheck`, `build`, `db:generate` (no pending schema changes), and `git diff --check` passed. Local containers stopped; final status empty. Synthetic temporary files and DBs removed, working volume preserved.
-- Limits: questions require manually linked payment events; no semantic event matching, uncertain time inference, Jev, paid API or automatic claim correction. No browser E2E or new storage/OCR smoke run for T07.
-- Next unblocked task: T08 reviewable draft export.
+- Added export snapshot migration, authorized versioned generation/list/download, escaped printable renderer and sandboxed UI preview/download. Corrections and unknowns remain traceable.
+- `test:exports`: 5 passed; `npm test`: 28 passed; `test:auth`: 9 passed; `test:claims`: 4 passed; `test:clarifications`: 3 passed. Total: 49 tests.
+- `lint`, `typecheck`, `build`, `db:migrate`, `db:verify`, `db:generate` (no pending schema changes) and whitespace checks passed. DB verifier tested six migrations and 16 tables/indexes with repeated seed preservation.
+- Initial concurrency test exposed nested-connection pool starvation; same-transaction scope recheck fixed it, concurrent version and auth tests passed on rerun.
+- Storage smoke passed 21 HTTP probes and asset scan. Test DB/files and smoke sentinel/servers removed. Containers stopped; final status empty; working volume preserved.
+- Limits: browser Print / Save as PDF manual path; no browser/print E2E, original embedding or reauthentication, offline-copy revocation or automatic retention. T09 TigerGraph setup is next.

@@ -54,3 +54,9 @@ verification or generate investigative conclusions.
 
 ## Design tradeoffs
 Do not optimize for unsupported “zero latency.” Correctness, provenance, consent and reproducible demo outcomes take precedence. Use small controlled synthetic data. Graph similarity alone must never claim a common criminal organization.
+
+T08 implements the export module as a deterministic printable HTML snapshot stored
+privately alongside version metadata in PostgreSQL. Authorized list/download routes
+serve only escaped, checksum-verified drafts; a sandboxed React preview supports
+review before HTML download and manual browser PDF saving. It uses no PDF service
+or model. Details and bounds are recorded in ADR-019 and the API/data contracts.
