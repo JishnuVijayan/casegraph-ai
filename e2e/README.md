@@ -96,3 +96,9 @@ artifacts; retain any desired failure evidence first. Timing output describes th
 `npm run typecheck` now also checks the Playwright TypeScript. `npm test` retains
 its lightweight unit/component suites; browser requirements are explicit in the
 separate `test:e2e` commands. PostgreSQL HTTP suites are also separate as before.
+
+T13 adds a third real OCR run on an instruction-like synthetic image and monitors
+browser requests for its attack URL. It also saves hostile script/image markup as
+a recollection and verifies escaped report text with no active script/image elements.
+No external attack URL is visited by the observed browser flow. This does not replace
+live graph-server or independent security assessment.

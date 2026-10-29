@@ -212,3 +212,15 @@ and requires actual paths. No API interception/mock result fallback exists. Real
 graph credentials, networking, license use and EC2 resources are not configured by
 the browser harness. The future graph fixture remains authored scenario data, not
 a claim that uploaded screenshots independently verify financial links.
+
+## T13 observed adversarial verification
+
+`npm run test:security` runs regular, HTTP authorization/upload/OCR/claim/question/
+export/investigation and browser checks against synthetic temporary records.
+Adversarial OCR strings remain data; ambiguous amounts stay unnormalized. The real
+browser scenario also uploads instruction-like text for actual OCR and verifies
+UNKNOWN without visiting its embedded attack URL, then verifies hostile markup is
+inert in the draft. This is local regression evidence, not a production security
+certification. Real TigerGraph server/scope testing must be repeated after deployment;
+mocked query responses do not establish server isolation. No vulnerability audit or
+independent penetration test has been performed.

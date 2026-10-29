@@ -54,3 +54,11 @@ Use **synthetic fixtures only**. Never represent controlled examples as proof of
 See [E2E runbook](../e2e/README.md) for prerequisites, fixed isolated ports, temporary
 DB/file ownership, cleanup, credential privacy and observed coverage. Browser test
 success in default mode must not be recorded as installed-query E2E acceptance.
+
+## T13 security regression command
+
+With local PostgreSQL, Chrome and Tesseract available, run `npm run test:security`.
+It includes existing HTTP denial/tamper/invalid-upload/unavailable-service coverage,
+new adversarial parser/export tests, and actual browser hostile-text/OCR checks.
+Default browser graph mode remains disabled; live graph tests still require deployment.
+This command expects PostgreSQL already running; stop it afterward with infra:down.

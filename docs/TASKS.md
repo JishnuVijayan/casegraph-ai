@@ -2,7 +2,7 @@
 
 **How to use:** Ask Codex to implement **one task** at a time, run tests, then mark it `[x]` and attach verification evidence. No single-prompt “build the whole app”. Track failures honestly. Update `docs/DECISIONS.md` when deviating from architecture.
 
-Current detailed plan: [`task.md`](../task.md) — T12 browser workflow on `feat/t12-e2e-workflow`; live graph acceptance pending future EC2 deployment.
+Current detailed plan: [`task.md`](../task.md) — T13 local security verification on `feat/t13-security-tests`; live graph rechecks pending deployment.
 
 ## Phase 0 — Bootstrap (P0)
 - [x] **T00 Repo initialization.** Monorepo `apps/web`, `apps/api`, `infra`, `data/synthetic`, `docs`; copy existing README/docs; `.gitignore`, `.env.example`; lock dependencies. **Done:** both projects start locally and no secrets committed.
@@ -24,7 +24,7 @@ Current detailed plan: [`task.md`](../task.md) — T12 browser workflow on `feat
 
 ## Phase 3 — Quality + optional (P0 first)
 - [ ] **T12 E2E test.** Disordered evidence -> OCR -> correction -> case report -> graph path. **Done:** reproducible from fresh local seed.
-- [ ] **T13 Security/adversarial tests.** IDOR, bad upload, prompt-injection text, unavailable graph, incorrect OCR. **Done:** tested and logged results.
+- [x] **T13 Security/adversarial tests.** IDOR, bad upload, prompt-injection text, unavailable graph, incorrect OCR. **Done:** tested and logged results.
 - [ ] **T14 Optional local voice.** Whisper.cpp or faster-whisper on permitted test samples, reviewable transcript. **Done:** explicit language-specific limitations; may skip entirely.
 - [ ] **T15 Optional local LLM.** Ollama on compatible machine; compare against OCR+rules with labeled fixtures. **Done:** no fabricated facts; if inferior, leave disabled.
 - [ ] **T16 Optional Jev benchmark.** Only with sponsor credits/approved access; compare non-final routing with deterministic rules. **Done:** measured results, no unverifiable latency promises.
@@ -195,3 +195,12 @@ Current detailed plan: [`task.md`](../task.md) — T12 browser workflow on `feat
 - `npm test`: **39 passed** (7 infrastructure, 4 graph contracts, 15 API, 13 web). Browser scenario adds one successful E2E check. Lint, typecheck (including dedicated E2E TypeScript), builds, dependency listing and whitespace check passed. Database HTTP suites and storage smoke were not rerun for this test-only orchestration; E2E itself uses real DB/auth/upload/OCR/export/download routes.
 - Harness cleanup stopped owned API/Vite/browser children and removed generated temporary DBs/files after successful and failed runs; local PostgreSQL stopped and final status empty. Working volume/private config preserved. Trace/video/screenshots disabled; ignored failure context contains only isolated synthetic data. Abrupt host/process kill can still leave uniquely named test resources for deliberate cleanup.
 - No manual print/PDF dialog, actual graph compiler/query/source fetch, EC2 provisioning, benchmark or real-user data. Remaining: complete T09–T11 runtime and run required-live E2E after deployment. Next source phase: **T13 Security/adversarial tests**. Runbook: `e2e/README.md`.
+
+
+### T13 local security/adversarial checks (2026-10-29 IST)
+- Merged/pushed T12 into develop as `38820b8`; implemented `feat/t13-security-tests`. T13 local synthetic test scope completed; T09–T12 live graph acceptance remains pending.
+- Added three adversarial tests: incorrect/ambiguous currency/OCR strings remain unnormalized; instruction-like TSV remains text without fetch calls and out-of-bounds coordinates cannot become regions; hostile summary/claim markup is escaped in drafts with restrictive CSP and preserved recollection/UNVERIFIED labels.
+- Extended real Chrome E2E: uploaded synthetic instruction image is read by real Tesseract, retains UNKNOWN amount and produces no browser request to its attack URL. Hostile recollection markup survives as escaped export text, with zero script/image elements in the report. No API interception or graph fallback introduced. Production OCR/application behavior unchanged.
+- `npm run test:security` passed: **42 regular tests** (7 infra, 4 graph offline, 18 API, 13 web), **38 HTTP integration tests** (auth 9, evidence 8, OCR 4, claims 4, clarifications 3, exports 5, investigations 5), and **1 real-browser workflow**: **81 total**. Expanded hostile-upload browser test subsequently passed. Covered role/IDOR/revocation, invalid/oversized/mismatched uploads, original tampering, provenance preservation, missing OCR, malformed graph responses and actual disabled-graph 503; graph-success transport fixtures remain explicitly test-only.
+- Lint, full typecheck including E2E, builds and whitespace checks passed. Temporary DBs/files/browser/server children cleaned, project PostgreSQL stopped and final status empty; working volume/config preserved. No paid service, EC2 change or benchmark.
+- Limits: no actual TigerGraph runtime or graph-server attack test; re-run live scope/source checks after deployment. No dependency vulnerability audit, independent penetration test or production security certification performed. T14–T16 optional; required live acceptance T09–T12 still outstanding.
