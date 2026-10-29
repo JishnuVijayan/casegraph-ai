@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, HttpException, Inject, Injectable, OnModuleDestroy, ServiceUnavailableException } from '@nestjs/common';
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import { connect } from '../db/connection';
 import { loadFixtures } from '../db/fixtures';
 import { auditEvents, cases, caseAccessGrants, organizations, users } from '../db/schema';
@@ -28,7 +28,7 @@ export class AccessStore implements OnModuleDestroy {
     return this.available((db) => db.transaction(async (tx) => {
       const organizationId = this.fixtures.organization.id;
       if (!organizationId) throw new ServiceUnavailableException();
-      const [row] = await tx.insert(cases).values({ ownerId: actor.id, title: `Synthetic ${title}`, category, synthetic: true }).returning();
+      const [row] = await tx.insert(cases).values({ ownerId: actor.id, title, category, synthetic: true }).returning();
       await tx.insert(auditEvents).values({ actorId: actor.id, action: 'CASE_CREATED', resourceType: 'case', resourceId: row.id, requestId });
       // Hackathon officer inbox: new complaints are auto-shared for investigation with the demo consortium.
       const [grant] = await tx.insert(caseAccessGrants).values({
@@ -117,9 +117,13 @@ export class AccessStore implements OnModuleDestroy {
       .where(and(eq(cases.synthetic,true),this.permitted(actor,'INVESTIGATE'))).orderBy(cases.id).limit(21)).map((row)=>row.id));
   }
   async list(actor: Actor) {
+    // Officers only see submitted complaints; victims see their own drafts too.
+    const filters = [eq(cases.synthetic, true), this.permitted(actor, 'READ')];
+    if (actor.role === 'analyst') filters.push(eq(cases.status, 'REVIEW_REQUIRED'));
     return this.available((db) => db.select({
       id: cases.id, title: cases.title, status: cases.status, category: cases.category, synthetic: cases.synthetic,
-    }).from(cases).where(and(eq(cases.synthetic, true), this.permitted(actor, 'READ'))).orderBy(cases.id));
+      updatedAt: cases.updatedAt,
+    }).from(cases).where(and(...filters)).orderBy(actor.role === 'analyst' ? desc(cases.updatedAt) : cases.id));
   }
   async audit(actor: Actor, action: string, resourceType: string, resourceId: string, requestId: string) {
     await this.available(async (db) => {

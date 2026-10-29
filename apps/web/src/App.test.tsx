@@ -8,7 +8,7 @@ afterEach(() => cleanup());
 test('shows victim intake hero with name and mobile, without fixture picker', () => {
   render(<MemoryRouter initialEntries={['/']}><App /></MemoryRouter>);
   expect(screen.getByRole('heading', { level: 1, name: 'CaseGraph AI' })).toBeVisible();
-  expect(screen.getByText('Hackathon demo · synthetic data')).toBeVisible();
+  expect(screen.getByText('Hackathon demo')).toBeVisible();
   expect(screen.getByText(/File a complaint in a few clear steps/)).toBeVisible();
   expect(screen.getByLabelText('Your name')).toBeVisible();
   expect(screen.getByLabelText('Mobile number')).toBeVisible();

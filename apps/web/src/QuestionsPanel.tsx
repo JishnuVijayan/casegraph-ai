@@ -32,8 +32,9 @@ export function QuestionsPanel({ token, caseId, owner, busy, perform, autoRefres
 
   useEffect(() => {
     if (!autoRefresh || !owner) return;
-    void performRef.current(() => load(true));
-  }, [autoRefresh, owner, caseId, token]);
+    // Victim prepare already refreshed; load current list only.
+    void performRef.current(() => load(compact ? false : true));
+  }, [autoRefresh, owner, caseId, token, compact]);
 
   async function answer(status: 'UNKNOWN' | 'ANSWERED') {
     if (!next) return;
@@ -59,21 +60,27 @@ export function QuestionsPanel({ token, caseId, owner, busy, perform, autoRefres
           {owner ? 'Check payment details for questions' : 'Read clarification history'}
         </button>
       )}
-      {loaded && !next && <p className="empty-hint empty-hint-ok">No current unanswered questions.</p>}
+      {loaded && !next && (
+        <p className="empty-hint empty-hint-ok">
+          {compact ? 'Nothing else is missing — you can submit.' : 'No current unanswered questions.'}
+        </p>
+      )}
       {next && (
         <form className="question-card" onSubmit={(event) => { event.preventDefault(); void perform(() => answer('ANSWERED')); }}>
           <p className="question-prompt">{next.prompt}</p>
           {!compact && <p className="evidence-meta">Payment event: {next.context.eventId}</p>}
-          <ul className="claim-chip-list">
-            {next.context.claims.map((c) => (
-              <li key={c.id} className="claim-chip">
-                {c.rawValue} · {c.sourceKind} · UNVERIFIED
-              </li>
-            ))}
-          </ul>
+          {!compact && (
+            <ul className="claim-chip-list">
+              {next.context.claims.map((c) => (
+                <li key={c.id} className="claim-chip">
+                  {c.rawValue} · {c.sourceKind} · UNVERIFIED
+                </li>
+              ))}
+            </ul>
+          )}
           {owner && (
             <>
-              <label htmlFor="clarification-answer">Your recollection</label>
+              <label htmlFor="clarification-answer">{compact ? 'Your answer' : 'Your recollection'}</label>
               <input
                 id="clarification-answer"
                 value={text}
@@ -83,16 +90,18 @@ export function QuestionsPanel({ token, caseId, owner, busy, perform, autoRefres
                 onChange={(e) => setText(e.target.value)}
               />
               <div className="action-row">
-                <button className="btn-primary" type="submit" disabled={busy}>Save recollection</button>
+                <button className="btn-primary" type="submit" disabled={busy}>
+                  {compact ? 'Save answer' : 'Save recollection'}
+                </button>
                 <button className="btn-ghost" type="button" disabled={busy} onClick={() => void perform(() => answer('UNKNOWN'))}>
-                  Unknown / I can’t remember
+                  {compact ? 'I don’t remember' : 'Unknown / I can’t remember'}
                 </button>
               </div>
             </>
           )}
         </form>
       )}
-      {rows.some((q) => q.status !== 'OPEN' || !q.isCurrent) && (
+      {!compact && rows.some((q) => q.status !== 'OPEN' || !q.isCurrent) && (
         <details className="history-details">
           <summary>Previous questions and answers</summary>
           <ul>

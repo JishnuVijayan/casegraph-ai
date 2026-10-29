@@ -1,23 +1,22 @@
 import { Link, Navigate } from 'react-router-dom';
 import { useState } from 'react';
-import { AnalystPanel } from './AnalystPanel';
 import { DemoBadge } from './DemoBadge';
-import { EvidencePanel } from './EvidencePanel';
-import { ExportPanel } from './ExportPanel';
-import { QuestionsPanel } from './QuestionsPanel';
-import { ReviewPanel } from './ReviewPanel';
+import { OfficerCaseReport } from './OfficerCaseReport';
 import { api, ApiFailure } from './api';
 import type { CaseDetail, CaseSummary, Session } from './types';
 
+type InboxRow = CaseSummary & { leadCount?: number };
+
 export function OfficerInboxPage() {
   const [session, setSession] = useState<Session | null>(null);
-  const [cases, setCases] = useState<CaseSummary[]>([]);
+  const [cases, setCases] = useState<InboxRow[]>([]);
   const [detail, setDetail] = useState<CaseDetail | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [fixtureId, setFixtureId] = useState('');
 
   function clear() {
-    setSession(null); setCases([]); setDetail(null);
+    setSession(null); setCases([]); setDetail(null); setFixtureId('');
   }
 
   async function perform(operation: () => Promise<void>) {
@@ -27,6 +26,19 @@ export function OfficerInboxPage() {
       if (failure instanceof ApiFailure && failure.status === 401) clear();
       setError(failure instanceof Error ? failure.message : 'Request failed.');
     } finally { setBusy(false); }
+  }
+
+  async function loadInbox(token: string) {
+    const rows = await api<CaseSummary[]>('/cases', token);
+    const withLeads = await Promise.all(rows.map(async (row) => {
+      try {
+        const leads = await api<unknown[]>(`/investigations/${row.id}/graph-leads`, token);
+        return { ...row, leadCount: leads.length };
+      } catch {
+        return { ...row, leadCount: 0 };
+      }
+    }));
+    setCases(withLeads);
   }
 
   async function openCase(id: string, token = session!.token) {
@@ -45,7 +57,7 @@ export function OfficerInboxPage() {
             <h1 id="officer-brand" className="hero-brand anim-rise">CaseGraph AI</h1>
             <p className="hero-headline anim-rise-delay">Review complaints and related-case leads.</p>
             <p className="hero-support anim-rise-delay">
-              Open a filed complaint for timeline, evidence, draft report, and similar-case search.
+              Open a submitted complaint for screenshots, answers, draft report, and similar-case leads.
             </p>
           </div>
           <form className="intake-card anim-fade" onSubmit={(event) => {
@@ -57,14 +69,14 @@ export function OfficerInboxPage() {
                 setSession(next);
                 return;
               }
-              const rows = await api<CaseSummary[]>('/cases', next.token);
-              setSession(next); setCases(rows);
+              await loadInbox(next.token);
+              setSession(next);
             });
           }}>
             <p className="intake-card-kicker">Officer access</p>
             <h2 className="intake-card-title">Demo workspace</h2>
             <p className="panel-lead" style={{ marginBottom: '1rem' }}>
-              Synthetic analyst login. Cases shared via auto-grant appear in your inbox.
+              Demo officer login. Submitted complaints shared with your organization appear here.
             </p>
             <button className="btn-primary btn-block" disabled={busy} type="submit">
               {busy ? 'Signing in…' : 'Continue as officer'}
@@ -97,11 +109,13 @@ export function OfficerInboxPage() {
 
       <section className="workspace-panel" aria-labelledby="inbox-title">
         <span className="step-label">Inbox</span>
-        <h2 id="inbox-title" className="text-xl font-bold m-0">Complaints</h2>
-        <p className="mt-2" style={{ color: 'var(--muted)' }}>Cases shared with your organization for investigation.</p>
+        <h2 id="inbox-title" className="text-xl font-bold m-0">Submitted complaints</h2>
+        <p className="mt-2" style={{ color: 'var(--muted)' }}>
+          Only complaints marked ready for review after victim submit.
+        </p>
         <button disabled={busy} onClick={() => void perform(async () => {
           setDetail(null);
-          setCases(await api<CaseSummary[]>('/cases', session.token));
+          await loadInbox(session.token);
         })}>Refresh inbox</button>
         {cases.length ? (
           <ul className="case-list" aria-label="Complaint inbox">
@@ -115,86 +129,47 @@ export function OfficerInboxPage() {
                 >
                   <strong>{row.title}</strong>
                   <span style={{ color: 'var(--muted)', fontWeight: 500 }}>
-                    {' · '}{row.status}{row.category ? ` · ${row.category}` : ''}
+                    {' · '}{row.category || 'case'}
+                    {row.updatedAt ? ` · ${new Date(row.updatedAt).toLocaleString()}` : ''}
+                    {typeof row.leadCount === 'number' && row.leadCount > 0 ? ` · ${row.leadCount} lead${row.leadCount === 1 ? '' : 's'}` : ''}
                   </span>
                 </button>
               </li>
             ))}
           </ul>
         ) : (
-          <p>No complaints in your inbox yet.</p>
+          <p>No submitted complaints yet.</p>
         )}
+        <details className="inbox-advanced">
+          <summary>Open by reference</summary>
+          <p className="panel-lead">For demo fixtures that are not in the submitted inbox.</p>
+          <label htmlFor="fixture-case-id">Case reference</label>
+          <input
+            id="fixture-case-id"
+            value={fixtureId}
+            disabled={busy}
+            onChange={(event) => setFixtureId(event.target.value.trim())}
+            placeholder="UUID"
+          />
+          <button
+            type="button"
+            className="btn-ghost"
+            disabled={busy || !fixtureId}
+            onClick={() => void perform(() => openCase(fixtureId))}
+          >
+            Open complaint
+          </button>
+        </details>
       </section>
 
       {detail && (
-        <article aria-label="Case report" className="anim-rise">
-          <section className="workspace-panel">
-            <span className="step-label">Case report</span>
-            <h2 className="text-2xl font-bold m-0">{detail.title}</h2>
-            <p className="mt-2 mb-0" style={{ color: 'var(--muted)' }}>
-              {detail.status} · {detail.category} · ID {detail.id}
-            </p>
-          </section>
-
-          <section className="workspace-panel">
-            <span className="step-label">Evidence</span>
-            <EvidencePanel
-              key={`evidence-${detail.id}`}
-              token={session.token}
-              caseId={detail.id}
-              owner={false}
-              busy={busy}
-              perform={perform}
-            />
-          </section>
-
-          <section className="workspace-panel">
-            <span className="step-label">Timeline and claims</span>
-            <ReviewPanel
-              key={`review-${detail.id}`}
-              token={session.token}
-              caseId={detail.id}
-              owner={false}
-              busy={busy}
-              refreshKey={0}
-              perform={perform}
-            />
-          </section>
-
-          <section className="workspace-panel">
-            <span className="step-label">Clarifications</span>
-            <QuestionsPanel
-              key={`questions-${detail.id}`}
-              token={session.token}
-              caseId={detail.id}
-              owner={false}
-              busy={busy}
-              perform={perform}
-            />
-          </section>
-
-          <section className="workspace-panel">
-            <span className="step-label">Complaint draft</span>
-            <ExportPanel
-              key={`export-${detail.id}`}
-              token={session.token}
-              caseId={detail.id}
-              busy={busy}
-              perform={perform}
-            />
-          </section>
-
-          <section className="workspace-panel">
-            <span className="step-label">Similar cases</span>
-            <AnalystPanel
-              key={`analyst-${detail.id}`}
-              token={session.token}
-              caseId={detail.id}
-              busy={busy}
-              perform={perform}
-            />
-          </section>
-        </article>
+        <OfficerCaseReport
+          key={detail.id}
+          token={session.token}
+          detail={detail}
+          busy={busy}
+          perform={perform}
+        />
       )}
 
       {busy && <p role="status">Working…</p>}

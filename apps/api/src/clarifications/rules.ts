@@ -10,13 +10,14 @@ export function questions(events: Payment[]) {
     const result: { kind: string; prompt: string; priority: number; fingerprint: string; context: typeof context }[] = [];
     const add = (kind: string, prompt: string, priority: number) => result.push({ kind, prompt, priority, context,
       fingerprint: createHash('sha256').update(JSON.stringify({ version: 1, kind, context })).digest('hex') });
-    const amounts = support.filter((c) => c.type === 'payment_amount');
+    const amounts = support.filter((c) => c.type === 'payment_amount' && c.rawValue.trim() && !/^(unknown|n\/a)$/i.test(c.rawValue.trim()));
     if (!support.some((c) => c.type === 'payment_reference' && c.rawValue.trim() && !/^(unknown|n\/a)$/i.test(c.rawValue.trim())))
       add('MISSING_REFERENCE', 'Do you remember the reference for this reported payment? You can answer Unknown.', 10);
     const normalized = amounts.map((c) => normalizeClaimValue(c.type, c.rawValue)?.amountMinorUnits).filter(Boolean);
-    if (amounts.length === 0 || normalized.length === 0)
+    // Any non-empty amount claim (including OCR text that did not fully normalize) suppresses MISSING_AMOUNT.
+    if (amounts.length === 0)
       add('MISSING_AMOUNT', 'Do you recall the approximate amount for this payment? You can answer Unknown.', 25);
-    if (new Set(normalized).size > 1)
+    if (normalized.length > 1 && new Set(normalized).size > 1)
       add('AMOUNT_CONFLICT', 'The claims linked to this payment show different amounts. Which amount do you recall, or is it unknown?', 30);
     const times = support.filter((c) => c.type === 'incident_time').map((c) => {
       if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/.test(c.rawValue)) return null;
