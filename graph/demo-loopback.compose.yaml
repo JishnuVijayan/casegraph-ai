@@ -1,0 +1,6 @@
+# Optional FUTURE HOST ONLY after credential rotation and REST authentication.
+# Never publish the database to the EC2 security group or public interfaces.
+services:
+  tigergraph:
+    ports:
+      - "127.0.0.1:14240:14240"

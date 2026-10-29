@@ -40,3 +40,12 @@ Generate the human-reviewable report draft: chronology, claims, unknowns, source
 - Can a hash prove screenshot authenticity? **No**, only integrity since ingest.
 - Who pays? Bank fraud-response/BPO team is hypothesis; validate workflow savings before selling.
 - Why not include Jev or phone calls? Optional if verified useful and cost feasible; not a precondition for the central value.
+
+## T10 source preparation status
+
+The schema, synthetic seed bundle, four-hop query and live functional verifier are
+prepared in `graph/`. They have not run in TigerGraph. Do not tick the live-instance
+or installed-query checklist based on offline fixture tests. On the future compatible
+EC2 host, finish T09, compile/install/load T10, repeat the seed, run `graph:verify-live`
+and record actual results before staging Act 4. Administrative fixture query checks
+do not establish the T11 backend's grant enforcement. No benchmarks are included.

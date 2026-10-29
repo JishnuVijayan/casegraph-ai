@@ -186,3 +186,14 @@ Output is limited to 2 MiB and 1,000 rows per queried section (413 on excess). E
 version remains frozen across later corrections. Browser Print / Save as PDF is a
 manual local action. Original images are not embedded or reauthenticated by export.
 Downloaded copies cannot be revoked from a user's device.
+
+## T10 graph query source status
+
+No investigation REST endpoint is implemented by T10. The candidate installed GSQL
+signature is `find_case_links(STRING case_id, INT max_hops, SET<STRING> allowed_case_ids)`
+for CaseGraphDemoV1. The extra scope argument is reserved for a trusted backend's
+current grant-derived case set. Four-hop paths include source/target case IDs,
+VPAs, shared account and four EvidenceRef IDs with synthetic/unverified/review labels.
+Other hop bounds or invalid scope return no paths. This is not a substitute for
+T11 backend authorization, source dereference checks or actual GSQL compilation.
+`graph:verify-live` is an administrative deployment check, not an application route.

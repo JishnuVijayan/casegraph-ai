@@ -1,0 +1,10 @@
+// Administrative fixture validation only. Never expose via the application API.
+USE GRAPH CaseGraphDemoV1
+CREATE OR REPLACE QUERY verify_fixture_inventory() FOR GRAPH CaseGraphDemoV1 {
+  C = {CaseReport.*}; U = {UPI_VPA.*}; B = {BankAccount.*};
+  P = {PhoneNumber.*}; S = {SocialHandle.*}; D = {PhishingDomain.*}; E = {EvidenceRef.*};
+  PRINT C.size() AS CaseReport, U.size() AS UPI_VPA, B.size() AS BankAccount,
+    P.size() AS PhoneNumber, S.size() AS SocialHandle, D.size() AS PhishingDomain,
+    E.size() AS EvidenceRef;
+}
+INSTALL QUERY verify_fixture_inventory

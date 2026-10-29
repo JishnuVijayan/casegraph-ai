@@ -11,7 +11,7 @@
   "scripts": {
     "dev": "concurrently -k -n api,web \"npm run dev -w @casegraph/api\" \"npm run dev -w @casegraph/web\"",
     "build": "npm run build --workspaces",
-    "test": "npm run infra:test && npm run test --workspaces",
+    "test": "npm run infra:test && npm run graph:test && npm run test --workspaces",
     "lint": "eslint .",
     "typecheck": "npm run typecheck --workspaces",
     "infra:init": "node infra/manage.mjs init",
@@ -35,7 +35,10 @@
     "test:exports": "node infra/exports-test.mjs",
     "graph:preflight": "node infra/tigergraph.mjs preflight",
     "graph:config": "node infra/tigergraph.mjs config",
-    "graph:health": "node infra/tigergraph.mjs health"
+    "graph:health": "node infra/tigergraph.mjs health",
+    "graph:bundle": "node graph/bundle.mjs",
+    "graph:test": "node --test graph/test/*.test.mjs",
+    "graph:verify-live": "node graph/verify-live.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

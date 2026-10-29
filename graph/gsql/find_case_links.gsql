@@ -1,0 +1,40 @@
+// Candidate GSQL 4.2 source: NOT compiled/installed in this workspace.
+// Only the future trusted backend may supply allowed_case_ids from active grants.
+// No end-user access to TigerGraph credentials or arbitrary scope parameters.
+USE GRAPH CaseGraphDemoV1
+CREATE OR REPLACE QUERY find_case_links(STRING case_id, INT max_hops, SET<STRING> allowed_case_ids) FOR GRAPH CaseGraphDemoV1 SYNTAX V2 {
+  TYPEDEF TUPLE<STRING source_case_id, STRING source_vpa_id, STRING account_id,
+    STRING target_vpa_id, STRING target_case_id, STRING source_report_ref,
+    STRING source_settlement_ref, STRING target_settlement_ref, STRING target_report_ref,
+    STRING source_kind, STRING verification_status, STRING review_status, STRING data_origin> Path;
+  SetAccum<Path> @@paths;
+  IF max_hops == 4 AND allowed_case_ids.size() <= 20 AND allowed_case_ids.contains(case_id) THEN
+    Start = {CaseReport.*};
+    Start = SELECT s FROM Start:s WHERE s.case_id == case_id AND s.synthetic;
+    Matches = SELECT t
+      FROM Start:s -(CASE_REPORTED_VPA:e1)-> UPI_VPA:u1
+        -(VPA_SETTLED_TO_ACCOUNT:e2)-> BankAccount:b
+        -(ACCOUNT_SETTLED_FROM_VPA:e3)-> UPI_VPA:u2
+        -(VPA_REPORTED_BY_CASE:e4)-> CaseReport:t
+      WHERE t.case_id != s.case_id AND allowed_case_ids.contains(t.case_id)
+        AND u1.synthetic AND b.synthetic AND u2.synthetic AND t.synthetic
+        AND e1.case_id == s.case_id AND e2.case_id == s.case_id
+        AND e3.case_id == t.case_id AND e4.case_id == t.case_id
+        AND e1.synthetic AND e2.synthetic AND e3.synthetic AND e4.synthetic
+        AND e1.source_kind == "SYSTEM_INFERENCE" AND e2.source_kind == "SYSTEM_INFERENCE"
+        AND e3.source_kind == "SYSTEM_INFERENCE" AND e4.source_kind == "SYSTEM_INFERENCE"
+        AND e1.verification_status == "UNVERIFIED" AND e2.verification_status == "UNVERIFIED"
+        AND e3.verification_status == "UNVERIFIED" AND e4.verification_status == "UNVERIFIED"
+        AND e1.review_status == "NEEDS_REVIEW" AND e2.review_status == "NEEDS_REVIEW"
+        AND e3.review_status == "NEEDS_REVIEW" AND e4.review_status == "NEEDS_REVIEW"
+        AND e1.data_origin == "SYNTHETIC_FIXTURE" AND e2.data_origin == "SYNTHETIC_FIXTURE"
+        AND e3.data_origin == "SYNTHETIC_FIXTURE" AND e4.data_origin == "SYNTHETIC_FIXTURE"
+      ACCUM @@paths += Path(s.case_id, u1.id, b.id, u2.id, t.case_id,
+        e1.evidence_id, e2.evidence_id, e3.evidence_id, e4.evidence_id,
+        "SYSTEM_INFERENCE", "UNVERIFIED", "NEEDS_REVIEW", "SYNTHETIC_FIXTURE");
+    PRINT @@paths AS paths, "SYNTHETIC_INVESTIGATIVE_LEAD" AS classification;
+  ELSE
+    PRINT @@paths AS paths, "INVALID_SCOPE_OR_HOP_BOUND" AS classification;
+  END;
+}
+INSTALL QUERY find_case_links
