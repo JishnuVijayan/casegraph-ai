@@ -1,7 +1,7 @@
 # CaseGraph AI
 
-**Current implementation: T00 scaffold only.** React/Vite and NestJS run locally.
-See [implemented local setup](#implemented-local-scaffold-t00) for commands.
+**Current implementation: T00 scaffold, T01 local infrastructure, T02 database bootstrap, T03 demo authorization, T04 controlled uploads.** React/Vite and NestJS run locally.
+See [app setup](#implemented-local-scaffold-t00) and [local infrastructure](#implemented-local-infrastructure-t01) for commands.
 The following product blueprint includes future, unimplemented features.
 
 **Evidence-grounded cybercrime reporting, case reconstruction, and authorized graph investigation — built India-first.**
@@ -852,5 +852,89 @@ npm test
 npm run build
 ```
 
-There are no migration or seed commands yet (T02). Infrastructure is T01.
+Migration/seed commands are documented in the T02 database bootstrap section. Infrastructure commands are in the T01 section.
 Evidence, authentication, and graph routes are not exposed by this scaffold.
+
+## Implemented local infrastructure (T01)
+
+PostgreSQL and private local evidence storage are now configured independently
+of the application scaffold. From the repository root with Docker running:
+
+```bash
+npm run infra:init
+npm run infra:config
+npm run infra:up
+npm run infra:status
+npm run infra:smoke:db
+npm run infra:smoke:storage
+npm run infra:down
+```
+
+The database binds to `127.0.0.1:55432`; credentials are generated in ignored
+`.env`. Private evidence belongs in ignored `.local/evidence`, never the frontend.
+The smoke checks use synthetic data; the database check restarts this project's
+container, and the storage check builds and temporarily starts its own servers.
+Shutdown preserves the database volume. See [infra/README.md](infra/README.md) for
+prerequisites, the pinned image, commands, credential handling and limitations.
+Schema migrations and synthetic seeding are documented below (T02); authenticated application access remains T03.
+
+## Implemented database bootstrap (T02)
+
+After `npm run infra:up`, run:
+
+```bash
+npm run db:migrate
+npm run seed:synthetic
+npm run db:verify
+npm run infra:down
+```
+
+Drizzle now defines the 15 canonical tables with a reviewed SQL migration. Seeds
+create one fictional consortium, two victim identities, one analyst, 20 synthetic
+case placeholders and three sharing examples. Repeating seeds preserves edits.
+`db:verify` uses a separate temporary local database and removes it afterward.
+`npm run db:generate` generates future migrations offline. See
+[infrastructure instructions](infra/README.md) and [data model](docs/DATA_MODEL.md).
+T03 adds demo authentication and protected case reads; T04 adds original evidence ingestion; OCR remains unimplemented. No fixture is a real victim record or live investigation result.
+
+## Local demo login and authorization (T03)
+
+```bash
+npm run infra:up
+npm run db:migrate
+npm run seed:synthetic
+npm run dev:demo
+```
+
+Open http://127.0.0.1:5173 and choose a fictional identity. Victims see only their
+10 owned placeholders; the seeded analyst sees the one actively shared case.
+Owners can explicitly grant/revoke scope to the Fictional Demo Consortium. Case creation and uploads are implemented in T04 below. Refresh the permitted list to observe grant changes.
+
+`npm run dev` keeps login disabled unless DEMO_MODE=true was explicitly configured.
+Demo mode is refused with NODE_ENV=production. This is local role simulation;
+no real passwords or identity verification. Sessions expire after 30 minutes and
+are cleared on server restart; browser tokens are held only in memory.
+
+`npm test` runs offline unit/component/API checks. With infrastructure running,
+`npm run test:auth` runs 9 HTTP authorization tests against a temporary local
+PostgreSQL database, then removes it. `npm run db:verify` remains the migration
+regression check. Stop dev servers with Ctrl+C and infrastructure with
+`npm run infra:down`; volume contents are preserved.
+
+## Synthetic case creation and evidence originals (T04)
+
+Start the seeded local demo as described above. As a fictional victim, create a
+synthetic draft, read it, and choose an entirely fictional PNG/JPEG to upload.
+Confirm the synthetic-only checkbox. Refresh the evidence manifest to inspect
+its source ID, MIME, byte count, SHA-256 and upload time. Download the original
+through its authenticated action. Shared analysts may read/download but cannot
+upload; revoking their last active grant denies the next manifest or original read.
+
+Files are limited to 5 MiB and validated before commit. Originals are private,
+read-only, never replaced, and SHA-256 checked before download. Hashes establish
+post-ingest integrity, not authenticity. There is no PDF ingestion, OCR, automated
+report or live graph result yet. Never upload real records or personal images.
+
+With local PostgreSQL running, `npm run test:evidence` creates an isolated synthetic
+database/private directory, runs 8 upload/authorization tests and removes its own
+fixtures. `npm run test:auth` remains the separate 9-test authorization regression.

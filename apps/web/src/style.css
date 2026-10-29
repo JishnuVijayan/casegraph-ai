@@ -3,3 +3,11 @@ body { margin: 0; color: #172b36; background: #f8fafc; font-family: system-ui, s
 a { color: #075985; text-decoration: underline; }
 a:focus-visible { outline: 3px solid #075985; outline-offset: 3px; }
 p { margin-block: 1rem; }
+
+button, input, select { border: 1px solid #64748b; border-radius: 0.35rem; padding: 0.5rem 0.75rem; margin: 0.3rem; min-height: 44px; }
+button { cursor: pointer; background: white; }
+button:disabled { cursor: wait; opacity: 0.6; }
+label { display: block; font-weight: 600; margin-top: 0.75rem; }
+input { max-width: 100%; width: 24rem; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #075985; outline-offset: 2px; }
+[role="alert"] { color: #9f1239; }

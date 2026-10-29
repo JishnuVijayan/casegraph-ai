@@ -26,21 +26,32 @@
 
 **Mode C (optional experiment):** Local Whisper for voice recording transcription; require explicit editing. Telephone integration postponed.
 
-## Practical commands (after project code is scaffolded)
+## Implemented local commands (T00/T01)
+
+No paid API credentials are required. Docker must be running for infrastructure.
+Run these commands from the repository root after `npm ci`:
+
 ```bash
-# Verify prerequisites
 node --version
 docker --version
 docker compose version
-
-# Start local infrastructure, once infra/compose.yaml is created
-# docker compose -f infra/compose.yaml up -d
-
-# A local Ollama server, only if installed and model downloaded:
-# ollama list
-# curl http://127.0.0.1:11434/api/tags
+npm run infra:init
+npm run infra:config
+npm run infra:up
+npm run infra:status
+npm run infra:smoke:db
+npm run infra:smoke:storage
+npm run infra:down
 ```
-The commented commands are proposed workflow guidance, not proof the files already exist.
+
+The init command safely creates ignored `.env` credentials and private
+`.local/evidence`. PostgreSQL publishes only `127.0.0.1:55432`. Shutdown preserves
+its volume. The DB smoke check restarts this project's container; storage smoke
+builds both apps and starts temporary loopback servers on 3000/15173/15174.
+See [infrastructure instructions](../infra/README.md) for the pinned image and
+credential/persistence behavior. T02 adds `npm run db:migrate`, `npm run seed:synthetic`, and `npm run db:verify`
+after `infra:up`. Database verification uses/removes a temporary local database.
+OCR and graph setup remain unimplemented.
 
 ## TigerGraph Community important licensing distinction
 Official comparison (2026): Community Edition is listed as **free**, single-server and available in Docker with graph/vector capabilities. Its [March 5, 2026 software license](https://www.tigergraph.com/license-agreement/) contains restrictions on **benchmarking, license scope and support**. Read the license before deciding how to run and showcase it. Do not promise that Community Edition permits your future production SaaS/hosted-service use or publish throughput claims without permission. For the hackathon, use local internal demonstration data; seek sponsor clarification about permitted use and access. Resources:
@@ -57,3 +68,10 @@ Codex is included in current ChatGPT plans, but how much you can use depends on 
 - Tesseract is open-source under Apache-2.0: https://tesseract-ocr.github.io/tessdoc/
 - whisper.cpp is MIT licensed; model licenses must be verified separately: https://github.com/ggml-org/whisper.cpp
 - Never enter credit-card details or enable a chargeable cloud product without a conscious decision.
+
+## T03 local demo
+
+After migration/seeding, use `npm run dev:demo` to opt into fictional login.
+Regular `npm run dev` leaves login disabled by default. `npm run test:auth`
+requires PostgreSQL and uses/removes an isolated temporary database. No paid
+identity service or API key is needed. Never use demo role selection for real data.

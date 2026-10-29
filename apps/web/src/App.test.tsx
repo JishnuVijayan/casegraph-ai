@@ -7,6 +7,6 @@ test('shows urgent official guidance and honest scaffold boundaries', () => {
  expect(screen.getByRole('link', { name: '1930' })).toHaveAttribute('href', 'tel:1930');
  expect(screen.getByRole('link', { name: 'cybercrime.gov.in' })).toHaveAttribute('href', 'https://cybercrime.gov.in/');
  expect(screen.getByText(/Contact your bank immediately/)).toBeVisible();
- expect(screen.getByText(/Scaffold only/)).toBeVisible();
- expect(screen.queryByLabelText(/upload/i)).not.toBeInTheDocument();
+ expect(screen.getByText(/Create synthetic cases and upload/)).toBeVisible();
+ expect(screen.queryByLabelText(/Synthetic PNG/)).not.toBeInTheDocument();
 });
