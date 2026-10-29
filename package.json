@@ -13,7 +13,8 @@
     "build": "npm run build --workspaces",
     "test": "npm run infra:test && npm run graph:test && npm run test --workspaces",
     "lint": "eslint .",
-    "typecheck": "npm run typecheck --workspaces",
+    "typecheck": "npm run typecheck --workspaces && npm run typecheck:e2e",
+    "typecheck:e2e": "tsc -p e2e/tsconfig.json",
     "infra:init": "node infra/manage.mjs init",
     "infra:config": "node infra/manage.mjs config",
     "infra:up": "node infra/manage.mjs up",
@@ -34,6 +35,8 @@
     "test:clarifications": "node infra/clarifications-test.mjs",
     "test:exports": "node infra/exports-test.mjs",
     "test:investigations": "node infra/investigations-test.mjs",
+    "test:e2e": "npm run build -w @casegraph/api && node infra/e2e.mjs",
+    "test:e2e:live": "npm run build -w @casegraph/api && node infra/e2e.mjs --live-graph",
     "graph:preflight": "node infra/tigergraph.mjs preflight",
     "graph:config": "node infra/tigergraph.mjs config",
     "graph:health": "node infra/tigergraph.mjs health",
@@ -42,11 +45,12 @@
     "graph:verify-live": "node graph/verify-live.mjs"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "@playwright/test": "1.64.1",
     "concurrently": "^9.2.1",
     "eslint": "^9.39.0",
-    "@eslint/js": "^9.39.0",
-    "typescript-eslint": "^8.46.0",
     "globals": "^16.4.0",
-    "typescript": "~5.9.3"
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.46.0"
   }
 }

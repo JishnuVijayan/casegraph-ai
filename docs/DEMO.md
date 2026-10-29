@@ -59,3 +59,16 @@ explicit graph fixtures only into test modules. Before Act 4, complete the actua
 host installation, install get_lead_sources alongside find_case_links, verify both
 with graph:verify-live and then run the analyst UI against that host/tunnel. Do not
 present mocked transport tests or saved snapshots as a new live query demonstration.
+
+## T12 observed browser replay
+
+`npm run test:e2e` now reproduces the local reporting flow from a fresh isolated
+seed in Chrome with real local Tesseract: six uploads in disordered date order,
+actual source crop, correction/revision, date-only timeline ordering, UNKNOWN,
+report preview/download/hash equality, original-byte preservation, grants and denied
+reads. It also verifies the graph-disabled unavailable state without a fixture path.
+This is automation evidence for the local flow; stage rehearsals and manual print
+output still need review. The actual graph demo remains unverified. After host
+setup, `test:e2e:live` must pass the real path/source/review/revocation branch before
+claiming complete victim-to-investigator E2E acceptance. The authored graph fixture
+is not misrepresented as independently verified banking evidence from the uploads.

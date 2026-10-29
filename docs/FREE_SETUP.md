@@ -119,3 +119,14 @@ query actions show unavailable; no fake path is substituted. Future EC2 setup ma
 incur hosting costs and needs its own deployment/budget review; no resource was
 provisioned during T11. `npm run test:investigations` uses local PostgreSQL plus
 explicitly mocked TigerGraph transport in a temporary synthetic database.
+
+## T12 real browser workflow
+
+After `npm ci`, ensure Google Chrome, local English Tesseract and PostgreSQL are
+available, then run `npm run test:e2e`. It uses a temporary synthetic database/private
+files and separate servers; it never resets the working DB or reuses running app
+ports. Default graph mode is disabled and must show unavailable. No browser binary
+or paid API service is installed by this command. `test:e2e:live` requires the future
+actual graph/tunnel and private app token, failing when absent rather than skipping.
+See [E2E runbook](../e2e/README.md). Both modes clean owned servers/database/files;
+stop project PostgreSQL separately with `npm run infra:down` when finished.

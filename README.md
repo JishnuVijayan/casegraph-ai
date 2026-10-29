@@ -1005,3 +1005,15 @@ guilt or verifies a bank record. Saved snapshots display capture time and are hi
 if a case grant is revoked/expired. These app paths have synthetic mocked-transport
 HTTP/component coverage; an actual installed query demonstration is still pending
 T09/T10 on the future compatible host. See graph/README.md for handoff/configuration.
+
+### T12 browser workflow (local reporting passed; live graph pending)
+
+With local PostgreSQL, Google Chrome and English Tesseract installed, run
+`npm run test:e2e`. Playwright drives the actual UI through six disordered synthetic
+uploads, real OCR/source crops, correction/history, chronological review, UNKNOWN,
+export preview/download/hash checks and scoped access/revocation. It uses a fresh
+isolated temporary database/private files and separate servers, then cleans them up.
+Default mode requires honest graph-unavailable behavior. The separate
+`npm run test:e2e:live` requires the future installed graph and private app token;
+it never skips the live path or substitutes fixtures. See [E2E runbook](e2e/README.md).
+T12 remains unchecked until the actual live-graph branch passes after deployment.

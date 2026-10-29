@@ -194,3 +194,21 @@ synthetic authored scenarios and cannot pretend these are uploaded originals or
 bank records. React renders values as text. Tests validate authorization using real
 PostgreSQL and explicitly mocked graph responses; actual graph behavior remains
 unverified until T09/T10 deployment. No EC2/account/network change was made here.
+
+## T12 E2E harness boundary
+
+E2E bootstraps live under e2e/ and are not production HTTP handlers. They admit only
+a generated test database prefix, private temporary file root and explicit graph
+mode. The lifecycle wrapper creates those resources, rejects occupied ports and
+cleans only its own children/database/files. It does not reuse the working casegraph
+DB, dev server, real evidence or browser profile. An abrupt kill can leave generated
+resources; cleanup must target only those owned names.
+
+Browser traces, video and screenshots are disabled; ephemeral role tokens stay in
+memory and are not logged or stored as browser state. Ignored error artifacts may
+contain only the controlled synthetic records from the isolated run. Default mode
+cannot inherit an enabled graph flag; required-live mode checks a private app token
+and requires actual paths. No API interception/mock result fallback exists. Real
+graph credentials, networking, license use and EC2 resources are not configured by
+the browser harness. The future graph fixture remains authored scenario data, not
+a claim that uploaded screenshots independently verify financial links.
