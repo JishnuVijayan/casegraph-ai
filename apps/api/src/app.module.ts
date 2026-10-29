@@ -15,6 +15,7 @@ import { CaseScopeGuard, Public, RolesGuard, SessionGuard } from './auth/guards'
 import { Sessions } from './auth/sessions';
 import { AccessStore, LOCAL_DATABASE } from './auth/store';
 import { CasesController } from './cases/controller';
+import { CasesService } from './cases/service';
 import { resolve } from 'node:path';
 import { EvidenceController } from './evidence/controller';
 import { EvidenceService } from './evidence/service';
@@ -36,7 +37,7 @@ class HealthController {
 @Module({
   exports: [AccessStore, CaseScopeGuard],
   controllers: [InvestigationsController, GraphLeadsController, ExportsController, ClarificationsController, HealthController, AuthController, CasesController, EvidenceController, ExtractionController, ClaimsController, TimelineController],
-  providers: [InvestigationsService, GraphConfig, TigerGraphClient, {provide:GRAPH_FETCH,useValue:fetch}, {provide:GRAPH_TOKEN_FILE,useValue:resolve(__dirname,'../../../.local/tigergraph-app.token')}, ExportsService, ClarificationsService, EvidenceService, EvidenceStorage, ExtractionService, ClaimsService, { provide: TESSERACT_BINARY, useFactory: () => process.env.TESSERACT_BINARY || 'tesseract' }, { provide: TEXTRACT_CLIENT, useValue: undefined }, { provide: BEDROCK_CLIENT, useValue: undefined }, { provide: EVIDENCE_DIRECTORY, useValue: resolve(__dirname, '../../../.local/evidence') }, DemoConfig, Sessions, AccessStore, CaseScopeGuard,
+  providers: [InvestigationsService, GraphConfig, TigerGraphClient, {provide:GRAPH_FETCH,useValue:fetch}, {provide:GRAPH_TOKEN_FILE,useValue:resolve(__dirname,'../../../.local/tigergraph-app.token')}, ExportsService, ClarificationsService, CasesService, EvidenceService, EvidenceStorage, ExtractionService, ClaimsService, { provide: TESSERACT_BINARY, useFactory: () => process.env.TESSERACT_BINARY || 'tesseract' }, { provide: TEXTRACT_CLIENT, useValue: undefined }, { provide: BEDROCK_CLIENT, useValue: undefined }, { provide: EVIDENCE_DIRECTORY, useValue: resolve(__dirname, '../../../.local/evidence') }, DemoConfig, Sessions, AccessStore, CaseScopeGuard,
     { provide: LOCAL_DATABASE, inject: [DemoConfig], useFactory: (config: DemoConfig) => config.enabled ? connect('casegraph', config.database) : undefined },
     { provide: APP_GUARD, useClass: SessionGuard }, { provide: APP_GUARD, useClass: RolesGuard }],
 })

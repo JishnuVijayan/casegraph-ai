@@ -20,6 +20,45 @@ export class InvestigationsService {
     if(!row)throw new ForbiddenException();
     const snapshot=parseSnapshot(row.path,row.caseId,await this.scope(req));return {row,snapshot};
   }
+  /**
+   * Victim submit helper: capture similar-case leads for the demo consortium when TigerGraph is up.
+   * Never invents paths; returns UNAVAILABLE when the graph client/runtime is down.
+   */
+  async captureForSubmit(req:ApiRequest):Promise<{leadsStatus:'CAPTURED'|'UNAVAILABLE'|'NONE';similarCaseCount:number}> {
+    const root=req.caseRecord!.id;
+    const organizationId=this.access.fixtures.organization.id;
+    if(!organizationId)return {leadsStatus:'UNAVAILABLE',similarCaseCount:0};
+    try{
+      const scoped=[...new Set([root,...await this.access.orgInvestigateCaseIds(20)])].slice(0,20);
+      const signal=AbortSignal.timeout(12000);
+      const result=await this.graph.execute('find_case_links',{case_id:root,max_hops:4,allowed_case_ids:scoped},signal);
+      if(result.classification!=='SYNTHETIC_INVESTIGATIVE_LEAD'||!Array.isArray(result.paths)||result.paths.length>20){
+        return {leadsStatus:'UNAVAILABLE',similarCaseCount:0};
+      }
+      const paths:GraphPath[]=result.paths.map((p)=>parsePath(p,root,scoped));
+      if(!paths.length)return {leadsStatus:'NONE',similarCaseCount:0};
+      if(new Set(paths.map((p)=>JSON.stringify(p))).size!==paths.length)return {leadsStatus:'UNAVAILABLE',similarCaseCount:0};
+      const evidence_ids=[...new Set(paths.flatMap(pathRefs).map((r)=>r.id))];
+      let sources=parseSources([]);
+      if(evidence_ids.length){
+        const response=await this.graph.execute('get_lead_sources',{evidence_ids,allowed_case_ids:scoped},signal);
+        if(response.classification!=='SYNTHETIC_FIXTURE_SOURCES')return {leadsStatus:'UNAVAILABLE',similarCaseCount:0};
+        sources=parseSources(response.sources);
+      }
+      validateSources(paths,sources);
+      await this.access.available((db)=>db.transaction(async(tx)=>{
+        for(const path of paths){
+          const ids=new Set(pathRefs(path).map((r)=>r.id));
+          const snapshot:LeadSnapshot={version:1,path,sources:sources.filter((s)=>ids.has(s.id))};
+          await tx.insert(graphLeads).values({caseId:root,organizationId,path:snapshot,reviewStatus:'NEEDS_REVIEW'});
+        }
+        await tx.insert(auditEvents).values({actorId:req.actor!.id,action:'GRAPH_QUERY_ON_SUBMIT',resourceType:'case',resourceId:root,requestId:req.requestId});
+      }));
+      return {leadsStatus:'CAPTURED',similarCaseCount:paths.length};
+    }catch{
+      return {leadsStatus:'UNAVAILABLE',similarCaseCount:0};
+    }
+  }
   async query(req:ApiRequest){
     const root=req.caseRecord!.id,allowed=await this.scope(req),signal=AbortSignal.timeout(12000);
     if(!allowed.includes(root))throw new ForbiddenException();

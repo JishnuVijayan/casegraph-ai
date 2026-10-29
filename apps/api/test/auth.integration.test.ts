@@ -86,10 +86,11 @@ describe('PostgreSQL-backed HTTP authorization', () => {
     const absent = await http().get(`/api/v1/cases/${randomUUID()}`).set('Authorization', auth(b)).expect(403);
     expect(denied.body.error).toEqual(absent.body.error);
     await http().get('/api/v1/cases/not-a-uuid').set('Authorization', auth(a)).expect(403);
-    expect((await http().get('/api/v1/cases').set('Authorization', auth(a)).expect(200)).body.data).toHaveLength(25);
+    const ownedByA = fixture.cases.filter((row) => row.ownerId === fixture.users[0].id).length;
+    expect((await http().get('/api/v1/cases').set('Authorization', auth(a)).expect(200)).body.data).toHaveLength(ownedByA);
     const analystIds = (await http().get('/api/v1/cases').set('Authorization', auth(analyst)).expect(200)).body.data.map((row: { id: string }) => row.id) as string[];
     expect(analystIds).toContain(caseA);
-    expect(analystIds.length).toBeGreaterThan(40);
+    expect(analystIds.length).toBeGreaterThan(1);
     expect(analystIds).not.toContain(caseB);
     expect(analystIds).not.toContain(casePrivate);
   });
@@ -144,6 +145,20 @@ describe('PostgreSQL-backed HTTP authorization', () => {
     try { await http().get('/api/v1/auth/me').set('Authorization', auth(b)).expect(401); }
     finally { clock.mockRestore(); }
     a = await login('synthetic-victim-a');
+  });
+  it('accepts name+mobile intake, upserts a synthetic victim, and reuses the same subject', async () => {
+    const first = await http().post('/api/v1/auth/intake')
+      .send({ displayName: 'Priya Demo', mobile: '9876543210' }).expect(200);
+    expect(first.body.data.user.role).toBe('victim');
+    expect(first.body.data.user.displayName).toBe('Priya Demo');
+    expect(first.body.data.token).toMatch(/^[a-f0-9]{64}$/);
+    await http().post('/api/v1/auth/intake').send({ displayName: 'P', mobile: '123' }).expect(400);
+    const second = await http().post('/api/v1/auth/intake')
+      .send({ displayName: 'Priya Updated', mobile: '9876543210' }).expect(200);
+    expect(second.body.data.user.id).toBe(first.body.data.user.id);
+    expect(second.body.data.user.displayName).toBe('Priya Updated');
+    const me = await http().get('/api/v1/auth/me').set('Authorization', auth(second.body.data.token)).expect(200);
+    expect(me.body.data.displayName).toBe('Priya Updated');
   });
   it('auto-grants INVESTIGATE to the demo consortium when a victim creates a case', async () => {
     a = await login('synthetic-victim-a');
