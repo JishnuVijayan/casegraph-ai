@@ -125,3 +125,17 @@ uniquely named temporary test database may remain for manual cleanup. Never drop
 
 Stable installed versions are locked: Drizzle ORM 0.45.4, Kit 0.31.11, pg 8.23.1.
 See [Drizzle's migration guide](https://orm.drizzle.team/docs/migrations).
+
+## T03 authorization checks
+
+`npm run test:auth` requires running local PostgreSQL. It creates a unique
+`casegraph_t03_test_*` database, migrates/seeds it, exercises real NestJS HTTP
+session/role/case guards and sharing, then removes only its test database.
+A single query-error fault injection verifies sanitized HTTP 503 behavior; this
+is not a claim of a real outage test. Forced interruption can leave the uniquely
+named test database for deliberate manual cleanup.
+
+`npm run dev:demo` explicitly enables fictional login using the root private
+.env PostgreSQL configuration. No API secret is exposed to Vite. Disabled mode
+can run public process liveness without PostgreSQL. Idle pool errors are handled
+without logging connection details; subsequent database operations fail closed.

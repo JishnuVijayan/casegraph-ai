@@ -68,3 +68,10 @@ Codex is included in current ChatGPT plans, but how much you can use depends on 
 - Tesseract is open-source under Apache-2.0: https://tesseract-ocr.github.io/tessdoc/
 - whisper.cpp is MIT licensed; model licenses must be verified separately: https://github.com/ggml-org/whisper.cpp
 - Never enter credit-card details or enable a chargeable cloud product without a conscious decision.
+
+## T03 local demo
+
+After migration/seeding, use `npm run dev:demo` to opt into fictional login.
+Regular `npm run dev` leaves login disabled by default. `npm run test:auth`
+requires PostgreSQL and uses/removes an isolated temporary database. No paid
+identity service or API key is needed. Never use demo role selection for real data.

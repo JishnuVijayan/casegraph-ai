@@ -58,3 +58,28 @@ Only `GET /api/v1/health/live` is implemented. It returns HTTP 200 with
 `data: { status: "ok", scope: "process-only", mode: "local-synthetic" }` and a
 fresh request ID. This does not check PostgreSQL or TigerGraph. Readiness and all
 case/evidence/auth/graph routes remain unimplemented (404).
+
+## Implemented T03 routes
+
+T03 supersedes the T00 implementation status above. All responses use the documented
+success/error envelope and server-generated request IDs. Responses are `no-store`.
+
+| Method/path under `/api/v1` | Access | Behavior |
+|---|---|---|
+| `POST /auth/demo` | Public, opt-in demo mode | JSON `{demoSubject}`; only synthetic-victim-a, synthetic-victim-b, synthetic-analyst accepted; returns opaque token, expiry and fictional user |
+| `GET /auth/me` | Bearer session | Current DB-backed identity |
+| `POST /auth/logout` | Bearer session | Invalidates session |
+| `GET /cases` | Victim/analyst | Only owned or actively granted synthetic cases |
+| `GET /cases/:caseId` | CaseScopeGuard | Owner or analyst with active explicit grant |
+| `POST /cases/:caseId/shares` | Owner victim only | `{organizationId, scope, expiresAt?}`; READ/INVESTIGATE, fictional consortium only; explicit action can reactivate the same scope |
+| `DELETE /cases/:caseId/shares/:grantId` | Owner victim only | Revokes that grant; other active scopes still apply |
+
+Use `Authorization: Bearer <token>`, never user/role IDs from request bodies or
+headers. DTOs reject undeclared fields. Nonexistent, malformed and unauthorized
+case IDs all return the same 403 error. Unavailable DB operations return 503,
+without SQL, stack traces or parameters. Unknown routes remain 404.
+
+Roles and synthetic membership are checked against the DB on every private
+request. Grant validity includes organization, scope, current owner as grantor,
+revocation and expiration. Public health remains process-only; readiness, case
+creation, evidence, OCR, export and graph endpoints remain unimplemented.
