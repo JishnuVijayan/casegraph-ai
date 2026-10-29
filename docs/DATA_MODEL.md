@@ -125,3 +125,25 @@ UTC midnight for date-only and require a null timestamp for unknown precision.
 `event_claims` composite keys enforce that each linked support claim belongs to the
 same case. These database constraints complement, but do not replace, per-request
 case authorization.
+
+## T07 clarification history
+
+Migration `0004_clear_ezekiel_stane.sql` adds nullable `fingerprint` and `context_json`
+to clarifications plus unique `(case_id,fingerprint)`. Context records event ID and
+supporting claim IDs, interpreted values and source kinds. The fingerprint hashes a
+versioned deterministic rule kind and sorted snapshot. Existing rows are preserved;
+rows without a fingerprint are historical, not current. Answers record text or
+explicit null for UNKNOWN, source/verification labels, actor and time. There is no
+answer replacement endpoint. Currentness is calculated from current payment claims,
+so history survives correction without being presented as a current question.
+
+## T08 export snapshots
+
+Migration `0005_sloppy_ezekiel_stane.sql` adds nullable `content_html` and `sha256`
+to exports. New records store a frozen escaped HTML snapshot with checksum and
+logical `object_key` `db-export:<uuid>` within PostgreSQL. There is no public object
+or filesystem export file. Existing records with no content remain intact and
+return unavailable on download. `(case_id,version)` stays unique; generation locks
+the case row before reading data and allocating a version. Application writes do
+not modify old export snapshots. Downloads verify SHA-256 before returning bytes;
+this is corruption detection, not an administrator-proof audit or authenticity proof.

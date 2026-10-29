@@ -57,13 +57,14 @@ export class AccessStore implements OnModuleDestroy {
       ${inArray(caseAccessGrants.scope, scopes)} and ${caseAccessGrants.revokedAt} is null and
       (${caseAccessGrants.expiresAt} is null or ${caseAccessGrants.expiresAt} > now()))`;
   }
-  async findCase(actor: Actor, caseId: string, permission: CasePermission) {
+  async findCaseIn(db: Pick<ReturnType<typeof connect>['db'], 'select'>, actor: Actor, caseId: string, permission: CasePermission) {
     if (!/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(caseId)) throw new ForbiddenException();
-    return this.available(async (db) => {
-      const [row] = await db.select().from(cases).where(and(eq(cases.id, caseId), eq(cases.synthetic, true), this.permitted(actor, permission)));
-      if (!row) throw new ForbiddenException();
-      return row;
-    });
+    const [row] = await db.select().from(cases).where(and(eq(cases.id, caseId), eq(cases.synthetic, true), this.permitted(actor, permission)));
+    if (!row) throw new ForbiddenException();
+    return row;
+  }
+  async findCase(actor: Actor, caseId: string, permission: CasePermission) {
+    return this.available((db) => this.findCaseIn(db, actor, caseId, permission));
   }
   async list(actor: Actor) {
     return this.available((db) => db.select({ id: cases.id, title: cases.title, status: cases.status, synthetic: cases.synthetic })

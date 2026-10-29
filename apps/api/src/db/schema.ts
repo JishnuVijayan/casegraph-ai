@@ -138,9 +138,10 @@ export const eventClaims = pgTable('event_claims', {
 export const clarifications = pgTable('clarifications', {
   id: id(), caseId: uuid('case_id').notNull().references(() => cases.id), kind: text('kind').notNull(),
   prompt: text('prompt').notNull(), answer: jsonb('answer_json'),
+  fingerprint: text('fingerprint'), context: jsonb('context_json'),
   status: clarificationStatus('status').default('OPEN').notNull(), priority: integer('priority').default(0).notNull(),
   createdAt: createdAt(),
-}, (t) => [index('clarifications_case_idx').on(t.caseId)]);
+}, (t) => [index('clarifications_case_idx').on(t.caseId), unique('clarifications_case_fingerprint_unique').on(t.caseId, t.fingerprint)]);
 
 export const graphLeads = pgTable('graph_leads', {
   id: id(), caseId: uuid('case_id').notNull().references(() => cases.id),
@@ -151,7 +152,9 @@ export const graphLeads = pgTable('graph_leads', {
 
 export const reportExports = pgTable('exports', {
   id: id(), caseId: uuid('case_id').notNull().references(() => cases.id), version: integer('version').notNull(),
-  objectKey: text('object_key').unique().notNull(), createdBy: uuid('created_by').notNull().references(() => users.id),
+  objectKey: text('object_key').unique().notNull(),
+  contentHtml: text('content_html'), sha256: text('sha256'),
+  createdBy: uuid('created_by').notNull().references(() => users.id),
   createdAt: createdAt(),
 }, (t) => [unique('exports_case_version_unique').on(t.caseId, t.version), check('exports_version_positive', sql`${t.version} > 0`)]);
 

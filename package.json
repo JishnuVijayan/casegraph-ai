@@ -30,7 +30,9 @@
     "dev:demo": "DEMO_MODE=true npm run dev",
     "test:evidence": "node infra/evidence-test.mjs",
     "test:ocr": "node infra/extraction-test.mjs",
-    "test:claims": "node infra/claims-test.mjs"
+    "test:claims": "node infra/claims-test.mjs",
+    "test:clarifications": "node infra/clarifications-test.mjs",
+    "test:exports": "node infra/exports-test.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

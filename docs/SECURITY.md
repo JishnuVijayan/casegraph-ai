@@ -127,3 +127,28 @@ OCR regions, source labels or verification state. OCR observations and recollect
 remain `UNVERIFIED`. Timeline notes describe uncertainty but do not authenticate an
 event. Uploaded strings remain untrusted data and are rendered as text; no browsing,
 execution or privileged action is triggered from them.
+
+## T07 clarification boundary
+
+Only owners can generate questions or answer them. Every write locks/rechecks the
+synthetic owner case, scopes question lookup by case, and writes metadata-only audit
+events transactionally. Analysts read only with a live grant; access is rechecked
+before release. Claim values and answer text are private untrusted content, rendered
+as React text. Prompts are static deterministic rules; no upload text becomes an
+instruction. Answers cannot change source kind, claim values or verification status.
+Superseded and already answered questions reject further writes with 409.
+
+## T08 export boundary
+
+Generation, listing and download use live backend case scope. Analyst exports
+require an active grant. Generation locks the case and rechecks scope using the
+transaction connection; snapshots and identifier-only audit metadata commit together.
+Downloads scope IDs to the case, verify a bounded snapshot checksum and recheck
+permission before release. Snapshot HTML remains private in PostgreSQL. UI preview
+uses a sandboxed iframe; all report values are escaped, with no active user markup,
+embedded files or automatic URL visits. CSP blocks network/script/form activity;
+responses are no-store attachments with nosniff. Query sections are capped at 1,000
+rows and HTML at 2 MiB. Users must keep downloaded copies private; revocation denies
+future server access but cannot erase saved HTML/PDF. Automatic expiry/retention and
+administrator-proof storage are not implemented. A manifest records ingest integrity
+metadata, not screenshot authenticity or guaranteed court admissibility.

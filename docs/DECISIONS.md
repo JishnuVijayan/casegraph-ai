@@ -115,3 +115,35 @@ exact, approximate, date-only or unknown time precision. Normalize only determin
 INR strings to paise using integer arithmetic. Keep writes owner-only and reads
 scoped to current case grants. This supports local review without external
 verification, paid APIs or presenting inference as fact.
+
+### ADR-018 — T07 deterministic payment questions (2026-10-29)
+Compare only claims explicitly linked to the same payment timeline event. Different
+payments are not evidence of a contradiction. Generate missing-reference questions,
+differing normalized INR amounts, and differing valid explicit zoned ISO timestamps.
+Skip ambiguous, date-only and unzoned timestamps. Preserve the supporting claim IDs,
+values and source kinds in a protected snapshot; a versioned SHA-256 fingerprint
+makes refresh repeatable. Changes to any supporting interpretation create a new
+snapshot; prior questions/answers remain visible as superseded. Owners explicitly
+refresh questions; GET remains read-only. Answers are immutable through the API,
+recorded as unverified victim recollections, and never silently rewrite claims.
+Users can separately correct claims through T06. No Jev/model integration or paid
+service is needed. Only manually linked payment events are evaluated initially;
+missing events, semantic matching and ambiguous amount extraction remain limits.
+
+### ADR-019 — T08 frozen printable HTML exports (2026-10-29)
+Use the approved printable HTML path with browser Print / Save as PDF to avoid a
+new PDF engine/dependency. Persist escaped HTML and its SHA-256 privately in the
+existing PostgreSQL `exports` record. `object_key` is a logical `db-export:<uuid>`
+locator, not a filesystem path or public URL. This avoids another private directory
+and keeps version metadata/content atomic. Nullable snapshot columns preserve older
+records; missing or corrupt content returns unavailable, never a fabricated draft.
+Serialize versions with the existing case row lock; authorization uses the same
+transaction connection to avoid pool starvation with concurrent exports. All normal
+case/claim/question writes already lock this case row. Download rechecks live scope.
+Render sourced data with explicit unknowns and frozen correction/question history;
+include unrefreshed current rule gaps as OPEN in the snapshot. No generated narrative,
+external bank verification or official submission is implied. HTML is capped at 2 MiB
+and each queried section at 1,000 rows; exceeding limits rejects the whole export.
+Browser preview is sandboxed and downloaded HTML has CSP blocking active content and
+network access. Manual print layout and browser Save as PDF remain unverified by E2E.
+Reviewer: implementation under the user's T08 request.
