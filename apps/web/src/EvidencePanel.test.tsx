@@ -51,12 +51,13 @@ test('runs local OCR and opens an authenticated crop for an unverified amount ca
   const fetch = vi.fn()
     .mockResolvedValueOnce(success([row]))
     .mockResolvedValueOnce(success(extraction))
-    .mockResolvedValueOnce({ ok: true, blob: async () => new Blob(['synthetic crop'], { type: 'image/png' }) });
+    .mockResolvedValueOnce({ ok: true, blob: async () => new Blob(['synthetic crop'], { type: 'image/png' }) })
+    .mockResolvedValueOnce(success({ id: 'synthetic-claim' }));
   vi.stubGlobal('fetch', fetch);
-  const create = vi.fn(() => 'blob:synthetic-crop'); const revoke = vi.fn();
+  const create = vi.fn(() => 'blob:synthetic-crop'); const revoke = vi.fn(); const onClaimAdded = vi.fn();
   Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: create });
   Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: revoke });
-  render(<EvidencePanel token="synthetic-token" caseId="synthetic-case" owner busy={false} perform={async (operation) => operation()} />);
+  render(<EvidencePanel token="synthetic-token" caseId="synthetic-case" owner busy={false} onClaimAdded={onClaimAdded} perform={async (operation) => operation()} />);
   fireEvent.click(screen.getByRole('button', { name: 'Refresh evidence manifest' }));
   await screen.findByText(/Source ID: synthetic-source-id/);
   fireEvent.click(screen.getByRole('button', { name: 'Run local OCR' }));
@@ -67,6 +68,10 @@ test('runs local OCR and opens an authenticated crop for an unverified amount ca
   expect(fetch.mock.calls[1][1].headers.Authorization).toBe('Bearer synthetic-token');
   expect(fetch.mock.calls[2][0]).toContain('/regions/synthetic-region/crop');
   expect(fetch.mock.calls[2][1].headers.Authorization).toBe('Bearer synthetic-token');
+  fireEvent.click(screen.getByRole('button', { name: /Save observed amount claim for INR 2500/ }));
+  await waitFor(() => expect(onClaimAdded).toHaveBeenCalledOnce());
+  expect(fetch.mock.calls[3][0]).toBe('/api/v1/cases/synthetic-case/claims');
+  expect(JSON.parse(fetch.mock.calls[3][1].body)).toEqual({ type: 'payment_amount', sourceKind: 'OBSERVED_IN_UPLOAD', evidenceId: row.id, regionId: region.id });
   fireEvent.click(screen.getByRole('button', { name: 'Close source crop' }));
   await waitFor(() => expect(revoke).toHaveBeenCalledWith('blob:synthetic-crop'));
 });

@@ -95,7 +95,7 @@ A caller using a keypad phone calls an **existing verified bank/authorized partn
 - [ ] SHA-256 original-file hashing and basic audit history.
 - [ ] OCR/multimodal extraction of amounts, timestamps, transaction references, handles, phone numbers and statements.
 - [ ] Every extracted fact links to its **source artifact and region/text span**.
-- [ ] Structured chronological timeline with provenance/uncertainty labels.
+- [x] Structured chronological timeline with provenance/uncertainty labels (T06 synthetic demo).
 - [ ] Deterministic field checks and conflict detection; targeted questions.
 - [ ] Victim correction/confirmation without overwriting source facts.
 - [ ] Downloadable complaint draft, evidence index, uncertainty notes and hash manifest.

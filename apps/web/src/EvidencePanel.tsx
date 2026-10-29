@@ -4,13 +4,15 @@ import { api, ApiFailure } from './api';
 type Evidence = { id: string; mimeType: string; sizeBytes: number; sha256: string; createdAt: string };
 type Region = { id: string; kind: 'TEXT' | 'AMOUNT'; text: string; confidence: number };
 type Extraction = { status: string; errorCode?: string | null; outputText?: string | null; amountStatus: string; regions: Region[] };
-export function EvidencePanel({ token, caseId, owner, busy, perform }: {
+export function EvidencePanel({ token, caseId, owner, busy, perform, onClaimAdded }: {
   token: string; caseId: string; owner: boolean; busy: boolean; perform: (operation: () => Promise<void>) => Promise<void>;
+  onClaimAdded?: () => void;
 }) {
   const [rows, setRows] = useState<Evidence[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [extractions, setExtractions] = useState<Record<string, Extraction>>({});
+  const [savedRegions, setSavedRegions] = useState<Record<string, boolean>>({});
   const [crop, setCrop] = useState<{ url: string; text: string } | null>(null);
   useEffect(() => { if (!crop) return; return () => URL.revokeObjectURL(crop.url); }, [crop?.url]);
   const refresh = async () => {
@@ -56,6 +58,10 @@ export function EvidencePanel({ token, caseId, owner, busy, perform }: {
           const url = URL.createObjectURL(await response.blob());
           setCrop({ url, text: region.text });
         })}>Review source region for {region.text} (OBSERVED_IN_UPLOAD · UNVERIFIED)</button>)}
+        {owner && extractions[row.id].regions.filter((region) => region.kind === 'AMOUNT').map((region) => <button key={`claim-${region.id}`} disabled={busy || savedRegions[region.id]} onClick={() => void perform(async () => {
+          await api(`/cases/${caseId}/claims`, token, { type: 'payment_amount', sourceKind: 'OBSERVED_IN_UPLOAD', evidenceId: row.id, regionId: region.id }, 'POST');
+          setSavedRegions((current) => ({ ...current, [region.id]: true })); onClaimAdded?.();
+        })}>{savedRegions[region.id] ? 'Observed amount claim saved' : `Save observed amount claim for ${region.text}`}</button>)}
       </div>}
       <button disabled={busy} onClick={() => void perform(async () => {
         const response = await fetch(`/api/v1/cases/${caseId}/evidence/${row.id}/view`, {

@@ -104,3 +104,14 @@ currency-prefix detection labels only review candidates; it does not create clai
 or verify bank records. This avoids paid endpoints and temporary OCR files, but
 Tesseract remains a native unsandboxed subprocess and the initial implementation
 supports English only. Keep correction/timeline semantics in T06.
+
+### ADR-017 — T06 source-linked claims and uncertain timeline (2026-10-29)
+Promote amount candidates only by persisted OCR-region ID; derive observed text and
+coordinates from the stored successful run. Enforce one claim source per region to
+make promotion idempotent. Keep corrections as before/after snapshots of interpreted
+values without changing provenance or `UNVERIFIED` status. Require every timeline
+event to link to same-case supporting claims and retain explicit uncertainty plus
+exact, approximate, date-only or unknown time precision. Normalize only deterministic
+INR strings to paise using integer arithmetic. Keep writes owner-only and reads
+scoped to current case grants. This supports local review without external
+verification, paid APIs or presenting inference as fact.

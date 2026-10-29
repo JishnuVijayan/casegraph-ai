@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { EvidencePanel } from './EvidencePanel';
+import { ReviewPanel } from './ReviewPanel';
 import { api, ApiFailure } from './api';
 
 type Identity = { id: string; displayName: string; role: 'victim' | 'analyst' };
@@ -17,6 +18,7 @@ export function DemoWorkspace() {
   const [subject, setSubject] = useState('synthetic-victim-a');
   const [cases, setCases] = useState<CaseSummary[]>([]);
   const [caseId, setCaseId] = useState('');
+  const [reviewKey, setReviewKey] = useState(0);
   const [detail, setDetail] = useState<CaseDetail | null>(null);
   const [scope, setScope] = useState('READ');
   const [grant, setGrant] = useState<{ id: string; caseId: string } | null>(null);
@@ -35,7 +37,7 @@ export function DemoWorkspace() {
   return <section aria-labelledby="demo-title">
     <h2 id="demo-title" className="text-xl font-bold">Local synthetic demo</h2>
     <p>Fictional role simulation only. Choosing an identity is not real identity verification. No real victim data.</p>
-    <p>Create synthetic cases, upload original PNG/JPEG evidence and review local OCR candidates. Exports and TigerGraph investigation are not implemented yet.</p>
+    <p>Create synthetic cases, review local OCR, save source-linked claims and build a sourced timeline. Exports and TigerGraph investigation are not implemented yet.</p>
     {!session ? <form onSubmit={(event) => { event.preventDefault(); void perform(async () => {
       clear();
       const next = await api<Session>('/auth/demo', undefined, { demoSubject: subject }, 'POST');
@@ -87,7 +89,8 @@ export function DemoWorkspace() {
         <h3 className="text-lg font-bold">{detail.title}</h3>
         <p>Synthetic placeholder · {detail.status} · {detail.category}</p>
         <p>Uploads are unverified user-supplied material, not bank-verified records.</p>
-        <EvidencePanel key={detail.id} token={session.token} caseId={detail.id} owner={session.user.role === 'victim'} busy={busy} perform={perform} />
+        <EvidencePanel key={`evidence-${detail.id}`} token={session.token} caseId={detail.id} owner={session.user.role === 'victim'} busy={busy} perform={perform} onClaimAdded={() => setReviewKey((value) => value + 1)} />
+        <ReviewPanel key={`review-${detail.id}`} token={session.token} caseId={detail.id} owner={session.user.role === 'victim'} busy={busy} refreshKey={reviewKey} perform={perform} />
         {session.user.role === 'victim' && <div>
           <p>Explicitly share this case with the Fictional Demo Consortium.</p>
           <label htmlFor="share-scope">Permission</label>

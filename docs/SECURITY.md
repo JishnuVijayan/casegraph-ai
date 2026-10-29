@@ -112,3 +112,18 @@ T04-validated PNG/JPEG in the local synthetic demo, with a 5 MiB/16 MP limit and
 the process bounds above. There is no PDF parsing, external URL fetch, model tool
 access, language guarantee, correction or real-data pilot. Treat OCR output as
 potentially adversarial text; never interpret it as instructions.
+
+## T06 claims and timeline
+
+Claim and timeline routes recheck current owner/grant scope. Only the victim case
+owner can create or correct claims and events; analysts can read within an active
+grant. Each write locks and confirms the synthetic owner case, and claim/event
+references are constrained to that case. Promoting an observed amount accepts only
+a stored `SUCCEEDED` OCR `AMOUNT` region for the requested evidence and derives all
+source values server-side. The unique region link prevents duplicate promotion.
+
+Corrections append interpreted before/after values; they cannot edit original bytes,
+OCR regions, source labels or verification state. OCR observations and recollections
+remain `UNVERIFIED`. Timeline notes describe uncertainty but do not authenticate an
+event. Uploaded strings remain untrusted data and are rendered as text; no browsing,
+execution or privileged action is triggered from them.

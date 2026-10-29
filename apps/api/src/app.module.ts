@@ -15,6 +15,8 @@ import { connect } from './db/connection';
 import { ExtractionController } from './extraction/controller';
 import { ExtractionService } from './extraction/service';
 import { TESSERACT_BINARY } from './extraction/tesseract';
+import { ClaimsController, TimelineController } from './claims/controller';
+import { ClaimsService } from './claims/service';
 
 @Controller('health')
 class HealthController {
@@ -24,8 +26,8 @@ class HealthController {
 }
 @Module({
   exports: [AccessStore, CaseScopeGuard],
-  controllers: [HealthController, AuthController, CasesController, EvidenceController, ExtractionController],
-  providers: [EvidenceService, EvidenceStorage, ExtractionService, { provide: TESSERACT_BINARY, useFactory: () => process.env.TESSERACT_BINARY || 'tesseract' }, { provide: EVIDENCE_DIRECTORY, useValue: resolve(__dirname, '../../../.local/evidence') }, DemoConfig, Sessions, AccessStore, CaseScopeGuard,
+  controllers: [HealthController, AuthController, CasesController, EvidenceController, ExtractionController, ClaimsController, TimelineController],
+  providers: [EvidenceService, EvidenceStorage, ExtractionService, ClaimsService, { provide: TESSERACT_BINARY, useFactory: () => process.env.TESSERACT_BINARY || 'tesseract' }, { provide: EVIDENCE_DIRECTORY, useValue: resolve(__dirname, '../../../.local/evidence') }, DemoConfig, Sessions, AccessStore, CaseScopeGuard,
     { provide: LOCAL_DATABASE, inject: [DemoConfig], useFactory: (config: DemoConfig) => config.enabled ? connect('casegraph', config.database) : undefined },
     { provide: APP_GUARD, useClass: SessionGuard }, { provide: APP_GUARD, useClass: RolesGuard }],
 })
