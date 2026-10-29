@@ -5,12 +5,18 @@ import { organizations, users, cases, caseAccessGrants } from './schema';
 type Grant = Omit<typeof caseAccessGrants.$inferInsert, 'createdAt' | 'revokedAt' | 'expiresAt'> & {
   revokedAt: string | null; expiresAt: string | null;
 };
+export type EnrichmentRow = {
+  caseId: string;
+  event: { id: string; eventType: string; precision: string; uncertainty: string; occurredAt: string };
+  claims: { id: string; type: string; rawValue: string; sourceKind: string }[];
+};
 export interface Fixtures {
   label: string;
   organization: typeof organizations.$inferInsert;
   users: (typeof users.$inferInsert)[];
   cases: (typeof cases.$inferInsert & { scenarioNote: string })[];
   grants: Grant[];
+  enrichment?: EnrichmentRow[];
 }
 
 export function loadFixtures(): Fixtures {
@@ -23,9 +29,9 @@ export function loadFixtures(): Fixtures {
     }
     ids.add(record.id);
   }
-  if (!fixture.label.includes('SYNTHETIC') || fixture.users.length !== 3 || fixture.cases.length !== 20 ||
+  if (!fixture.label.includes('SYNTHETIC') || fixture.users.length !== 3 || fixture.cases.length !== 200 ||
     [fixture.organization, ...fixture.users, ...fixture.cases].some((record) => record.synthetic !== true)) {
-    throw new Error('Expected the explicitly synthetic T02 bootstrap fixture.');
+    throw new Error('Expected the explicitly synthetic bootstrap fixture (200 fictional cases).');
   }
   for (const record of fixture.cases) {
     if (!record.title.startsWith('Synthetic ') || record.status !== 'DRAFT' ||

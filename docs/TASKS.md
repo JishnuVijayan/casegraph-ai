@@ -2,7 +2,7 @@
 
 **How to use:** Ask Codex to implement **one task** at a time, run tests, then mark it `[x]` and attach verification evidence. No single-prompt “build the whole app”. Track failures honestly. Update `docs/DECISIONS.md` when deviating from architecture.
 
-Current detailed plan: [`task.md`](../task.md) — T13 local security verification on `feat/t13-security-tests`; live graph rechecks pending deployment.
+Current detailed plan: [`task.md`](../task.md) — AWS 24h working-demo (ADR-026); live EC2 TigerGraph still needs operator AWS credentials.
 
 ## Phase 0 — Bootstrap (P0)
 - [x] **T00 Repo initialization.** Monorepo `apps/web`, `apps/api`, `infra`, `data/synthetic`, `docs`; copy existing README/docs; `.gitignore`, `.env.example`; lock dependencies. **Done:** both projects start locally and no secrets committed.
@@ -204,3 +204,10 @@ Current detailed plan: [`task.md`](../task.md) — T13 local security verificati
 - `npm run test:security` passed: **42 regular tests** (7 infra, 4 graph offline, 18 API, 13 web), **38 HTTP integration tests** (auth 9, evidence 8, OCR 4, claims 4, clarifications 3, exports 5, investigations 5), and **1 real-browser workflow**: **81 total**. Expanded hostile-upload browser test subsequently passed. Covered role/IDOR/revocation, invalid/oversized/mismatched uploads, original tampering, provenance preservation, missing OCR, malformed graph responses and actual disabled-graph 503; graph-success transport fixtures remain explicitly test-only.
 - Lint, full typecheck including E2E, builds and whitespace checks passed. Temporary DBs/files/browser/server children cleaned, project PostgreSQL stopped and final status empty; working volume/config preserved. No paid service, EC2 change or benchmark.
 - Limits: no actual TigerGraph runtime or graph-server attack test; re-run live scope/source checks after deployment. No dependency vulnerability audit, independent penetration test or production security certification performed. T14–T16 optional; required live acceptance T09–T12 still outstanding.
+
+### AWS 24h working-demo prep (2026-10-29 IST) — code ready; live AWS pending credentials
+- ADR-026 + `docs/AWS_DEMO.md` + `.env.example` flags (`AWS_REGION`, `TEXTRACT_ENABLED`, `BEDROCK_ENABLED`, `BEDROCK_MODEL_ID`). Budget **$20** / `ap-south-1`; app stays local.
+- Synthetic bootstrap expanded to **50** fictional cases, clusters A/B/C in graph fixture, recollection-only enrichment for 5 cases, 48 grants (older INVESTIGATE for officer inbox). `db:verify` passed 50/48; graph contracts + regenerated `.local` bundle (50 CaseReport / 250 EvidenceRef).
+- `infra/aws/ec2-tigergraph.mjs` + npm scripts create/status/stop/start/destroy/tunnel-hint. AWS CLI present; **no credentials** configured — create not run; `graph:verify-live` still fail-closed as expected.
+- Feature-flagged Textract OCR (Tesseract fallback) and Bedrock prompt polish gated by deterministic essentials rules (`MISSING_AMOUNT` / `MISSING_TIME` added). Unit tests for Textract parse + Bedrock polish. Flags default OFF.
+- `DEMO.md` updated with victim `/` → officer `/officer` script and cost teardown. Lint/typecheck passed; focused API/auth/OCR/clarifications/db:verify/graph tests passed. Live Textract/Bedrock/EC2 acceptance blocked on user `aws configure` + Bedrock model enablement + key pair.

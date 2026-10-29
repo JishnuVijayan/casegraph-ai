@@ -43,7 +43,14 @@
     "graph:health": "node infra/tigergraph.mjs health",
     "graph:bundle": "node graph/bundle.mjs",
     "graph:test": "node --test graph/test/*.test.mjs",
-    "graph:verify-live": "node graph/verify-live.mjs"
+    "graph:verify-live": "node graph/verify-live.mjs",
+    "seed:generate-bootstrap": "node data/synthetic/generate-bootstrap.mjs",
+    "aws:tg:create": "node infra/aws/ec2-tigergraph.mjs create",
+    "aws:tg:status": "node infra/aws/ec2-tigergraph.mjs status",
+    "aws:tg:stop": "node infra/aws/ec2-tigergraph.mjs stop",
+    "aws:tg:start": "node infra/aws/ec2-tigergraph.mjs start",
+    "aws:tg:destroy": "node infra/aws/ec2-tigergraph.mjs destroy",
+    "aws:tg:tunnel-hint": "node infra/aws/ec2-tigergraph.mjs tunnel-hint"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.0",

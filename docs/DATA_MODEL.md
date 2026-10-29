@@ -152,7 +152,7 @@ this is corruption detection, not an administrator-proof audit or authenticity p
 
 `graph/gsql/schema.gsql` defines the seven specified vertex types and six primary
 edge types, plus reverse VPA-report/settlement edges for a four-hop traversal.
-`graph/lib/fixture.mjs` generates 20 cases matching bootstrap UUIDs, opaque `fx:`
+`graph/lib/fixture.mjs` generates 50 cases matching bootstrap UUIDs, opaque `fx:`
 front/account IDs and 100 fixture EvidenceRefs. These references identify authored
 fixture rows, not PostgreSQL evidence-file IDs. Each edge carries case/source IDs,
 source kind, verification/review state, data origin, synthetic flag and timestamp.

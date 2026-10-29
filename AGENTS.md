@@ -1,7 +1,25 @@
-# Codex Project Instructions — CaseGraph AI
+# Agent Instructions — CaseGraph AI
 
 ## Mission
-Build a local, zero-paid-API **HHGOA 2026 prototype** of CaseGraph AI: a free-to-victim evidence-reconstruction assistant and a permission-scoped TigerGraph investigation workspace over **synthetic cases**. Read `README.md`, `docs/REQUIREMENTS.md`, and `docs/TASKS.md` before implementing tasks. Read the relevant specialized document when working on that subsystem. Do not treat documentation as implemented code.
+Build a local, zero-paid-API **HHGOA 2026 prototype** of CaseGraph AI: a free-to-victim evidence-reconstruction assistant and a permission-scoped TigerGraph investigation workspace over **synthetic cases**.
+
+Do not treat documentation as implemented code. Inspect files and run checks before claiming a feature works.
+
+## Current state (develop @ `38820b8`)
+- **Checked complete (T00–T08):** scaffold, Compose Postgres + private evidence storage, Drizzle schema/seed, demo auth + case scope, uploads + SHA-256, local Tesseract OCR/provenance, timeline/claims, clarifications, versioned HTML draft export.
+- **Source prepared, live acceptance pending (T09–T12):** TigerGraph setup scripts/compose, GSQL schema/query package under `graph/`, scoped analyst investigation API/UI, Playwright browser E2E. Checkboxes stay open until a real installed TigerGraph query path is verified (planned compatible host / future EC2; do not fake live results).
+- **Next unblocked:** T13 security/adversarial tests (while T09–T12 await live graph). Current plan: root `task.md`. Progress log: `docs/TASKS.md`.
+
+## Repo map
+```text
+apps/web/          React + TypeScript + Vite + Tailwind SPA (victim + analyst panels)
+apps/api/          NestJS API (auth, cases, evidence, OCR, claims, clarifications, exports, investigations)
+graph/             Candidate TigerGraph GSQL + offline contract tests (not a live substitute)
+e2e/               Playwright browser workflow against isolated temp DB/servers
+infra/             Compose, DB migrate/seed, smoke/integration scripts, TigerGraph helpers
+data/synthetic/    Fictional fixtures only
+docs/              Requirements, architecture, API, security, tasks, demo
+```
 
 ## Non-negotiable rules
 1. **Never pretend an external integration exists.** If TigerGraph, a local model or another service isn't running, show a visible unavailable/degraded status; only use explicitly labeled fixtures for test/demo mode.
@@ -24,16 +42,29 @@ Build a local, zero-paid-API **HHGOA 2026 prototype** of CaseGraph AI: a free-to
 - Run the relevant checks before marking a task complete; record observed outcomes in `docs/TASKS.md`. Do not mark tests passed if not run.
 - Never overwrite or delete files/data unexpectedly; request approval for destructive operations, publishing, paid services, changing security policies, or connecting external accounts.
 - When assumptions remain unresolved, make a conservative local-demo choice and document it in `docs/DECISIONS.md`.
-- Expose reproducible `dev`, `test`, `lint`, `typecheck`, `seed:synthetic`, and `db:migrate` scripts as the implementation matures; do not claim commands exist before creating them.
 - At the end of each task, summarize changed files, commands executed, actual results, known limitations, next unblocked task.
+
+## Useful commands (exist today)
+| Command | Purpose |
+|---|---|
+| `npm run dev` / `npm run dev:demo` | API + web watchers (demo mode optional) |
+| `npm run lint` / `typecheck` / `test` / `build` | Quality gates |
+| `npm run infra:init` / `infra:up` / `infra:down` / `infra:status` | Local Postgres + private evidence dir |
+| `npm run db:migrate` / `seed:synthetic` / `db:verify` | Schema and fictional seed |
+| `npm run test:auth` / `test:evidence` / `test:ocr` / `test:claims` / `test:clarifications` / `test:exports` / `test:investigations` | Focused integration checks |
+| `npm run test:e2e` / `test:e2e:live` | Browser workflow; live mode refuses without real graph runtime |
+| `npm run graph:preflight` / `graph:health` / `graph:test` / `graph:verify-live` | TigerGraph prep/health; live verify requires installed runtime |
+
+Do not claim new scripts exist until they are added to root `package.json`. Offline graph fixtures never count as live query success.
 
 ## Planning and Git workflow
 - Use root `task.md` for the current task plan; keep `docs/TASKS.md` as the overall completion and verification log.
-- Feature branch names must start with `feat/`; fix branch names must start with `fix/`.
+- Prefer implementing on branches from `develop`. Feature branch names must start with `feat/`; fix branch names must start with `fix/`.
 - Do not include `codex` in any branch name or commit message.
 - Use conventional commit types (`feat:`, `fix:`, `chore:`, `docs:`) matching the actual change. Stage only required, reviewed project files.
+- Create commits only when the user asks.
 
-## Reading order for Codex
+## Reading order
 1. `README.md` — canonical vision and detailed blueprint.
 2. `docs/REQUIREMENTS.md` — scope and acceptance criteria.
 3. `docs/STACK.md` and `docs/FREE_SETUP.md` — approved packages and zero-paid-API rules.
@@ -43,4 +74,4 @@ Build a local, zero-paid-API **HHGOA 2026 prototype** of CaseGraph AI: a free-to
 7. `docs/DEMO.md` — exact end-to-end showcase.
 8. `docs/DECISIONS.md` — decisions and changes.
 
-`AGENTS.md` is instructions for Codex; files under `docs/` are references and must be requested/read by task. If docs conflict: safety and factual accuracy first; `README.md` and `REQUIREMENTS.md` define the product; record the inconsistency rather than silently inventing a feature.
+Root `AGENTS.md` is the agent contract. Files under `docs/` are references and must be read by task. If docs conflict: safety and factual accuracy first; `README.md` and `REQUIREMENTS.md` define the product; record the inconsistency rather than silently inventing a feature.

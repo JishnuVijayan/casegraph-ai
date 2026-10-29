@@ -6,12 +6,18 @@ export const relationships = {
   CASE_REPORTED_HANDLE:['CaseReport','SocialHandle'], CASE_REPORTED_DOMAIN:['CaseReport','PhishingDomain'],
   VPA_SETTLED_TO_ACCOUNT:['UPI_VPA','BankAccount'], RELATION_SUPPORTED_BY_EVIDENCE:['CaseReport','EvidenceRef'],
 };
+function settlementAccount(index) {
+  if (index < 2) return 'fx:account:shared-01'; // cluster A
+  if (index === 5 || index === 6) return 'fx:account:shared-02'; // cluster B
+  if (index >= 7 && index <= 9) return 'fx:account:shared-03'; // cluster C
+  return `fx:account:${String(index + 1).padStart(2, '0')}`;
+}
 export function fixture() {
   const vertices={CaseReport:[],UPI_VPA:[],BankAccount:[],PhoneNumber:[],SocialHandle:[],PhishingDomain:[],EvidenceRef:[]};
   const edges=Object.fromEntries(Object.keys(relationships).map((type)=>[type,[]]));
   for(const [index,c] of bootstrap.cases.entries()) {
     const n=String(index+1).padStart(2,'0');
-    const vpa=`fx:vpa:${n}`, bank=index<2?'fx:account:shared-01':`fx:account:${n}`;
+    const vpa=`fx:vpa:${n}`, bank=settlementAccount(index);
     const phone=`fx:phone:${n}`, handle=`fx:handle:${n}`, domain=[3,4].includes(index)?'fx:domain:benign-shared.invalid':`fx:domain:${n}.invalid`;
     vertices.CaseReport.push({id:c.id,label:c.title,synthetic:true,generic_text_hint:[3,4].includes(index)?'FICTIONAL_GENERIC_GREETING':''});
     for(const [type,id] of [['UPI_VPA',vpa],['BankAccount',bank],['PhoneNumber',phone],['SocialHandle',handle],['PhishingDomain',domain]]) {
@@ -28,7 +34,7 @@ export function fixture() {
   return {label:'FICTIONAL SYNTHETIC FIXTURE ONLY — no uploads or bank records',vertices,edges};
 }
 export function validateFixture(data) {
-  if(data.vertices.CaseReport.length!==20) throw new Error('Expected twenty synthetic cases');
+  if(data.vertices.CaseReport.length!==200) throw new Error('Expected 200 synthetic cases');
   for(const rows of Object.values(data.vertices)) {
     if(new Set(rows.map((v)=>v.id)).size!==rows.length || rows.some((v)=>v.synthetic!==true)) throw new Error('Invalid synthetic vertex identity');
   }

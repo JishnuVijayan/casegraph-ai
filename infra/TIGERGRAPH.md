@@ -1,10 +1,14 @@
 # T09 TigerGraph supported-host setup — not installed here
 
+For the HHGOA AWS demo path (short-lived **x86 EC2** in `ap-south-1`, SSH tunnel only),
+see [`docs/AWS_DEMO.md`](../docs/AWS_DEMO.md) and `npm run aws:tg:create|stop|destroy`.
+Do not open RESTPP port `14240` publicly.
+
 Status checked 2026-10-29 IST: this workspace is macOS arm64; Docker reports
-`aarch64`, 10 CPUs and 8,321,712,128 bytes memory. The user confirmed no compatible
-host is available. T09 is **incomplete**. No TigerGraph image was pulled, no service
-started, no graph/seed/query installed, and no benchmark run. The NestJS graph
-integration remains unimplemented; these are infrastructure diagnostics only.
+`aarch64`, 10 CPUs and 8,321,712,128 bytes memory. Local ARM install remains unsupported.
+T09 live runtime is **incomplete until EC2 install + `graph:verify-live` pass**. No
+TigerGraph image was pulled on this Mac. Application NestJS client exists and stays
+fail-closed without a tunnel/token.
 
 ## Sources and selected candidate
 

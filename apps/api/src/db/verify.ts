@@ -33,6 +33,7 @@ export async function verifyDatabase() {
     }
     console.log('PASS: fresh migration, repeat no-op, 16 tables and required indexes.');
     await seedSynthetic(db);
+    const fixture = loadFixtures();
     const snapshot = async () => {
       const result: Record<string, unknown> = {};
       for (const table of ['organizations', 'users', 'cases', 'case_access_grants']) {
@@ -43,11 +44,10 @@ export async function verifyDatabase() {
     const before = await snapshot();
     assert.equal((before.organizations as unknown[]).length, 1);
     assert.equal((before.users as unknown[]).length, 3);
-    assert.equal((before.cases as unknown[]).length, 20);
-    assert.equal((before.case_access_grants as unknown[]).length, 3);
+    assert.equal((before.cases as unknown[]).length, 200);
+    assert.equal((before.case_access_grants as unknown[]).length, fixture.grants.length);
     await seedSynthetic(db);
     assert.deepEqual(await snapshot(), before);
-    const fixture = loadFixtures();
     const firstCase = fixture.cases[0].id!;
     const secondCase = fixture.cases[1].id!;
     const victim = fixture.users[0].id!;
@@ -57,7 +57,7 @@ export async function verifyDatabase() {
     const edited = await snapshot();
     await seedSynthetic(db);
     assert.deepEqual(await snapshot(), edited);
-    console.log('PASS: 1 organization, 3 users, 20 cases, 3 grants; repeated seed unchanged and edits/revocations preserved.');
+    console.log(`PASS: 1 organization, 3 users, 200 cases, ${fixture.grants.length} grants; repeated seed unchanged and edits/revocations preserved.`);
 
     async function rejects(statement: string, values: unknown[], code: string) {
       await assert.rejects(() => pool.query(statement, values), (error: unknown) =>

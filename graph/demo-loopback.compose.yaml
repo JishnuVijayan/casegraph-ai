@@ -1,6 +1,11 @@
 # Optional FUTURE HOST ONLY after credential rotation and REST authentication.
 # Never publish the database to the EC2 security group or public interfaces.
+# Host loopback publish requires the compose network to be non-internal;
+# keep binding 127.0.0.1 only and reach it via SSH tunnel from the laptop.
 services:
   tigergraph:
     ports:
       - "127.0.0.1:14240:14240"
+networks:
+  graph-private:
+    internal: false

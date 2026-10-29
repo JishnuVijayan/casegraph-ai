@@ -8,14 +8,16 @@ CREATE OR REPLACE QUERY find_case_links(STRING case_id, INT max_hops, SET<STRING
     STRING source_settlement_ref, STRING target_settlement_ref, STRING target_report_ref,
     STRING source_kind, STRING verification_status, STRING review_status, STRING data_origin> Path;
   SetAccum<Path> @@paths;
-  IF max_hops == 4 AND allowed_case_ids.size() <= 20 AND allowed_case_ids.contains(case_id) THEN
+  // Cap raised for expanded synthetic pack (200 cases / officer inbox grants).
+  IF max_hops == 4 AND allowed_case_ids.size() <= 250 AND allowed_case_ids.contains(case_id) THEN
     Start = {CaseReport.*};
     Start = SELECT s FROM Start:s WHERE s.case_id == case_id AND s.synthetic;
+    // SYNTAX V2 uses -(edge)- not -(edge)-> (arrow form is V1).
     Matches = SELECT t
-      FROM Start:s -(CASE_REPORTED_VPA:e1)-> UPI_VPA:u1
-        -(VPA_SETTLED_TO_ACCOUNT:e2)-> BankAccount:b
-        -(ACCOUNT_SETTLED_FROM_VPA:e3)-> UPI_VPA:u2
-        -(VPA_REPORTED_BY_CASE:e4)-> CaseReport:t
+      FROM Start:s -(CASE_REPORTED_VPA>:e1)- UPI_VPA:u1
+        -(VPA_SETTLED_TO_ACCOUNT>:e2)- BankAccount:b
+        -(ACCOUNT_SETTLED_FROM_VPA>:e3)- UPI_VPA:u2
+        -(VPA_REPORTED_BY_CASE>:e4)- CaseReport:t
       WHERE t.case_id != s.case_id AND allowed_case_ids.contains(t.case_id)
         AND u1.synthetic AND b.synthetic AND u2.synthetic AND t.synthetic
         AND e1.case_id == s.case_id AND e2.case_id == s.case_id

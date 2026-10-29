@@ -1,17 +1,20 @@
-import { ForbiddenException, Inject, Injectable, StreamableFile } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, Optional, StreamableFile } from '@nestjs/common';
 import { and, desc, eq } from 'drizzle-orm';
 import sharp from 'sharp';
 import { AccessStore } from '../auth/store';
 import { ApiRequest } from '../common/http';
 import { auditEvents, extractionRegions, extractionRuns } from '../db/schema';
 import { EvidenceService } from '../evidence/service';
-import { OcrFailure, parseTsv, TESSERACT_BINARY, tesseractTsv, tesseractVersion } from './tesseract';
+import { OcrFailure, parseTsv, TESSERACT_BINARY, tesseractTsv, tesseractVersion, type Region } from './tesseract';
+import { runTextract, TEXTRACT_CLIENT, textractEnabled, type TextractClientLike, createDefaultTextractClient } from './textract';
 
 @Injectable()
 export class ExtractionService {
   private active = false;
+  private textractClient: TextractClientLike | null | undefined;
   constructor(private readonly access: AccessStore, private readonly evidence: EvidenceService,
-    @Inject(TESSERACT_BINARY) private readonly binary: string) {}
+    @Inject(TESSERACT_BINARY) private readonly binary: string,
+    @Optional() @Inject(TEXTRACT_CLIENT) private readonly injectedTextract?: TextractClientLike | null) {}
   private async result(run: typeof extractionRuns.$inferSelect) {
     const regions = run.status === 'SUCCEEDED' ? await this.access.available((db) => db.select({
       id: extractionRegions.id, kind: extractionRegions.kind, text: extractionRegions.text,
@@ -22,6 +25,14 @@ export class ExtractionService {
       status: run.status, errorCode: run.errorCode, outputText: run.outputText, regions,
       amountStatus: regions.some((region) => region.kind === 'AMOUNT') ? 'OBSERVED_IN_UPLOAD' : 'UNKNOWN',
       verificationStatus: 'UNVERIFIED', createdAt: run.createdAt };
+  }
+  private async textract(): Promise<TextractClientLike | null> {
+    if (!textractEnabled()) return null;
+    if (this.injectedTextract !== undefined) return this.injectedTextract;
+    if (this.textractClient !== undefined) return this.textractClient;
+    try { this.textractClient = await createDefaultTextractClient(); }
+    catch { this.textractClient = null; }
+    return this.textractClient;
   }
   async get(request: ApiRequest, evidenceId: string) {
     await this.evidence.readVerified(request, evidenceId);
@@ -51,11 +62,47 @@ export class ExtractionService {
     await this.access.audit(request.actor!, 'EXTRACTION_REGION_READ', 'evidence', row.id, request.requestId);
     return new StreamableFile(image, { type: 'image/png', length: image.length });
   }
+  private async persist(request: ApiRequest, evidenceId: string, engine: string, version: string,
+    failure: OcrFailure | undefined, outputText: string | null, regions: Region[]) {
+    await this.access.findCase(request.actor!, request.caseRecord!.id, 'READ');
+    const row = await this.access.available((db) => db.transaction(async (tx) => {
+      const [inserted] = await tx.insert(extractionRuns).values({ evidenceFileId: evidenceId,
+        engine, version, status: failure ? 'FAILED' : 'SUCCEEDED',
+        errorCode: failure?.code, outputText }).onConflictDoNothing().returning();
+      const [run] = inserted ? [inserted] : await tx.select().from(extractionRuns).where(and(
+        eq(extractionRuns.evidenceFileId, evidenceId), eq(extractionRuns.engine, engine), eq(extractionRuns.version, version)));
+      if (inserted && regions.length) await tx.insert(extractionRegions).values(regions.map((region) => ({ runId: run.id, ...region })));
+      await tx.insert(auditEvents).values({ actorId: request.actor!.id, action: 'EXTRACTION_RUN',
+        resourceType: 'evidence', resourceId: evidenceId, requestId: request.requestId });
+      return run;
+    }));
+    const response = await this.result(row);
+    await this.access.findCase(request.actor!, request.caseRecord!.id, 'READ');
+    return response;
+  }
   async run(request: ApiRequest, evidenceId: string) {
     const { bytes } = await this.evidence.readVerified(request, evidenceId);
     if (this.active) return { evidenceId, status: 'RUNNING', amountStatus: 'UNKNOWN', regions: [] };
     this.active = true;
     try {
+      const client = await this.textract();
+      if (client) {
+        try {
+          const extracted = await runTextract(client, bytes);
+          const [prior] = await this.access.available((db) => db.select().from(extractionRuns).where(and(
+            eq(extractionRuns.evidenceFileId, evidenceId), eq(extractionRuns.engine, 'textract'),
+            eq(extractionRuns.version, extracted.version))).limit(1));
+          if (prior) {
+            const response = await this.result(prior);
+            await this.access.findCase(request.actor!, request.caseRecord!.id, 'READ');
+            return response;
+          }
+          return await this.persist(request, evidenceId, 'textract', extracted.version, undefined, extracted.outputText, extracted.regions);
+        } catch {
+          // Fall through to local Tesseract; never invent OCR content.
+        }
+      }
+
       let version = 'unavailable'; let failure: OcrFailure | undefined;
       try { version = await tesseractVersion(this.binary); }
       catch (error) { failure = error instanceof OcrFailure ? error : new OcrFailure('OCR_UNAVAILABLE'); }
@@ -67,7 +114,7 @@ export class ExtractionService {
         return response;
       }
       let outputText: string | null = null;
-      let regions: ReturnType<typeof parseTsv>['regions'] = [];
+      let regions: Region[] = [];
       if (!failure) {
         try {
           const metadata = await sharp(bytes, { limitInputPixels: 16_000_000 }).metadata();
@@ -76,22 +123,7 @@ export class ExtractionService {
           outputText = result.outputText; regions = result.regions;
         } catch (error) { failure = error instanceof OcrFailure ? error : new OcrFailure('OCR_FAILED'); }
       }
-      // Revocation during OCR prevents both persistence and release of extracted content.
-      await this.access.findCase(request.actor!, request.caseRecord!.id, 'READ');
-      const row = await this.access.available((db) => db.transaction(async (tx) => {
-        const [inserted] = await tx.insert(extractionRuns).values({ evidenceFileId: evidenceId,
-          engine: 'tesseract', version, status: failure ? 'FAILED' : 'SUCCEEDED',
-          errorCode: failure?.code, outputText }).onConflictDoNothing().returning();
-        const [run] = inserted ? [inserted] : await tx.select().from(extractionRuns).where(and(
-          eq(extractionRuns.evidenceFileId, evidenceId), eq(extractionRuns.engine, 'tesseract'), eq(extractionRuns.version, version)));
-        if (inserted && regions.length) await tx.insert(extractionRegions).values(regions.map((region) => ({ runId: run.id, ...region })));
-        await tx.insert(auditEvents).values({ actorId: request.actor!.id, action: 'EXTRACTION_RUN',
-          resourceType: 'evidence', resourceId: evidenceId, requestId: request.requestId });
-        return run;
-      }));
-      const response = await this.result(row);
-      await this.access.findCase(request.actor!, request.caseRecord!.id, 'READ');
-      return response;
+      return await this.persist(request, evidenceId, 'tesseract', version, failure, outputText, regions);
     } finally { this.active = false; }
   }
 }

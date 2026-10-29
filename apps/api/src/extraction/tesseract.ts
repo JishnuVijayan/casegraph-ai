@@ -1,8 +1,9 @@
 import { spawn } from 'node:child_process';
+import { finalizeRegions } from './regions';
+import { OcrFailure, type Region } from './types';
 
+export { OcrFailure, type Region, type OcrErrorCode } from './types';
 export const TESSERACT_BINARY = Symbol('TESSERACT_BINARY');
-export type OcrErrorCode = 'OCR_UNAVAILABLE' | 'OCR_TIMEOUT' | 'OCR_OUTPUT_LIMIT' | 'OCR_FAILED';
-export class OcrFailure extends Error { constructor(readonly code: OcrErrorCode) { super(code); } }
 
 async function invoke(binary: string, args: string[], input?: Buffer, timeoutMs = 8000, maxOutput = 512 * 1024) {
   return new Promise<string>((resolve, reject) => {
@@ -43,8 +44,6 @@ export async function tesseractTsv(binary: string, bytes: Buffer) {
   return invoke(binary, ['stdin', 'stdout', '-l', 'eng', '--psm', '6', 'tsv'], bytes);
 }
 
-export type Region = { kind: 'TEXT' | 'AMOUNT'; text: string; textSpan: { start: number; end: number };
-  boundingBox: { x: number; y: number; width: number; height: number }; confidence: number };
 export function parseTsv(tsv: string, width: number, height: number): { outputText: string; regions: Region[] } {
   const words: Region[] = []; let outputText = '';
   for (const line of tsv.split(/\r?\n/).slice(1)) {
@@ -60,26 +59,5 @@ export function parseTsv(tsv: string, width: number, height: number): { outputTe
     words.push({ kind: 'TEXT', text, textSpan: { start, end: outputText.length },
       boundingBox: { x: left / width, y: top / height, width: w / width, height: h / height }, confidence: Math.round(confidence) });
   }
-  const amounts: Region[] = [];
-  for (let i = 0; i < words.length; i++) {
-    const current = words[i], previous = words[i - 1];
-    const number = /^(?:₹|Rs\.?|INR)?\s?\d{1,3}(?:,\d{2,3})*(?:\.\d{1,2})?$|^(?:₹|Rs\.?|INR)?\s?\d{4,9}(?:\.\d{1,2})?$/i.test(current.text);
-    const currencyPrefix = /^(?:₹|Rs\.?|INR)$/i.test(current.text);
-    const next = words[i + 1];
-    if (currencyPrefix && next && /^\d[\d,.]{0,12}$/.test(next.text)) {
-      const a = current.boundingBox, b = next.boundingBox;
-      const x = Math.min(a.x, b.x), y = Math.min(a.y, b.y);
-      amounts.push({ kind: 'AMOUNT', text: `${current.text} ${next.text}`,
-        textSpan: { start: current.textSpan.start, end: next.textSpan.end },
-        boundingBox: { x, y, width: Math.max(a.x + a.width, b.x + b.width) - x,
-          height: Math.max(a.y + a.height, b.y + b.height) - y },
-        confidence: Math.min(current.confidence, next.confidence) });
-      i++; continue;
-    }
-    if (number && (/[₹]/.test(current.text) || /^(?:Rs\.?|INR)/i.test(current.text) ||
-      (previous && /^(?:₹|Rs\.?|INR)$/i.test(previous.text)))) {
-      amounts.push({ ...current, kind: 'AMOUNT' });
-    }
-  }
-  return { outputText, regions: [...words, ...amounts] };
+  return finalizeRegions(words, outputText);
 }
