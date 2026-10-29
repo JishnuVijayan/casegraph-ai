@@ -1017,3 +1017,11 @@ Default mode requires honest graph-unavailable behavior. The separate
 `npm run test:e2e:live` requires the future installed graph and private app token;
 it never skips the live path or substitutes fixtures. See [E2E runbook](e2e/README.md).
 T12 remains unchecked until the actual live-graph branch passes after deployment.
+
+### T13 local security regression
+
+`npm run test:security` combines unit/component, HTTP adversarial and browser checks
+using only temporary synthetic records. It covers access denial/revocation, bad uploads,
+source integrity, ambiguous OCR, inert hostile text and truthful unavailable services.
+It requires local PostgreSQL, Chrome and Tesseract. Live TigerGraph security acceptance
+still awaits deployment; offline/mock results are not presented as live isolation proof.
