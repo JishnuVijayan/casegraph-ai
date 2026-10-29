@@ -115,3 +115,17 @@ exact, approximate, date-only or unknown time precision. Normalize only determin
 INR strings to paise using integer arithmetic. Keep writes owner-only and reads
 scoped to current case grants. This supports local review without external
 verification, paid APIs or presenting inference as fact.
+
+### ADR-018 — T07 deterministic payment questions (2026-10-29)
+Compare only claims explicitly linked to the same payment timeline event. Different
+payments are not evidence of a contradiction. Generate missing-reference questions,
+differing normalized INR amounts, and differing valid explicit zoned ISO timestamps.
+Skip ambiguous, date-only and unzoned timestamps. Preserve the supporting claim IDs,
+values and source kinds in a protected snapshot; a versioned SHA-256 fingerprint
+makes refresh repeatable. Changes to any supporting interpretation create a new
+snapshot; prior questions/answers remain visible as superseded. Owners explicitly
+refresh questions; GET remains read-only. Answers are immutable through the API,
+recorded as unverified victim recollections, and never silently rewrite claims.
+Users can separately correct claims through T06. No Jev/model integration or paid
+service is needed. Only manually linked payment events are evaluated initially;
+missing events, semantic matching and ambiguous amount extraction remain limits.

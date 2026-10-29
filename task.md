@@ -1,28 +1,24 @@
-# Current task — T06 timeline and source-linked claims
+# Current task — T07 deterministic questions
 
-Updated: 2026-10-29 IST. Branch: `feat/t06-timeline-claims` from updated `develop` (`07fa125` includes T05).
+Branch: `feat/t07-questions` from develop (T06 merge `d0c80e4`; main merge `233d3aa`).
 
-References: `AGENTS.md`, `README.md`, `docs/REQUIREMENTS.md`, `docs/STACK.md`, `docs/ARCHITECTURE.md`, `docs/DATA_MODEL.md`, `docs/API.md`, `docs/SECURITY.md`, `docs/TASKS.md`, and `docs/TEST_PLAN.md`.
+References: AGENTS.md, README.md, REQUIREMENTS, STACK, FREE_SETUP, API, DATA_MODEL, SECURITY, TEST_PLAN and TASKS.
 
-Expected changes: T06-only Drizzle migration for claim-to-OCR-region reference and timeline precision constraints; protected claim/revision/timeline endpoints and deterministic amount normalization; victim review UI plus analyst read-only timeline; isolated synthetic PostgreSQL HTTP tests, component tests, and documentation. Preserve original files and T05 extraction output. No T07 clarification rules or T08 exports.
+Expected files: clarification rules/controller/service, schema and migration, AppModule, question review UI, synthetic rule/HTTP/component tests, test wrapper and docs.
 
-- [x] Promote a stored OCR amount region into an `OBSERVED_IN_UPLOAD`, `UNVERIFIED` claim; derive its text/source coordinates from persisted OCR, never request-supplied values.
-- [x] Let a victim add a `VICTIM_RECOLLECTION` claim without implying external confirmation; normalize simple INR amounts deterministically.
-- [x] List source-backed claims with original region and revision history; correct only the interpreted current value by appending before/after history without changing source or verification status.
-- [x] Create/list timeline events linked to one or more claims from the same case; accept exact zoned timestamp, date-only, or explicit unknown time and preserve uncertainty.
-- [x] Enforce owner-only writes, owner/granted-analyst reads, cross-case denial and immediate revocation for all claim/timeline routes.
-- [x] Test source-region derivation, correction history, normalization, date precision/unknown, event-claim linkage, bad IDs, role/IDOR/revocation, and UI provenance labels using synthetic data.
-- [x] Run migrations, all existing regression suites, T06 integration and component tests, lint/typecheck/build/storage checks; update `docs/TASKS.md` with actual results.
+- [x] Detect missing payment reference and amount/time disagreements within an explicitly linked payment event.
+- [x] Persist source snapshots and stable question identity; preserve historical answers and mark superseded questions.
+- [x] Owner generates/questions answers with ANSWERED or UNKNOWN; granted analysts read only; backend scopes every operation.
+- [x] Show one focused open question at a time with source context and UNKNOWN option.
+- [x] Run relevant checks and record actual results.
 
-Definition of done: a synthetic OCR amount can be saved as a source-linked observation, a victim correction leaves the source and an append-only revision trace, and a chronological event links to its supporting same-case claim(s). Analyst access remains read-only and scoped. T07 clarification questions and T08 exports remain separate.
+Done: a conflicting synthetic payment asks a focused source-linked question, an UNKNOWN answer persists without changing claims, and unauthorized access is denied. T08 export remains next.
 
-## Actual results (2026-10-29 IST)
+## Actual results — 2026-10-29 IST
 
-- `npm run db:generate`: passed; no schema changes remain after migration `0003_tiresome_sentinels.sql`.
-- `npm run db:migrate`, `npm run seed:synthetic`, `npm run db:verify`: passed; fresh/repeat migration, 16 tables/indexes, synthetic seed preservation, cross-case constraints and timeline precision checks verified; temporary verification DB removed.
-- `npm run test:claims`: 4 HTTP/PostgreSQL integration tests passed. `npm run test:auth`: 9 passed. `npm run test:evidence`: 8 passed. `npm run test:ocr`: 4 passed.
-- `npm test`: 24 tests passed (4 infrastructure, 11 API, 9 web). Frontend component tests: 9 passed across 4 files.
-- `npm run lint`, `npm run typecheck`, `npm run build`: passed. `npm run infra:smoke:storage`: passed 21 HTTP probes and frontend asset scan; temporary servers and synthetic sentinel were cleaned up.
-- Database verification first failed on an outdated synthetic timeline fixture. The fixture was corrected to an allowed event type and the full verifier passed on rerun. No tests or failures are represented as passed without a successful rerun.
-- Limits: no browser visual E2E, OCR language guarantees, bank verification, T07 question generation, T08 export or graph integration. Only synthetic records were used.
-- Next unblocked task: **T07 Questions**.
+- Added deterministic rules, protected refresh/read/answer endpoints, source snapshots and stable fingerprints; superseded/answered questions retain history and reject overwrites.
+- Added migration `0004_clear_ezekiel_stane.sql`; `db:migrate` and `db:verify` passed. Fresh/repeated five-migration verification, 16 tables/indexes and seed preservation passed; temporary DB removed.
+- `npm test`: 27 passed (4 infrastructure, 13 API, 10 web). `test:clarifications`: 3 passed; `test:claims`: 4 passed; `test:auth`: 9 passed. T07 tests cover source snapshots, stable IDs, conflicting amounts/times, separate payments, equivalent timestamps, invalid/ambiguous dates, UNKNOWN, immutable answers, stale snapshots, cross-case denial, analyst write denial and revoked-grant reads.
+- `lint`, `typecheck`, `build`, `db:generate` (no pending schema changes), and `git diff --check` passed. Local containers stopped; final status empty. Synthetic temporary files and DBs removed, working volume preserved.
+- Limits: questions require manually linked payment events; no semantic event matching, uncertain time inference, Jev, paid API or automatic claim correction. No browser E2E or new storage/OCR smoke run for T07.
+- Next unblocked task: T08 reviewable draft export.

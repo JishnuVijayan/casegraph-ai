@@ -143,3 +143,24 @@ bank records or independently verified values. Defaults are English, 8 seconds,
 512 KiB TSV output, 1,000 words, 64 KiB joined text and one OCR subprocess per API
 process. Uploaded text and stderr diagnostics are never logged. There is no
 PDF/ASR extraction, background queue or correction endpoint.
+
+## Implemented T07 clarification routes
+
+All paths are under `/api/v1`; current case scope is enforced on each request.
+
+- `POST /cases/:caseId/clarifications/refresh`: owner-only, empty JSON; persists
+  deterministic questions for payment events and returns history with `isCurrent`.
+- `GET /cases/:caseId/clarifications`: owner or currently granted analyst; reads
+  questions, protected source snapshots and recorded answers, priority ordered.
+- `POST /cases/:caseId/clarifications/:questionId/answer`: owner-only;
+  `{status:"ANSWERED",text:"..."}` (1–500 trimmed characters), or `{status:"UNKNOWN"}`
+  without text. Returns the recorded question. Answered or superseded questions
+  return 409; foreign or malformed question IDs return 403.
+
+Rules compare same-event claims only: missing payment reference, differing parsed
+INR amounts, and differing valid explicit ISO timestamps with timezone. Refresh
+preserves answered questions and deduplicates identical snapshots. Responses show
+claim IDs, values and source kinds for traceability through the T06 claim/source
+viewer. Answers store victim-recollection/unverified labels, actor and time;
+no claim or verification state changes automatically. Old snapshots remain readable
+but cannot accept answers once their source interpretations change.

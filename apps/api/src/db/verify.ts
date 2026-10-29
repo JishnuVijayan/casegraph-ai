@@ -18,7 +18,7 @@ export async function verifyDatabase() {
     const { pool, db } = test;
     await migrateDatabase(db);
     const journal = (await pool.query('SELECT * FROM drizzle.__drizzle_migrations ORDER BY id')).rows;
-    assert.equal(journal.length, 4);
+    assert.equal(journal.length, 5);
     await migrateDatabase(db);
     assert.deepEqual((await pool.query('SELECT * FROM drizzle.__drizzle_migrations ORDER BY id')).rows, journal);
     const expectedTables = [

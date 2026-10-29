@@ -125,3 +125,14 @@ UTC midnight for date-only and require a null timestamp for unknown precision.
 `event_claims` composite keys enforce that each linked support claim belongs to the
 same case. These database constraints complement, but do not replace, per-request
 case authorization.
+
+## T07 clarification history
+
+Migration `0004_clear_ezekiel_stane.sql` adds nullable `fingerprint` and `context_json`
+to clarifications plus unique `(case_id,fingerprint)`. Context records event ID and
+supporting claim IDs, interpreted values and source kinds. The fingerprint hashes a
+versioned deterministic rule kind and sorted snapshot. Existing rows are preserved;
+rows without a fingerprint are historical, not current. Answers record text or
+explicit null for UNKNOWN, source/verification labels, actor and time. There is no
+answer replacement endpoint. Currentness is calculated from current payment claims,
+so history survives correction without being presented as a current question.

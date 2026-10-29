@@ -1,3 +1,5 @@
+import { ClarificationsController } from './clarifications/controller';
+import { ClarificationsService } from './clarifications/service';
 import { Controller, Get, Module, Req } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ApiRequest, envelope } from './common/http';
@@ -26,8 +28,8 @@ class HealthController {
 }
 @Module({
   exports: [AccessStore, CaseScopeGuard],
-  controllers: [HealthController, AuthController, CasesController, EvidenceController, ExtractionController, ClaimsController, TimelineController],
-  providers: [EvidenceService, EvidenceStorage, ExtractionService, ClaimsService, { provide: TESSERACT_BINARY, useFactory: () => process.env.TESSERACT_BINARY || 'tesseract' }, { provide: EVIDENCE_DIRECTORY, useValue: resolve(__dirname, '../../../.local/evidence') }, DemoConfig, Sessions, AccessStore, CaseScopeGuard,
+  controllers: [ClarificationsController, HealthController, AuthController, CasesController, EvidenceController, ExtractionController, ClaimsController, TimelineController],
+  providers: [ClarificationsService, EvidenceService, EvidenceStorage, ExtractionService, ClaimsService, { provide: TESSERACT_BINARY, useFactory: () => process.env.TESSERACT_BINARY || 'tesseract' }, { provide: EVIDENCE_DIRECTORY, useValue: resolve(__dirname, '../../../.local/evidence') }, DemoConfig, Sessions, AccessStore, CaseScopeGuard,
     { provide: LOCAL_DATABASE, inject: [DemoConfig], useFactory: (config: DemoConfig) => config.enabled ? connect('casegraph', config.database) : undefined },
     { provide: APP_GUARD, useClass: SessionGuard }, { provide: APP_GUARD, useClass: RolesGuard }],
 })
