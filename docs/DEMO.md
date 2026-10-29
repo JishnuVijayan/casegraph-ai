@@ -5,20 +5,17 @@
 ## Demo goal
 Show **complete victim-to-investigator evidence continuity** using fictional cases, local app processing, optional Textract/Bedrock, and an **actual** TigerGraph query over an SSH tunnel.
 
-### Act 1 — Victim filing (0:00–0:45)
-Open `/`. File a synthetic complaint. Upload clearly marked fictional screenshots. Do not show real victim data. Prefer Textract when `TEXTRACT_ENABLED=true`; otherwise local Tesseract.
+### Act 1 — Start filing (0:00–0:30)
+Open `/`. Enter a fictional **name + 10-digit mobile** (no Victim A/B picker, no draft list). Continue into the one-complaint wizard.
 
-### Act 2 — Evidence reconstruction (0:45–1:25)
-OCR extracts payment amount with source regions labeled `OBSERVED_IN_UPLOAD`, not “Bank Verified.” Link claims to the timeline. Click one amount to show the crop.
+### Act 2 — Details + evidence (0:30–1:20)
+Short description + category, then upload clearly marked fictional screenshots. Prefer Textract when `TEXTRACT_ENABLED=true`; otherwise local Tesseract. Save observed amounts; link a payment timeline. Labels stay `OBSERVED_IN_UPLOAD` / UNVERIFIED — not “Bank Verified.”
 
-### Act 3 — Essentials only (1:25–2:00)
-Refresh clarifications. Deterministic rules ask **only** for missing essentials (reference, amount, time) or conflicts. If `BEDROCK_ENABLED=true`, phrasing may be polished — still rule-gated; never invents bank verification. Answer Unknown when appropriate.
+### Act 3 — Essentials + submit (1:20–2:10)
+Answer only missing essentials (or Unknown). If `BEDROCK_ENABLED=true`, phrasing may be polished — still rule-gated. Click **Submit complaint**. Backend builds the case file: draft export + optional similar-case leads (honest unavailable if TigerGraph is down). Show confirmation — not FIR/arrest/recovery claims.
 
-### Act 4 — Officer report + live graph (2:00–3:10)
-Open `/officer`. Inbox shows many older synthetic complaints (seeded INVESTIGATE grants). Open Kochi/Bengaluru cluster case. Run **similar-case search** with TigerGraph tunnel up (`graph:verify-live` already passed). Path is a synthetic investigative lead with edge provenance — not a verified perpetrator.
-
-### Act 5 — Export (3:10–3:40)
-Generate the human-reviewable draft: chronology, claims, unknowns, hashes. Marked `DRAFT`. No FIR/arrest/recovery claims.
+### Act 4 — Officer report + live graph (2:10–3:20)
+Open `/officer`. Inbox includes the submitted complaint (auto-grant) plus older synthetic cases. Open it for timeline/draft. On a seeded cluster case, run **similar-case search** with TigerGraph tunnel up (`graph:verify-live` already passed). Synthetic investigative lead only — not a verified perpetrator.
 
 ## Pre-stage checklist
 - [ ] `npm run infra:up` + `db:migrate` + `seed:synthetic` (50 fictional cases)
@@ -34,12 +31,4 @@ Generate the human-reviewable draft: chronology, claims, unknowns, hashes. Marke
 3. Confirm CloudWatch billing; rotate IAM keys after hackathon
 
 ## Backup plan
-- OCR off → Tesseract or labeled fixture only.
-- Bedrock off → deterministic T07 questions only.
-- TigerGraph down → **do not** show hard-coded paths as live. Show unavailable and offline query files.
-
-## Judge notes
-- TigerGraph shows multi-hop synthetic path provenance, not a single SQL join.
-- No Indian police/bank record access without agreements; demo data is fictional.
-- Hash proves integrity since ingest, not authenticity of the original capture.
-- Jev/voice deferred for this 24h cut (ADR-026).
+If TigerGraph is down: show honest unavailable on similar-case search; still demo filing → submit → officer draft. Never invent graph paths.

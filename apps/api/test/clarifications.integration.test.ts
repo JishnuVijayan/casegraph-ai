@@ -12,7 +12,6 @@ import { DemoConfig } from '../src/auth/config';
 import { LOCAL_DATABASE } from '../src/auth/store';
 import { configureHttp } from '../src/common/http';
 import { connect } from '../src/db/connection';
-import { loadFixtures } from '../src/db/fixtures';
 import { migrateDatabase } from '../src/db/migrate';
 import { seedSynthetic } from '../src/db/seed';
 import { EVIDENCE_DIRECTORY } from '../src/evidence/storage';
@@ -20,7 +19,6 @@ import { extractionRegions, extractionRuns } from '../src/db/schema';
 
 describe('deterministic clarification workflow', () => {
   const database = `casegraph_t07_test_${randomUUID().replaceAll('-', '')}`;
-  const fixture = loadFixtures();
   let app: INestApplication;
   let admin: ReturnType<typeof connect>; let connection: ReturnType<typeof connect>;
   let parent: string; let directory: string; let created = false;

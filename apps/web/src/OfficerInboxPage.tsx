@@ -39,12 +39,16 @@ export function OfficerInboxPage() {
   if (!session) {
     return (
       <section className="hero-shell" aria-labelledby="officer-brand">
-        <div className="hero-content">
-          <div className="anim-rise"><DemoBadge /></div>
-          <h1 id="officer-brand" className="hero-brand anim-rise">CaseGraph AI</h1>
-          <p className="hero-headline anim-rise-delay">Review complaints and related-case leads.</p>
-          <p className="hero-support anim-rise-delay">Open a filed complaint for timeline, evidence, draft report, and similar-case search.</p>
-          <form className="hero-cta anim-fade" onSubmit={(event) => {
+        <div className="hero-content hero-split">
+          <div className="hero-copy">
+            <div className="anim-rise"><DemoBadge /></div>
+            <h1 id="officer-brand" className="hero-brand anim-rise">CaseGraph AI</h1>
+            <p className="hero-headline anim-rise-delay">Review complaints and related-case leads.</p>
+            <p className="hero-support anim-rise-delay">
+              Open a filed complaint for timeline, evidence, draft report, and similar-case search.
+            </p>
+          </div>
+          <form className="intake-card anim-fade" onSubmit={(event) => {
             event.preventDefault();
             void perform(async () => {
               clear();
@@ -57,13 +61,19 @@ export function OfficerInboxPage() {
               setSession(next); setCases(rows);
             });
           }}>
-            <button className="btn-primary" disabled={busy} type="submit">Continue as officer</button>
+            <p className="intake-card-kicker">Officer access</p>
+            <h2 className="intake-card-title">Demo workspace</h2>
+            <p className="panel-lead" style={{ marginBottom: '1rem' }}>
+              Synthetic analyst login. Cases shared via auto-grant appear in your inbox.
+            </p>
+            <button className="btn-primary btn-block" disabled={busy} type="submit">
+              {busy ? 'Signing in…' : 'Continue as officer'}
+            </button>
+            <p className="intake-foot">
+              <Link to="/">File a complaint</Link>
+            </p>
+            {error && <p role="alert">{error}</p>}
           </form>
-          <p className="anim-fade" style={{ color: 'var(--muted)' }}>
-            <Link to="/">File a complaint</Link>
-          </p>
-          {busy && <p role="status">Signing in…</p>}
-          {error && <p role="alert">{error}</p>}
         </div>
       </section>
     );
@@ -76,10 +86,10 @@ export function OfficerInboxPage() {
           <p className="brand-mark text-2xl m-0">CaseGraph AI</p>
           <div className="mt-2"><DemoBadge /></div>
         </div>
-        <div className="text-right">
+        <div className="session-chip">
           <p className="m-0 font-semibold">{session.user.displayName}</p>
-          <p className="m-0 text-sm" style={{ color: 'var(--muted)' }}>Officer workspace</p>
-          <button disabled={busy} onClick={() => void perform(async () => {
+          <p className="m-0 text-sm session-chip-muted">Officer workspace</p>
+          <button className="btn-ghost btn-compact" disabled={busy} onClick={() => void perform(async () => {
             try { await api('/auth/logout', session.token, {}, 'POST'); } finally { clear(); }
           })}>Sign out</button>
         </div>
