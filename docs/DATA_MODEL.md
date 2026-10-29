@@ -55,3 +55,32 @@ At least 20 fictional cases, containing:
 
 ## Required indexes and invariants
 Index `cases.owner_id`, `evidence_files.case_id`, `claims.case_id`, `claim_sources.claim_id`, `case_access_grants(case_id, organization_id)`, and `audit_events.created_at`; add foreign keys and uniqueness on keys. Apply authorization to every evidence file and every graph-source dereference. Generate Drizzle migrations; don't assume migration exists until Codex creates and tests it.
+
+## Implemented PostgreSQL schema — T02
+
+The canonical typed schema is `apps/api/src/db/schema.ts`. The generated initial
+migration is `apps/api/drizzle/0000_bootstrap.sql`, with Drizzle snapshot/journal
+metadata alongside it. All 15 tables above now exist after `npm run db:migrate`.
+Use `npm run db:generate` for future changes and review generated SQL before applying.
+
+Naming follows this document: `owner_id`, `extraction_runs`, `size_bytes`, and
+`normalized_value_json`. Core organization/user/case rows include `synthetic`;
+users have display labels and cases have synthetic titles. `claim_sources` and
+`event_claims` additionally include `case_id` with composite foreign keys so a
+claim cannot reference another case's artifact/event. Recollection claims can
+exist without an uploaded-artifact source row.
+
+Role, case state, source kind, verification, processing, review, sharing scope and
+clarification state are PostgreSQL enums. Hash format, positive evidence size,
+page/audio offsets, export version, incident date order, and expected unique keys
+have database constraints. Timestamp columns are timezone-aware. New claims default
+to `UNVERIFIED`. These constraints do not implement file immutability, JSON-region
+validation, per-case authorization, or independent verification; those remain
+responsibilities of the later ingestion/review/auth modules.
+
+`data/synthetic/bootstrap.json` defines 1 fictional organization, 3 demo identities,
+20 empty cases and active/revoked/expired sharing examples. Seeding uses fixed UUIDs
+and insert-only conflicts inside a transaction, preserving existing edits and
+revocations. It does not manufacture evidence or TigerGraph relationships.
+`npm run db:verify` proves migration/seed repeatability and database constraints in
+an isolated temporary database, which it removes on completion.

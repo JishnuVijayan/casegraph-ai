@@ -2,12 +2,12 @@
 
 **How to use:** Ask Codex to implement **one task** at a time, run tests, then mark it `[x]` and attach verification evidence. No single-prompt “build the whole app”. Track failures honestly. Update `docs/DECISIONS.md` when deviating from architecture.
 
-Current detailed plan: [`task.md`](../task.md) — T01 local infrastructure. T01 implementation and verification are complete; T02 is next.
+Current detailed plan: [`task.md`](../task.md) — T02 database bootstrap complete; T03 authentication/authorization is next.
 
 ## Phase 0 — Bootstrap (P0)
 - [x] **T00 Repo initialization.** Monorepo `apps/web`, `apps/api`, `infra`, `data/synthetic`, `docs`; copy existing README/docs; `.gitignore`, `.env.example`; lock dependencies. **Done:** both projects start locally and no secrets committed.
 - [x] **T01 Infrastructure.** PostgreSQL via Compose; local private evidence directory or MinIO, smoke checks. **Done:** run startup and clean shutdown; unauthorized file isn't web-accessible.
-- [ ] **T02 Database.** Drizzle schema, migrations, seed-demo accounts and 20 synthetic case placeholders. **Done:** migrate twice safely / verify schema and seed idempotence.
+- [x] **T02 Database.** Drizzle schema, migrations, seed-demo accounts and 20 synthetic case placeholders. **Done:** migrate twice safely / verify schema and seed idempotence.
 
 ## Phase 1 — Victim reporting (P0)
 - [ ] **T03 Auth and authorization.** Seeded demo login, `CaseScopeGuard`, role boundaries. **Done:** cross-user access tests return denial.
@@ -66,3 +66,18 @@ Current detailed plan: [`task.md`](../task.md) — T01 local infrastructure. T01
 - `npm run infra:down` completed cleanly; final `infra:status` listed no project containers. The named database volume and private local configuration were preserved. No task services left running.
 - Limitations: app DB integration, migrations, seeding and dependency readiness remain T02 or later; per-case authorization/upload retrieval remain T03/T04. Filesystem isolation does not establish those controls. Dependency audit, Node 22 verification, browser E2E, OCR and TigerGraph checks were not run. Forced interruption of smoke scripts can leave a uniquely named synthetic marker for manual cleanup.
 - Next unblocked task: **T02**, Drizzle schema/migrations and idempotent synthetic seeding. T02 and later tasks remain unchecked.
+
+
+### T02 verification details (2026-10-29 IST)
+- Reviewed T01 commit `a830b1a`: no blocking findings. Re-ran lint/typecheck, all 7 then-existing tests, database connectivity/persistence, both builds and 21 HTTP storage probes successfully; stopped services afterward.
+- Created `develop` from `main` (`a515812`), merged T01 with merge commit `29c5a31` (`chore: merge local infrastructure into develop`), and pushed develop plus the T01 branch. Main was unchanged. T02 was implemented separately on `feat/t02-database` from develop.
+- Added the 15-table Drizzle schema, 8 enums, UUID/FK/unique/check constraints and required indexes, reviewed `0000_bootstrap.sql` with snapshot/journal metadata, local database CLI/wrapper and deterministic synthetic fixtures. Added root `db:generate`, `db:migrate`, `seed:synthetic`, `db:verify` commands. No public case/evidence/auth endpoint was added.
+- Locked Drizzle ORM **0.45.4**, Drizzle Kit **0.31.11**, pg and @types/pg **8.23.1**. `npm ls` succeeded. Existing package versions were not upgraded; lockfile changes include new dependency/peer locations and metadata. Installation warned about Kit's deprecated transitive esbuild-kit packages; vulnerability audit was not run.
+- `npm run db:generate`: generated SQL was inspected; subsequent generation reported no schema changes. First emitted build found TypeScript's reserved CommonJS `exports` identifier. Renamed the TypeScript symbol to `reportExports`, preserving SQL table `exports`; build and generation then passed.
+- `npm run db:verify`: passed against a fresh uniquely named local temporary database. Migration repeated without journal changes; verified 15 tables and required indexes. Seeding produced **1 fictional organization, 3 fictional users, 20 empty synthetic cases, 3 share grants**. Complete row snapshots matched on rerun; a manually changed case and revoked grant survived another seed. Test database was removed afterward.
+- Integration checks observed 9 expected database rejections: orphan case owner, duplicate demo subject, invalid role, invalid hash, zero file size, cross-case evidence source, cross-case timeline link, duplicate grant scope and nonpositive export version. New claims defaulted to UNVERIFIED; valid same-case source and event links succeeded. These are database-integrity checks, not HTTP authorization tests.
+- Working local `casegraph` database: `npm run db:migrate` twice and `npm run seed:synthetic` twice succeeded on PostgreSQL 17.11. Seeds are transactional and insert-only; no originals, graph relationships, OCR output or real records were introduced. Active/revoked/expired grant examples are fictional fixtures, not a working login/authorization system.
+- Final `npm run lint`, `npm run typecheck`, `npm test`: passed. Test counts: 4 infrastructure, 4 Jest (2 health + 2 fixture), 1 frontend = **9 tests**. `npm run infra:smoke:storage` rebuilt both projects successfully and passed all 21 HTTP content probes plus asset scan. Whitespace checks passed.
+- `npm run infra:down` succeeded; final status showed no project containers. Smoke servers stopped, sentinel and temporary verification DB removed; working seeded volume and ignored local credentials were preserved. No credentials added to Git or printed by database commands.
+- Limits: Node 24.15.0 was tested, Node 22 was not. No dependency audit, browser E2E, auth/IDOR, original-file immutability enforcement, JSON coordinate validation, OCR or TigerGraph integration tests yet. CLI migrations/seeds do not create protected application routes or a readiness endpoint. Forced interruption may leave a uniquely named temporary test database requiring deliberate manual cleanup.
+- Next unblocked task: **T03 — seeded demo login, CaseScopeGuard and role boundaries**. T03 and later tasks remain unchecked.

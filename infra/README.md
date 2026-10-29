@@ -54,9 +54,9 @@ manual cleanup; never drop application tables or the volume to clean a smoke tes
 
 PostgreSQL initializes credentials on a new volume only. Editing `.env` does not
 rotate an existing database password; restore the matching local value or perform
-an explicit database password change. The MVP currently has no Drizzle schema,
-migrations, seeds, application DB connection, or dependency-readiness endpoint
-(T02 and later). Process liveness is not database readiness.
+an explicit database password change. The CLI schema/migrations and synthetic seeds are documented in the T02 section
+below. Application DB access and dependency readiness remain later work. Process
+liveness is not database readiness.
 
 ## Private storage and checks
 
@@ -90,3 +90,38 @@ are in `docs/TASKS.md`.
 
 References: [official PostgreSQL image](https://hub.docker.com/_/postgres),
 [Vite filesystem serving controls](https://vite.dev/config/server-options#server-fs-strict).
+
+## Database schema and synthetic seeds — T02
+
+With `infra:up` complete, run from the root:
+
+```bash
+npm run db:generate
+npm run db:migrate
+npm run seed:synthetic
+npm run db:verify
+npm run infra:down
+```
+
+`db:generate` is offline and reads no credentials; after the committed migration,
+it reports no schema changes. `db:migrate` uses Drizzle's migration journal and
+is safe to repeat. `seed:synthetic` inserts the fictional fixtures transactionally
+without updating existing records. No login or case API is exposed by these commands.
+
+The root commands compile the backend CLI and use the validated, ignored `.env`
+from T01. They connect only to local `127.0.0.1`, database/user `casegraph`, using
+`POSTGRES_PORT` and `POSTGRES_PASSWORD`. No cloud connection URL or API key is used.
+The NestJS health route still reports process liveness only; application DB/auth
+integration remains later work.
+
+`db:verify` creates its own uniquely named `casegraph_t02_test_*` database on the
+local container. It migrates twice, seeds repeatedly, compares complete row
+snapshots, preserves manual edits/revocations, checks 15 tables/indexes and
+constraint rejections, then drops only that temporary database. The local demo
+role needs database-creation permission for this check (the image bootstrap role
+has it); this is not a production privilege design. On forced interruption, a
+uniquely named temporary test database may remain for manual cleanup. Never drop
+`casegraph` or its volume to clean test leftovers.
+
+Stable installed versions are locked: Drizzle ORM 0.45.4, Kit 0.31.11, pg 8.23.1.
+See [Drizzle's migration guide](https://orm.drizzle.team/docs/migrations).

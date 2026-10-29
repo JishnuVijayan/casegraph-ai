@@ -1,6 +1,6 @@
 # CaseGraph AI
 
-**Current implementation: T00 scaffold + T01 local infrastructure.** React/Vite and NestJS run locally.
+**Current implementation: T00 scaffold, T01 local infrastructure, T02 database bootstrap.** React/Vite and NestJS run locally.
 See [app setup](#implemented-local-scaffold-t00) and [local infrastructure](#implemented-local-infrastructure-t01) for commands.
 The following product blueprint includes future, unimplemented features.
 
@@ -852,7 +852,7 @@ npm test
 npm run build
 ```
 
-There are no migration or seed commands yet (T02). Infrastructure is T01.
+Migration/seed commands are documented in the T02 database bootstrap section. Infrastructure commands are in the T01 section.
 Evidence, authentication, and graph routes are not exposed by this scaffold.
 
 ## Implemented local infrastructure (T01)
@@ -876,4 +876,24 @@ The smoke checks use synthetic data; the database check restarts this project's
 container, and the storage check builds and temporarily starts its own servers.
 Shutdown preserves the database volume. See [infra/README.md](infra/README.md) for
 prerequisites, the pinned image, commands, credential handling and limitations.
-Application database integration and migrations remain T02.
+Schema migrations and synthetic seeding are documented below (T02); authenticated application access remains T03.
+
+## Implemented database bootstrap (T02)
+
+After `npm run infra:up`, run:
+
+```bash
+npm run db:migrate
+npm run seed:synthetic
+npm run db:verify
+npm run infra:down
+```
+
+Drizzle now defines the 15 canonical tables with a reviewed SQL migration. Seeds
+create one fictional consortium, two victim identities, one analyst, 20 synthetic
+case placeholders and three sharing examples. Repeating seeds preserves edits.
+`db:verify` uses a separate temporary local database and removes it afterward.
+`npm run db:generate` generates future migrations offline. See
+[infrastructure instructions](infra/README.md) and [data model](docs/DATA_MODEL.md).
+Authentication, protected case endpoints and actual evidence processing are still
+unimplemented. No fixture is a real victim record or live investigation result.

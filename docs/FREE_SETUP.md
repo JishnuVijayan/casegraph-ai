@@ -49,8 +49,9 @@ The init command safely creates ignored `.env` credentials and private
 its volume. The DB smoke check restarts this project's container; storage smoke
 builds both apps and starts temporary loopback servers on 3000/15173/15174.
 See [infrastructure instructions](../infra/README.md) for the pinned image and
-credential/persistence behavior. No migrations, seeding, OCR or graph setup is
-implemented by these commands.
+credential/persistence behavior. T02 adds `npm run db:migrate`, `npm run seed:synthetic`, and `npm run db:verify`
+after `infra:up`. Database verification uses/removes a temporary local database.
+OCR and graph setup remain unimplemented.
 
 ## TigerGraph Community important licensing distinction
 Official comparison (2026): Community Edition is listed as **free**, single-server and available in Docker with graph/vector capabilities. Its [March 5, 2026 software license](https://www.tigergraph.com/license-agreement/) contains restrictions on **benchmarking, license scope and support**. Read the license before deciding how to run and showcase it. Do not promise that Community Edition permits your future production SaaS/hosted-service use or publish throughput claims without permission. For the hackathon, use local internal demonstration data; seek sponsor clarification about permitted use and access. Resources:
