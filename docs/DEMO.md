@@ -1,3 +1,14 @@
+# Latest reviewed demo UI (2026-10-30, acd8d43 integration)
+
+1. Open `/`, show urgent guidance and synthetic badge, enter invented name/mobile.
+2. Describe the fictional incident; choose screenshots in the upload zone. Images upload automatically; owner can remove an unreferenced draft upload before preparation.
+3. Click **Continue**. Local preparation runs OCR, creates observed amount claims with source coordinates, file-linked inference hints and a provisional payment grouping. It asks only for unresolved essentials; Unknown remains valid. No LLM or bank verification is implied. Date-only/unknown-zone values remain uncertain. Multiple real payments are not automatically proven to be the same event.
+4. Submit the local review package, then explicitly **Share for investigation**. The case stays private until shared. Draft export remains accessible on confirmation.
+5. Open `/officer`. The inbox lists shared submitted complaints; open one for screenshot previews, sourced claims, provisional timeline, answers, saved leads and report preview/Print button. Use Advanced tools for detailed review/source crops/corrections and graph queries. Existing graph fixture IDs can be opened through **Open by reference** only with active grants. Newly uploaded cases are not projected to TigerGraph automatically.
+6. Demonstrate the existing seeded Kochi/Bengaluru graph pair under both INVESTIGATE grants. Keep SYSTEM_INFERENCE/UNVERIFIED/synthetic labels and source drilldown. Revocation must deny the next source request.
+
+**Observed:** local real-browser rehearsal passed. Latest required-live attempt returned HTTP 503; retry when Savanna connectivity is available. No live success is claimed for this revision. Browser Print/Save as PDF dialog was not automated. Earlier sections below are historical rehearsal guidance and do not supersede this flow.
+
 # Current wizard integration (2026-10-30)
 
 Victim `/` now asks for fictional name/mobile, short description, uploads, review, essentials and local submission. Use invented demo details only; no OTP/KYC or official submission. After submission use **Share for investigation** explicitly, then open the officer workspace. The generated draft is available in **Draft export**. Graph lookup occurs only under analyst grants; it is not performed as a victim on submit. Existing seeded case-pair graph demonstration remains separate from new uploads. **Current verification:** local wizard browser passed; latest required-live query returned 503 and a separate client probe timed out. Recheck Savanna availability and rerun live mode before stage use. The previous split UI had a successful live run.
@@ -20,6 +31,25 @@ Victim filing is at `/`; the fictional analyst/officer inbox is at `/officer`. B
 | Generate report | Versioned HTML complaint draft, chronology, evidence/hash index; browser Print/Save as PDF | No server-generated PDF certification or automatic filing |
 
 ## Manual rehearsal
+### Act 1 — Start filing (0:00–0:30)
+Open `/`. Enter a fictional **name + 10-digit mobile** (no Victim A/B picker, no draft list). Continue into the one-complaint wizard. Badge reads **Hackathon demo** (not “synthetic”).
+
+### Act 2 — Details + auto-uploads (0:30–1:10)
+Short description + category, then add screenshots. Files **upload automatically** with preview thumbnails and Remove. Victim UI stays plain — no OCR buttons, claim types, or timeline builder. Case titles show the victim’s wording (no “Synthetic …” prefix in the UI).
+
+### Act 3 — Prepare → ask only gaps → submit (1:10–2:10)
+Click **Continue**. Server runs OCR, promotes observed amounts, parses OCR/summary for reference/time heuristics when present, scaffolds a payment timeline, and refreshes essentials (`POST /cases/:id/prepare`). If nothing is missing, skip straight to **Ready to submit**. Otherwise answer only open questions (or “I don’t remember”). Click **Submit complaint**. Labels stay `OBSERVED_IN_UPLOAD` / `VICTIM_RECOLLECTION` / UNVERIFIED — not “Bank Verified.”
+
+### Act 4 — Officer report + print PDF (2:10–3:20)
+Open `/officer`. Inbox shows **submitted** complaints only (`REVIEW_REQUIRED`). Open the complaint for a single report: screenshots, what we know, answers, similar-case leads already captured at submit (Retry if unavailable), and the versioned HTML draft with **Print / Save as PDF**. Advanced tools stay collapsed. For live TigerGraph fixtures, use **Open by reference** — never invent graph paths.
+
+## Pre-stage checklist
+- [ ] `npm run infra:up` + `db:migrate` + `seed:synthetic` (fictional cases)
+- [ ] Billing alarms $15 / $20; EC2 stopped when idle
+- [ ] `npm run aws:tg:start` (or create) + SSH tunnel + `npm run graph:verify-live`
+- [ ] Optional: `TEXTRACT_ENABLED=true`, `BEDROCK_ENABLED=true`, cheap model enabled in Bedrock console
+- [ ] `DEMO_MODE=true npm run dev:demo`
+- [ ] No real identifiers on screen
 
 1. Start local PostgreSQL; migrate/seed the local app if needed. Configure the private credential and exported Savanna flags as in `tigergraph-savanna-integration.md`; start `npm run dev:demo`. Do not reload the graph.
 2. Open `/`, show urgent guidance, continue as Fictional Victim A. Open Synthetic Kochi-01 (case UUID ending 001) for the combined graph demonstration. A newly created case can demonstrate filing but has no graph projection.
@@ -112,3 +142,4 @@ output still need review. The actual graph demo remains unverified. After host
 setup, `test:e2e:live` must pass the real path/source/review/revocation branch before
 claiming complete victim-to-investigator E2E acceptance. The authored graph fixture
 is not misrepresented as independently verified banking evidence from the uploads.
+If TigerGraph is down: show honest unavailable on similar-case search / Retry; still demo filing → submit → officer report + print. Never invent graph paths.

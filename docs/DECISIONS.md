@@ -294,3 +294,43 @@ Approved by: User request for simple complaint filing UI on develop.
 
 ### Wizard integration safeguards (2026-10-29)
 Merge preserves the incoming wizard and local-only intake/submit endpoints, not AWS activation. Historical AWS authorization on develop is not used to introduce costs here. Submission prepares a local draft for review; investigation requires explicit share and analyst query, not victim-wide consortium lookup. Retain 20-case scope, local font fallback and global urgent guidance. Export failure leaves draft status retryable. Intake is synthetic role simulation, not mobile authentication; use invented values only.
+Approved by: User request for simple complaint filing on the AWS demo branch.
+
+### ADR-028 — Victim auto-prepare; hide investigator tools (2026-10-30)
+Context: Victims were shown claim types, OCR buttons, timeline builders, and
+“save recollection” controls that belong in an officer workspace. Normal
+customers cannot be expected to assemble claims manually.
+Alternatives considered: keep review step with softer labels; confirm OCR
+amounts before promoting; generative “AI invents whole case file.”
+Decision: Victim wizard is intake → details/uploads → questions → submit.
+`POST /cases/:id/prepare` (OWNER) runs OCR as needed, promotes AMOUNT regions to
+`payment_amount` claims (`OBSERVED_IN_UPLOAD`), adds a statement recollection from
+the complaint title when missing, ensures one `payment` timeline event with links,
+and refreshes clarifications. Victim Evidence/Questions UIs stay plain-language.
+Officer `/officer` retains full Review/Evidence tooling. Reconstruction remains
+deterministic OCR + rules (Bedrock may polish question wording only); never bank
+verification or invented graph paths.
+Consequences and tests: prepare + web/e2e cover the simplified path; officer e2e
+still opens claims/timeline. Revisit before any real-user pilot.
+Approved by: User request to rework complaint filing for normal customers.
+
+### ADR-029 — Victim/officer complaint UX (2026-10-30)
+Context: UI still said “synthetic,” victims had a manual Upload button, prepare
+re-asked known OCR details, and the officer inbox flooded with seeded DRAFTs
+instead of a reviewable complaint package.
+Alternatives considered: paid PDF services; keep Synthetic title prefix; show all
+grants in inbox; invent graph paths when TigerGraph is down.
+Decision: Strip “synthetic” from user-visible copy/titles while keeping
+`synthetic: true` and seed fixtures. Victim multi-select auto-uploads with
+preview + `DELETE` evidence (OWNER, DRAFT only). Prepare also parses OCR/summary
+heuristics for amount/reference/time recollections and skips the questions step
+when `openQuestions === 0`. Analyst `GET /cases` returns `REVIEW_REQUIRED` only.
+Officer opens a single report (screenshots, facts, answers, saved leads, HTML
+draft + browser Print/Save as PDF); advanced tools stay collapsed. Open-by-
+reference remains for live fixture cases outside the submitted inbox.
+Consequences and tests: web/API/e2e + DEMO updated; no Puppeteer/paid PDF.
+Approved by: User plan “Victim officer UX fix.”
+
+### 2026-10-30 — Reviewed integration of acd8d43
+Retain the two-step victim UI, auto-preparation and consolidated officer report. Keep explicit sharing and analyst-only graph execution with 20-case bounds from this branch. OCR-derived reference/time candidates are SYSTEM_INFERENCE with an evidence-file/full-OCR-span link; written summary candidates are VICTIM_RECOLLECTION. Amount regions retain OBSERVED_IN_UPLOAD and precise coordinates. Preserve full typed summary separately from the short case title. Date-only values remain date-only; unzoned clocks remain unzoned and ask for clarification, never assumed UTC/midnight. Unlabeled digit runs/ambiguous currency are not accepted as new amounts. Timeline grouping is provisional inference, not a verified single payment.
+Only owner-requested, unreferenced DRAFT uploads may be deleted; refuse removal after claims or any report export, preserving originals and revision history. No destructive cascade over referenced evidence. Keep synthetic labels in UI and export, private original streaming and grant checks. System font fallback and isolated installed Chrome test profile preserved; no personal browser attachment. A new test referenced an absent Bedrock module; do not add a paid dependency or claim Bedrock integration to satisfy it. That absent-module test was excluded; deterministic clarification coverage remains. No AWS activation, schema migration or graph reload.

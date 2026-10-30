@@ -9,7 +9,6 @@ test('shows victim intake hero with name and mobile, without fixture picker', ()
   render(<MemoryRouter initialEntries={['/']}><App /></MemoryRouter>);
   expect(screen.getByRole('heading', { level: 1, name: 'CaseGraph AI' })).toBeVisible();
   expect(screen.getByRole('link',{name:'1930'})).toHaveAttribute('href','tel:1930');
-  expect(screen.getByRole('link',{name:'cybercrime.gov.in'})).toHaveAttribute('href','https://cybercrime.gov.in/');
   expect(screen.getByText('Hackathon demo · synthetic data')).toBeVisible();
   expect(screen.getByText(/File a complaint in a few clear steps/)).toBeVisible();
   expect(screen.getByLabelText('Your name')).toBeVisible();

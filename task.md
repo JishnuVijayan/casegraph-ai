@@ -1,17 +1,12 @@
-# Merge latest develop intake wizard
+# Integrate develop acd8d43 UX and automatic preparation
 
-Compare develop c655a57 with current branch. References: AGENTS, SECURITY, API, TASKS, DEMO and existing Savanna contracts.
-Files: incoming victim wizard/panels, local intake/submit services, regression tests, merge conflicts and docs.
-Definition of done: wizard merged, explicit grants and 20-case scope preserved, no paid services, tests/typecheck/lint/build and both browser modes verified.
+References: AGENTS, SECURITY, DATA_MODEL, API, TASKS and current demo runbook.
+Expected files: incoming prepare/upload/report UI, backend preparation and retention safeguards, tests and merge docs.
+Definition of done: resolve merge, preserve HTTPS/authorization/provenance/original history, verify local and available live checks, record outcomes and push.
 
-- [x] Compare one incoming commit (18 files), identify non-UI backend additions.
-- [x] Resolve conflicts; preserve urgent guidance, private drafts and local fonts.
-- [x] Keep graph lookup analyst-only; preserve source/grant validation and 20-case cap.
-- [x] Verify submit failure/security behavior and updated browser flows.
-- [x] Record outcomes, commit and push current branch.
+- [x] Compare 38 changed files and identify provenance, time and destructive-cascade issues.
+- [x] Integrate new UI with explicit sharing, synthetic badge and 20-case scope.
+- [x] Verify source-bound preparation, conservative timestamps and referenced evidence retention.
+- [x] Run checks, document actual results, commit and push.
 
-## Actual outcomes (2026-10-30 IST)
-
-49 regular and 41 HTTP integration checks passed; updated real-browser wizard passed on rerun (91 total across completed suites). Lint/typecheck/build/whitespace passed. Composite security run first exposed a removed fixture import, then an ambiguous final button selector; fixed and affected suites rerun. Live Savanna E2E reached query and returned 503; isolated client probe timed out. No live success claimed for this revision. Prior successful live run remains historical.
-
-Preserved explicit sharing and analyst-only graph access with 20-case limit. Submit/export failure retry is tested; concurrent submit/report workflow is not fully atomic and can leave another immutable draft. Local-only fictional name/mobile intake is not identity verification. No AWS/billing, graph/data reload or secrets committed. Working PostgreSQL left running.
+Actual results: 56 regular, 43 HTTP integration and 1 real-browser scenario passed (100 distinct checks; parser tests repeated in test:prepare counted once). Lint/typecheck/build/whitespace passed. Required-live query returned 503; no live pass claimed. Original/claim/revision retention and source-kind corrections verified. Working data/graph untouched; isolated test resources cleaned and existing PostgreSQL left running. See docs/TASKS.md for failures, fixes and remaining limits.

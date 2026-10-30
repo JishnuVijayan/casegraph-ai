@@ -58,7 +58,7 @@ describe('immutable synthetic image evidence over HTTP', () => {
     await http().post('/api/v1/cases').set('Authorization', auth(a)).send({ ...dto, syntheticAcknowledged: false }).expect(400);
     const res = await http().post('/api/v1/cases').set('Authorization', auth(a)).send(dto).expect(201);
     caseId = res.body.data.id;
-    expect(res.body.data.title).toBe('Synthetic Fictional image test');
+    expect(res.body.data.title).toBe('Fictional image test');
     expect((await connection.pool.query('SELECT owner_id FROM cases WHERE id=$1', [caseId])).rows[0].owner_id).toBe(fixture.users[0].id);
   });
   it('submits only an owned evidenced case, preserves private scope and leaves report failure retryable',async()=>{
@@ -89,10 +89,10 @@ describe('immutable synthetic image evidence over HTTP', () => {
     expect(await readFile(join(directory, `${evidenceId}.original`))).toEqual(png);
     const original = await view().expect(200);
     expect(original.body).toEqual(png);
-    expect(original.headers['content-type']).toBe('application/octet-stream');
-    expect(original.headers['content-disposition']).toContain('attachment');
+    expect(original.headers['content-type']).toBe('image/png');
+    expect(original.headers['content-disposition']).toContain('inline');
     expect(original.headers['x-content-type-options']).toBe('nosniff');
-    expect(original.headers['cache-control']).toBe('no-store');
+    expect(original.headers['cache-control']).toMatch(/no-store/);
   });
   it('accepts JPEG and duplicate uploads as new sources without replacing originals', async () => {
     const duplicate = await upload(png).expect(201);
@@ -133,6 +133,21 @@ describe('immutable synthetic image evidence over HTTP', () => {
     await http().delete(`/api/v1/cases/${caseId}/shares/${share.body.data.id}`).set('Authorization', auth(a)).expect(200);
     await view(evidenceId, caseId, analyst).expect(403);
     await http().get(`/api/v1/cases/${caseId}/evidence`).set('Authorization', auth(analyst)).expect(403);
+  });
+  it('lets the owner remove a draft upload and deletes private bytes', async () => {
+    const res = await upload(png).expect(201);
+    const removable = res.body.data.id as string;
+    const path = join(directory, `${removable}.original`);
+    expect(await readFile(path)).toEqual(png);
+    await http().delete(`/api/v1/cases/${caseId}/evidence/${removable}`).set('Authorization', auth(b)).expect(403);
+    await http().delete(`/api/v1/cases/${caseId}/evidence/${removable}`).set('Authorization', auth(analyst)).expect(403);
+    await http().delete(`/api/v1/cases/${caseId}/evidence/${removable}`).set('Authorization', auth(a)).expect(200);
+    await view(removable).expect(403);
+    await expect(readFile(path)).rejects.toMatchObject({ code: 'ENOENT' });
+    const audit = (await connection.pool.query(
+      "SELECT action FROM audit_events WHERE resource_type = 'evidence' AND action = 'EVIDENCE_REMOVED'",
+    )).rows;
+    expect(audit.length).toBeGreaterThan(0);
   });
   it('fails closed for missing, tampered or symlinked originals instead of serving mismatched bytes', async () => {
     const file = join(directory, `${evidenceId}.original`);

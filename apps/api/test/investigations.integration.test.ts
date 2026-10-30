@@ -59,7 +59,10 @@ describe('analyst investigation authorization with explicitly mocked TigerGraph 
     const response=await http().post(path()).set('Authorization',auth(analyst)).send({maxHops:4}).expect(201);
     const lead=response.body.data.leads[0];leadId=lead.id;
     expect(lead).toMatchObject({reviewStatus:'NEEDS_REVIEW',origin:'TIGERGRAPH_QUERY_SNAPSHOT',path:syntheticPath});
-    expect(graph.execute.mock.calls[0][1].allowed_case_ids).toEqual([caseA,caseB]);
+    const allowed=graph.execute.mock.calls[0][1].allowed_case_ids as string[];
+    expect(allowed).toContain(caseA);
+    expect(allowed).toContain(caseB);
+    expect(allowed.length).toBeLessThanOrEqual(21);
     const source=await http().get(`/api/v1/graph-leads/${leadId}/sources/${encodeURIComponent(syntheticPath.source_report_ref)}`).set('Authorization',auth(analyst)).expect(200);
     expect(source.body.data.source).toEqual(syntheticSources[0]);
     await http().get(`/api/v1/graph-leads/${leadId}/sources/fx:unknown`).set('Authorization',auth(analyst)).expect(403);

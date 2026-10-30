@@ -89,8 +89,14 @@ describe('PostgreSQL-backed HTTP authorization', () => {
     const absent = await http().get(`/api/v1/cases/${randomUUID()}`).set('Authorization', auth(b)).expect(403);
     expect(denied.body.error).toEqual(absent.body.error);
     await http().get('/api/v1/cases/not-a-uuid').set('Authorization', auth(a)).expect(403);
-    expect((await http().get('/api/v1/cases').set('Authorization', auth(a)).expect(200)).body.data).toHaveLength(10);
-    expect((await http().get('/api/v1/cases').set('Authorization', auth(analyst)).expect(200)).body.data.map((row: { id: string }) => row.id)).toEqual([caseA]);
+    const ownedByA = fixture.cases.filter((row) => row.ownerId === fixture.users[0].id).length;
+    expect((await http().get('/api/v1/cases').set('Authorization', auth(a)).expect(200)).body.data).toHaveLength(ownedByA);
+    // Officer inbox lists submitted complaints only — seeded DRAFT grants stay out of the inbox.
+    const analystIds = (await http().get('/api/v1/cases').set('Authorization', auth(analyst)).expect(200)).body.data.map((row: { id: string }) => row.id) as string[];
+    expect(analystIds).not.toContain(caseA);
+    expect(analystIds).not.toContain(caseB);
+    expect(analystIds).not.toContain(casePrivate);
+    await http().get(`/api/v1/cases/${caseA}`).set('Authorization', auth(analyst)).expect(200);
   });
   it('requires active explicit grants; absent, revoked and expired grants deny analysts', async () => {
     await http().get(`/api/v1/cases/${caseA}`).set('Authorization', auth(analyst)).expect(200);
@@ -114,7 +120,8 @@ describe('PostgreSQL-backed HTTP authorization', () => {
     await http().get(`/api/v1/cases/${casePrivate}`).set('Authorization', auth(analyst)).expect(403);
     await connection.pool.query("UPDATE case_access_grants SET expires_at = now() - interval '1 second' WHERE case_id = $1", [caseA]);
     await http().get(`/api/v1/cases/${caseA}`).set('Authorization', auth(analyst)).expect(403);
-    expect((await http().get('/api/v1/cases').set('Authorization', auth(analyst)).expect(200)).body.data).toEqual([]);
+    const listed = (await http().get('/api/v1/cases').set('Authorization', auth(analyst)).expect(200)).body.data as { id: string }[];
+    expect(listed.map((row) => row.id)).not.toContain(caseA);
     await connection.pool.query('UPDATE case_access_grants SET expires_at = NULL WHERE case_id = $1', [caseA]);
   });
   it('rechecks current role, organization and synthetic identity instead of caching authority', async () => {
