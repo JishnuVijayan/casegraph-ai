@@ -1,21 +1,21 @@
-import { Body, Controller, Get, Param, Post, Req, Res, UseGuards } from '@nestjs/common';
-import { Equals } from 'class-validator';
+import { Controller, Get, Req, Res, StreamableFile, UseGuards } from '@nestjs/common';
 import { Response } from 'express';
-import { CaseScopeGuard, Roles } from '../auth/guards';
-import { ApiRequest, envelope } from '../common/http';
+import { CaseScopeGuard, RequireCaseScope, Roles } from '../auth/guards';
+import { ApiRequest } from '../common/http';
 import { ExportsService } from './service';
-export class CreateExportDto { @Equals(true) draftAcknowledged!: boolean; }
-@Controller('cases/:caseId/exports')
-@Roles('victim', 'analyst')
+
+@Controller('cases/:caseId')
+@Roles('victim')
+@RequireCaseScope('OWNER')
 @UseGuards(CaseScopeGuard)
 export class ExportsController {
   constructor(private readonly service: ExportsService) {}
-  @Post() async create(@Body() _dto: CreateExportDto, @Req() req: ApiRequest) { return envelope(req, await this.service.create(req)); }
-  @Get() async list(@Req() req: ApiRequest) { return envelope(req, await this.service.list(req)); }
-  @Get(':exportId/download')
-  async download(@Req() req: ApiRequest, @Param('exportId') id: string, @Res({passthrough:true}) res: Response) {
-    res.setHeader('X-Content-Type-Options','nosniff');
-    res.setHeader('Content-Security-Policy', "sandbox; default-src 'none'; style-src 'unsafe-inline'");
-    return this.service.download(req, id);
+  @Get('report.html')
+  async report(@Req() req: ApiRequest, @Res({ passthrough: true }) res: Response) {
+    const { html, filename } = await this.service.report(req);
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Content-Security-Policy', "sandbox; default-src 'none'; img-src data:; style-src 'unsafe-inline'");
+    res.setHeader('Cache-Control', 'private, no-store');
+    return new StreamableFile(Buffer.from(html), { type: 'text/html; charset=utf-8', disposition: `attachment; filename="${filename}"` });
   }
 }

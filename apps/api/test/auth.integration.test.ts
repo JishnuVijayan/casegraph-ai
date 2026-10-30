@@ -71,7 +71,7 @@ describe('PostgreSQL-backed HTTP authorization', () => {
   });
   it('rejects missing/forged sessions, undeclared routes, identity overrides and foreign origins', async () => {
     const denied = await http().get(`/api/v1/cases/${caseA}`).expect(401);
-    expect(denied.body).toEqual({ error: { code: 'UNAUTHENTICATED', message: 'Demo sign-in required.' }, requestId: expect.any(String) });
+    expect(denied.body).toEqual({ error: { code: 'UNAUTHENTICATED', message: 'Please sign in to continue.' }, requestId: expect.any(String) });
     await http().get('/api/v1/cases').set('Authorization', auth('0'.repeat(64))).expect(401);
     await http().get('/api/v1/test/unguarded').set('Authorization', auth(a)).expect(403);
     await http().post('/api/v1/auth/demo').send({ demoSubject: 'synthetic-victim-a', role: 'analyst', userId: fixture.users[2].id }).expect(400);
@@ -80,14 +80,20 @@ describe('PostgreSQL-backed HTTP authorization', () => {
   });
   it('allows each owner and scopes list/read from DB, ignoring claimed user headers', async () => {
     const own = await http().get(`/api/v1/cases/${caseA}`).set('Authorization', auth(a)).expect(200);
-    expect(own.body.data.synthetic).toBe(true);
+    expect(own.body.data.reference).toMatch(/^CG-\d{4}-\d{6}$/);
     await http().get(`/api/v1/cases/${caseB}`).set('Authorization', auth(b)).expect(200);
     const denied = await http().get(`/api/v1/cases/${caseA}`).set('Authorization', auth(b)).set('X-User-ID', fixture.users[0].id!).expect(403);
     const absent = await http().get(`/api/v1/cases/${randomUUID()}`).set('Authorization', auth(b)).expect(403);
     expect(denied.body.error).toEqual(absent.body.error);
     await http().get('/api/v1/cases/not-a-uuid').set('Authorization', auth(a)).expect(403);
-    expect((await http().get('/api/v1/cases').set('Authorization', auth(a)).expect(200)).body.data).toHaveLength(10);
-    expect((await http().get('/api/v1/cases').set('Authorization', auth(analyst)).expect(200)).body.data.map((row: { id: string }) => row.id)).toEqual([caseA]);
+    const ownedByA = fixture.cases.filter((row) => row.ownerId === fixture.users[0].id).length;
+    expect((await http().get('/api/v1/cases').set('Authorization', auth(a)).expect(200)).body.data).toHaveLength(ownedByA);
+    // Officer inbox lists submitted complaints only — seeded DRAFT grants stay out of the inbox.
+    const analystIds = (await http().get('/api/v1/cases').set('Authorization', auth(analyst)).expect(200)).body.data.map((row: { id: string }) => row.id) as string[];
+    expect(analystIds).not.toContain(caseA);
+    expect(analystIds).not.toContain(caseB);
+    expect(analystIds).not.toContain(casePrivate);
+    await http().get(`/api/v1/cases/${caseA}`).set('Authorization', auth(analyst)).expect(200);
   });
   it('requires active explicit grants; absent, revoked and expired grants deny analysts', async () => {
     await http().get(`/api/v1/cases/${caseA}`).set('Authorization', auth(analyst)).expect(200);
@@ -111,7 +117,8 @@ describe('PostgreSQL-backed HTTP authorization', () => {
     await http().get(`/api/v1/cases/${casePrivate}`).set('Authorization', auth(analyst)).expect(403);
     await connection.pool.query("UPDATE case_access_grants SET expires_at = now() - interval '1 second' WHERE case_id = $1", [caseA]);
     await http().get(`/api/v1/cases/${caseA}`).set('Authorization', auth(analyst)).expect(403);
-    expect((await http().get('/api/v1/cases').set('Authorization', auth(analyst)).expect(200)).body.data).toEqual([]);
+    const listed = (await http().get('/api/v1/cases').set('Authorization', auth(analyst)).expect(200)).body.data as { id: string }[];
+    expect(listed.map((row) => row.id)).not.toContain(caseA);
     await connection.pool.query('UPDATE case_access_grants SET expires_at = NULL WHERE case_id = $1', [caseA]);
   });
   it('rechecks current role, organization and synthetic identity instead of caching authority', async () => {
@@ -139,10 +146,44 @@ describe('PostgreSQL-backed HTTP authorization', () => {
     finally { clock.mockRestore(); }
     a = await login('synthetic-victim-a');
   });
+  it('accepts name+mobile intake, upserts a synthetic victim, and reuses the same subject', async () => {
+    const first = await http().post('/api/v1/auth/intake')
+      .send({ displayName: 'Priya Demo', mobile: '9876543210' }).expect(200);
+    expect(first.body.data.user.role).toBe('victim');
+    expect(first.body.data.user.displayName).toBe('Priya Demo');
+    expect(first.body.data.token).toMatch(/^[a-f0-9]{64}$/);
+    await http().post('/api/v1/auth/intake').send({ displayName: 'P', mobile: '123' }).expect(400);
+    const second = await http().post('/api/v1/auth/intake')
+      .send({ displayName: 'Priya Updated', mobile: '9876543210' }).expect(200);
+    expect(second.body.data.user.id).toBe(first.body.data.user.id);
+    expect(second.body.data.user.displayName).toBe('Priya Updated');
+    const me = await http().get('/api/v1/auth/me').set('Authorization', auth(second.body.data.token)).expect(200);
+    expect(me.body.data.displayName).toBe('Priya Updated');
+  });
+  it('auto-grants INVESTIGATE to the demo consortium when a victim creates a case', async () => {
+    a = await login('synthetic-victim-a');
+    analyst = await login('synthetic-analyst');
+    const created = await http().post('/api/v1/cases').set('Authorization', auth(a))
+      .send({ title: 'auto-share inbox case', category: 'upi_payment_fraud' }).expect(201);
+    const id = created.body.data.id as string;
+    expect(created.body.data.reference).toMatch(/^CG-/);
+    await http().get(`/api/v1/cases/${id}`).set('Authorization', auth(analyst)).expect(200);
+    await http().get(`/api/v1/test/${id}/investigate`).set('Authorization', auth(analyst)).expect(200);
+    const draftInbox = (await http().get('/api/v1/cases').set('Authorization', auth(analyst)).expect(200)).body.data as { id: string }[];
+    expect(draftInbox.map((row) => row.id)).not.toContain(id);
+    await connection.pool.query("UPDATE cases SET status = 'REVIEW_REQUIRED', updated_at = now() WHERE id = $1", [id]);
+    const listed = (await http().get('/api/v1/cases').set('Authorization', auth(analyst)).expect(200)).body.data as { id: string }[];
+    expect(listed.map((row) => row.id)).toContain(id);
+    const audits = (await connection.pool.query(
+      "SELECT action FROM audit_events WHERE resource_type = 'grant' AND action = 'CASE_AUTO_SHARED'",
+    )).rows;
+    expect(audits.length).toBeGreaterThan(0);
+  });
   it('writes only redacted audit metadata and returns a structured unavailable state', async () => {
     const audits = (await connection.pool.query('SELECT * FROM audit_events')).rows;
     expect(audits.some((row) => row.action === 'CASE_READ')).toBe(true);
     expect(audits.some((row) => row.action === 'SHARE_GRANTED')).toBe(true);
+    expect(audits.some((row) => row.action === 'CASE_AUTO_SHARED')).toBe(true);
     expect(audits.some((row) => row.action === 'SHARE_REVOKED')).toBe(true);
     expect(JSON.stringify(audits)).not.toContain(a);
     expect(Object.keys(audits[0]).sort()).toEqual(['action','actor_id','created_at','id','request_id','resource_id','resource_type']);

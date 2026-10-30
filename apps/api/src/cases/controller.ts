@@ -1,15 +1,16 @@
 import { Body, Controller, Delete, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
-import { Equals, IsIn, IsISO8601, IsOptional, IsUUID, IsString, Length } from 'class-validator';
+import { IsIn, IsISO8601, IsOptional, IsUUID, IsString, Length } from 'class-validator';
 import { ApiRequest, envelope } from '../common/http';
 import { CaseScopeGuard, RequireCaseScope, Roles } from '../auth/guards';
 import { Transform } from 'class-transformer';
 import { AccessStore } from '../auth/store';
+import { IntakeService } from '../intake/service';
+import { CATEGORY_IDS } from '../intake/types';
 
 export class CreateCase {
-  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
-  @IsString() @Length(1, 120) title!: string;
-  @IsIn(['investment', 'friendship', 'payment', 'other']) category!: string;
-  @Equals(true) syntheticAcknowledged!: boolean;
+  @IsOptional() @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
+  @IsString() @Length(1, 120) title?: string;
+  @IsOptional() @IsIn(CATEGORY_IDS) category?: string;
 }
 export class ShareCase {
   @IsUUID('4') organizationId!: string;
@@ -19,15 +20,16 @@ export class ShareCase {
 @Controller('cases')
 @Roles('victim', 'analyst')
 export class CasesController {
-  constructor(private readonly store: AccessStore) {}
+  constructor(private readonly store: AccessStore, private readonly intake: IntakeService) {}
 
   @Post()
   @Roles('victim')
   async create(@Body() dto: CreateCase, @Req() request: ApiRequest) {
-    return envelope(request, await this.store.createCase(request.actor!, dto.title, dto.category, request.requestId));
+    return envelope(request, await this.store.createCase(request.actor!, dto.title ?? 'New complaint', dto.category ?? 'other', request.requestId));
   }
   @Get()
   async list(@Req() request: ApiRequest) {
+    if (request.actor!.role === 'victim') return envelope(request, await this.intake.list(request));
     const rows = await this.store.list(request.actor!);
     await this.store.audit(request.actor!, 'CASES_LISTED', 'user', request.actor!.id, request.requestId);
     return envelope(request, rows);
@@ -37,8 +39,8 @@ export class CasesController {
   async read(@Req() request: ApiRequest) {
     const row = request.caseRecord!;
     await this.store.audit(request.actor!, 'CASE_READ', 'case', row.id, request.requestId);
-    const { id, title, category, status, synthetic, createdAt, updatedAt } = row;
-    return envelope(request, { id, title, category, status, synthetic, createdAt, updatedAt });
+    const { id, reference, title, category, status, createdAt, updatedAt } = row;
+    return envelope(request, { id, reference, title, category, status: status === 'DRAFT' ? 'DRAFT' : 'SUBMITTED', createdAt, updatedAt });
   }
   @Post(':caseId/shares')
   @Roles('victim')

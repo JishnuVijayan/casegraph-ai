@@ -1,10 +1,11 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Inject, Injectable, Optional } from '@nestjs/common';
 import { and, asc, desc, eq } from 'drizzle-orm';
 import { AccessStore } from '../auth/store';
 import { ApiRequest } from '../common/http';
 import { auditEvents, cases, claims, clarifications, eventClaims, timelineEvents } from '../db/schema';
 import { Database } from '../db/connection';
 import { questions } from './rules';
+import { BEDROCK_CLIENT, BedrockClientLike, createDefaultBedrockClient, polishQuestions } from './bedrock';
 import type { AnswerDto } from './controller';
 type Query = Pick<Database, 'select'>;
 async function current(db: Query, caseId: string) {
@@ -18,7 +19,16 @@ async function current(db: Query, caseId: string) {
 }
 @Injectable()
 export class ClarificationsService {
-  constructor(private readonly access: AccessStore) {}
+  private bedrock: BedrockClientLike | null | undefined;
+  constructor(private readonly access: AccessStore,
+    @Optional() @Inject(BEDROCK_CLIENT) private readonly injectedBedrock?: BedrockClientLike | null) {}
+  private async client(): Promise<BedrockClientLike | null> {
+    if (this.injectedBedrock !== undefined) return this.injectedBedrock;
+    if (this.bedrock !== undefined) return this.bedrock;
+    try { this.bedrock = await createDefaultBedrockClient(); }
+    catch { this.bedrock = null; }
+    return this.bedrock;
+  }
   async list(req: ApiRequest) {
     const caseId = req.caseRecord!.id;
     const result = await this.access.available(async (db) => {
@@ -36,7 +46,8 @@ export class ClarificationsService {
     await this.access.available((db) => db.transaction(async (tx) => {
       const [owned] = await tx.select().from(cases).where(and(eq(cases.id, caseId), eq(cases.ownerId, actor.id), eq(cases.synthetic, true))).for('update');
       if (!owned || actor.role !== 'victim') throw new ForbiddenException();
-      for (const q of await current(tx, caseId)) await tx.insert(clarifications).values({ caseId, ...q })
+      const generated = await polishQuestions(await this.client(), await current(tx, caseId));
+      for (const q of generated) await tx.insert(clarifications).values({ caseId, ...q })
         .onConflictDoNothing({ target: [clarifications.caseId, clarifications.fingerprint] });
       await tx.insert(auditEvents).values({ actorId: actor.id, action: 'CLARIFICATIONS_REFRESHED', resourceType: 'case', resourceId: caseId, requestId: req.requestId });
     }));

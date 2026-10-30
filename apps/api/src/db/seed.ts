@@ -1,7 +1,8 @@
 import { inArray } from 'drizzle-orm';
 import { Database } from './connection';
 import { loadFixtures } from './fixtures';
-import { organizations, users, cases, caseAccessGrants } from './schema';
+import { seedV2Complaints } from './seed-v2';
+import { organizations, users, cases, caseAccessGrants, claims, timelineEvents, eventClaims } from './schema';
 
 export async function seedSynthetic(db: Database) {
   const fixtures = loadFixtures();
@@ -22,5 +23,22 @@ export async function seedSynthetic(db: Database) {
       ...row, createdAt, revokedAt: row.revokedAt ? new Date(row.revokedAt) : null,
       expiresAt: row.expiresAt ? new Date(row.expiresAt) : null,
     }))).onConflictDoNothing({ target: caseAccessGrants.id });
+
+    // Optional recollection-only enrichment for denser officer demos (insert-only).
+    for (const row of fixtures.enrichment ?? []) {
+      await tx.insert(claims).values(row.claims.map((claim) => ({
+        id: claim.id, caseId: row.caseId, type: claim.type, rawValue: claim.rawValue,
+        sourceKind: claim.sourceKind as 'VICTIM_RECOLLECTION', verificationStatus: 'UNVERIFIED' as const, createdAt,
+      }))).onConflictDoNothing({ target: claims.id });
+      await tx.insert(timelineEvents).values({
+        id: row.event.id, caseId: row.caseId, eventType: row.event.eventType,
+        occurredAt: new Date(row.event.occurredAt), precision: row.event.precision,
+        uncertainty: row.event.uncertainty, createdAt,
+      }).onConflictDoNothing({ target: timelineEvents.id });
+      await tx.insert(eventClaims).values(row.claims.map((claim) => ({
+        caseId: row.caseId, eventId: row.event.id, claimId: claim.id,
+      }))).onConflictDoNothing();
+    }
   });
+  await seedV2Complaints(db);
 }

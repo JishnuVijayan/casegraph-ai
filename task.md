@@ -1,23 +1,14 @@
-# Current task — T08 reviewable draft export
+# AWS 24h working-demo (ADR-026)
 
-Branch: `feat/t08-draft-export` from develop after T07 merge `feaa544`.
-References: AGENTS.md, README.md, REQUIREMENTS, STACK, FREE_SETUP, ARCHITECTURE, DATA_MODEL, API, SECURITY, TASKS, TEST_PLAN and DEMO.
+Docs: AWS_DEMO, DEMO, DECISIONS ADR-026, STACK/FREE_SETUP soft override, DATA_MODEL/graph fixture.
+Files: `.env.example`, synthetic bootstrap (50), graph fixture/clusters, `infra/aws/ec2-tigergraph.mjs`, Textract/Bedrock adapters, clarifications essentials rules.
+Tests: fixtures/auth unit+integration, graph contracts, clarifications/textract unit, lint/typecheck; live EC2/Textract/Bedrock require user AWS configure.
+Done when: docs/flags ready, seed+graph expanded, EC2 scripts present, OCR/LLM feature-flagged with fallbacks, DEMO rehearsal script + teardown checklist.
 
-Expected files: export renderer/controller/service, schema/migration, AppModule, React export panel, synthetic rule/HTTP/component tests, wrapper/scripts and docs.
-
-- [x] Generate a frozen versioned printable HTML draft containing chronology, claims, sources, revisions, question answers/unknowns and ingest-hash manifest.
-- [x] Enforce case scope for generation/list/download, recheck live grants, and retain audit metadata without content.
-- [x] Escape all private strings, prohibit active content/network access, bound output, and persist snapshots privately in PostgreSQL.
-- [x] Provide preview and HTML download with browser Print / Save as PDF instructions.
-- [x] Verify synthetic export provenance, version preservation after corrections, unknowns, malicious text, authorization and revocation; run checks and record actual results.
-
-Done: a corrected synthetic claim exports with original observation and revision still traceable, UNKNOWN remains visible, manifest hashes match ingest metadata, and revoked access fails. T09 graph setup stays separate.
-
-## Actual results — 2026-10-29 IST
-
-- Added export snapshot migration, authorized versioned generation/list/download, escaped printable renderer and sandboxed UI preview/download. Corrections and unknowns remain traceable.
-- `test:exports`: 5 passed; `npm test`: 28 passed; `test:auth`: 9 passed; `test:claims`: 4 passed; `test:clarifications`: 3 passed. Total: 49 tests.
-- `lint`, `typecheck`, `build`, `db:migrate`, `db:verify`, `db:generate` (no pending schema changes) and whitespace checks passed. DB verifier tested six migrations and 16 tables/indexes with repeated seed preservation.
-- Initial concurrency test exposed nested-connection pool starvation; same-transaction scope recheck fixed it, concurrent version and auth tests passed on rerun.
-- Storage smoke passed 21 HTTP probes and asset scan. Test DB/files and smoke sentinel/servers removed. Containers stopped; final status empty; working volume preserved.
-- Limits: browser Print / Save as PDF manual path; no browser/print E2E, original embedding or reauthentication, offline-copy revocation or automatic retention. T09 TigerGraph setup is next.
+## Checklist
+- [x] ADR-026 + AWS_DEMO + .env.example
+- [x] Expand synthetic cases (~50) + enrichment + graph clusters/bundle expectations
+- [x] EC2 create/stop/start/destroy + tunnel hint scripts (provision needs AWS CLI/creds)
+- [x] Textract adapter + Tesseract fallback
+- [x] Bedrock essentials polish gated by rules
+- [x] DEMO.md smoke/cost teardown

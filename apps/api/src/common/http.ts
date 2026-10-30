@@ -7,6 +7,10 @@ export type Actor = Pick<typeof users.$inferSelect, 'id' | 'role' | 'organizatio
 export type ApiRequest = Request & {
   requestId: string; actor?: Actor; caseRecord?: typeof cases.$inferSelect; sessionDigest?: string;
 };
+/** An error whose message is safe, plain language for the person using the app. */
+export class PlainError extends HttpException {
+  constructor(status: number, readonly userMessage: string, readonly code?: string) { super(userMessage, status); }
+}
 export function envelope(request: ApiRequest, data: unknown) { return { data, requestId: request.requestId }; }
 
 @Catch()
@@ -17,13 +21,14 @@ class ApiErrors implements ExceptionFilter {
     const response = http.getResponse<Response>();
     const status = error instanceof HttpException ? error.getStatus() : 500;
     const errors: Record<number, [string, string]> = {
-      400: ['BAD_REQUEST', 'Invalid request.'], 401: ['UNAUTHENTICATED', 'Demo sign-in required.'],
+      400: ['BAD_REQUEST', 'Invalid request.'], 401: ['UNAUTHENTICATED', 'Please sign in to continue.'],
       403: ['ACCESS_DENIED', 'Access denied.'], 404: ['NOT_FOUND', 'Route not found.'],
-      415: ['UNSUPPORTED_MEDIA_TYPE', 'Only valid bounded PNG/JPEG files are supported.'],
+      415: ['UNSUPPORTED_MEDIA_TYPE', 'This file type is not supported. Use PNG, JPEG, WebP, PDF, TXT or DOCX files up to 5 MB.'],
       413: ['PAYLOAD_TOO_LARGE', 'Request too large.'], 429: ['RATE_LIMITED', 'Please try again later.'],
-      503: ['UNAVAILABLE', 'Local service unavailable. Check configuration and retry.'],
+      503: ['UNAVAILABLE', 'This service is temporarily unavailable. Please try again in a moment.'],
     };
-    const [code, message] = errors[status] ?? ['INTERNAL_ERROR', 'Request could not be completed.'];
+    let [code, message] = errors[status] ?? ['INTERNAL_ERROR', 'Request could not be completed.'];
+    if (error instanceof PlainError) { message = error.userMessage; code = error.code ?? code; }
     response.status(status).json({ error: { code, message }, requestId: request.requestId });
   }
 }

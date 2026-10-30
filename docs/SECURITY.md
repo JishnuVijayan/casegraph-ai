@@ -152,3 +152,75 @@ rows and HTML at 2 MiB. Users must keep downloaded copies private; revocation de
 future server access but cannot erase saved HTML/PDF. Automatic expiry/retention and
 administrator-proof storage are not implemented. A manifest records ingest integrity
 metadata, not screenshot authenticity or guaranteed court admissibility.
+
+## T10 candidate query and deployment boundary
+
+T10 adds no app endpoint or direct browser access to TigerGraph. The future backend
+must derive allowed_case_ids from current PostgreSQL grants and recheck each path's
+cases and source dereferences before release. A client-provided allowlist is not
+authorization. Administrative inventory/query tokens must not become frontend or
+application credentials. Scoped query source filters both endpoint cases and four
+edge provenance case IDs; it remains uncompiled/unverified here.
+
+Offline fixture/oracle code is test-only. No unavailable graph response is replaced
+with paths. The live verifier accepts only fixed loopback installed-query endpoints,
+private no-symlink mode-0600 token files, numeric ports, bounded JSON and no redirects;
+its errors omit raw responses/tokens. Future EC2 deployment must rotate credentials,
+enable authentication and use private/SSH-tunneled access; the optional loopback
+Compose override is not activated by this task. No public TigerGraph port, AWS
+account, infrastructure resource or security-group change was created.
+
+## T11 analyst workspace boundary
+
+Current PostgreSQL INVESTIGATE grants supply graph scope on the server. Every path
+endpoint and source case is rechecked before return; persistence/review lock cases
+in stable order and recheck inside the transaction. Revocation during a query denies
+its persistence/response. Source drilldown validates organization and membership,
+then rechecks both cases. Saved paths containing an inaccessible case are withheld.
+No client-provided allowlist is trusted. Victims and READ-only analysts cannot query.
+
+TigerGraph is a core service, enabled unless TIGERGRAPH_ENABLED=false is set. Only
+fixed loopback/tunnel queries are sent with a server-side token from an owner-only,
+no-symlink file; token, raw errors and result payloads are never logged. Redirects,
+invalid shapes/labels, missing references and source/edge endpoint mismatches fail
+closed. No fixture generator/oracle is imported into runtime application code.
+Mock transport fixtures exist only in isolated tests. App credentials must have
+only the query privileges needed by find_case_links/get_lead_sources, not the
+administrative inventory verifier's permissions. Verify actual privileges on host.
+
+Lead/source reads are explicitly saved-query snapshots, with current access checks;
+source kind/UNVERIFIED labels survive human review. Source drilldown describes
+synthetic authored scenarios and cannot pretend these are uploaded originals or
+bank records. React renders values as text. Tests validate authorization using real
+PostgreSQL and explicitly mocked graph responses; actual graph behavior remains
+unverified until T09/T10 deployment. No EC2/account/network change was made here.
+
+## T12 E2E harness boundary
+
+E2E bootstraps live under e2e/ and are not production HTTP handlers. They admit only
+a generated test database prefix, private temporary file root and explicit graph
+mode. The lifecycle wrapper creates those resources, rejects occupied ports and
+cleans only its own children/database/files. It does not reuse the working casegraph
+DB, dev server, real evidence or browser profile. An abrupt kill can leave generated
+resources; cleanup must target only those owned names.
+
+Browser traces, video and screenshots are disabled; ephemeral role tokens stay in
+memory and are not logged or stored as browser state. Ignored error artifacts may
+contain only the controlled synthetic records from the isolated run. Default mode
+cannot inherit an enabled graph flag; required-live mode checks a private app token
+and requires actual paths. No API interception/mock result fallback exists. Real
+graph credentials, networking, license use and EC2 resources are not configured by
+the browser harness. The future graph fixture remains authored scenario data, not
+a claim that uploaded screenshots independently verify financial links.
+
+## T13 observed adversarial verification
+
+`npm run test:security` runs regular, HTTP authorization/upload/OCR/claim/question/
+export/investigation and browser checks against synthetic temporary records.
+Adversarial OCR strings remain data; ambiguous amounts stay unnormalized. The real
+browser scenario also uploads instruction-like text for actual OCR and verifies
+UNKNOWN without visiting its embedded attack URL, then verifies hostile markup is
+inert in the draft. This is local regression evidence, not a production security
+certification. Real TigerGraph server/scope testing must be repeated after deployment;
+mocked query responses do not establish server isolation. No vulnerability audit or
+independent penetration test has been performed.

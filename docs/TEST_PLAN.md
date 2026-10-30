@@ -42,3 +42,26 @@ Use **synthetic fixtures only**. Never represent controlled examples as proof of
 5. Test revoked authorization and unavailable integration.
 
 **Licensing note:** TigerGraph Community Edition is free but its 2026 license restricts benchmarking. Do not run or publish TigerGraph speed/throughput benchmarks under that license without appropriate permission; focus on functional correctness and authorized demonstrations. See `docs/FREE_SETUP.md`.
+
+## T12 browser automation commands
+
+- `npm run test:e2e`: isolated real Chrome/PostgreSQL/Tesseract reporting flow with
+  TigerGraph disabled; asserts 503/unavailable, never substitutes a path.
+- `npm run test:e2e:live`: same flow plus required actual TigerGraph path/source/
+  review and revocation checks through the configured private loopback/tunnel. No
+  silent skip or mocked response in this mode; future deployment is still pending.
+
+See [E2E runbook](../e2e/README.md) for prerequisites, fixed isolated ports, temporary
+DB/file ownership, cleanup, credential privacy and observed coverage. Browser test
+success in default mode must not be recorded as installed-query E2E acceptance.
+
+## T13 security regression command
+
+With local PostgreSQL, Chrome and Tesseract available, run `npm run test:security`.
+It includes existing HTTP denial/tamper/invalid-upload/unavailable-service coverage,
+new adversarial parser/export tests, and actual browser hostile-text/OCR checks.
+Default browser graph mode remains disabled; live graph tests still require deployment.
+This command expects PostgreSQL already running; stop it afterward with infra:down.
+
+## v2 end-to-end (ADR-032)
+`npm run test:e2e` (`infra/e2e-live.mjs`) drives the running stack through the real API: story + document, AI timeline/facts/entities, questions, submit, own-report download, officer case file and similar cases from TigerGraph, plus denial of other users and of the wrong role. It needs Postgres, Textract, Bedrock and the TigerGraph tunnel up (`npm run dev:demo`). The old Playwright suite tested the removed prepare/export flow and was deleted; browser checks are manual until a v2 browser suite is added (V09).

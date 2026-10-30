@@ -1,42 +1,34 @@
-# HHGOA Live Demo Script — Honest, Reproducible
+# HHGOA Live Demo Script — Honest, Reproducible (~3–4 minutes)
 
-## Demo goal (approx. 3 minutes)
-Show **complete victim-to-investigator evidence continuity** using only fictional cases, local processing and an actual installed TigerGraph query.
+**Budget:** AWS spend ≤ **$20** (ap-south-1). Keep API/web/Postgres local. See [`AWS_DEMO.md`](AWS_DEMO.md).
 
-### Act 1 — The victim (0:00–0:35)
-Explain the human problem. Show **1930 / bank urgency guidance**. Start fictional Kochi victim report. Drag in 4–6 clearly marked synthetic scrambled screenshots/receipt images. Do not show real victim data.
+## Demo goal
+Show **complete victim-to-investigator evidence continuity** using fictional cases, local app processing, optional Textract/Bedrock, and an **actual** TigerGraph query over an SSH tunnel.
 
-### Act 2 — Evidence reconstruction (0:35–1:20)
-OCR extracts payment amount, contact handle and date. Timeline shows exact sources (file + region), with `OBSERVED_IN_UPLOAD`, not “Bank Verified.” Click one amount to highlight the source screenshot.
+### Act 1 — Start filing (0:00–0:30)
+Open `/`. Enter a fictional **name + 10-digit mobile** (no Victim A/B picker, no draft list). Continue into the one-complaint wizard. Badge reads **Hackathon demo** (not “synthetic”).
 
-### Act 3 — Contradiction (1:20–1:55)
-Victim's fictional recollection says 18:00; fictional screenshot appears to show 16:12. App asks for clarification; user can choose `I DON'T KNOW`. Upload corrected document or confirm uncertainty and show revision history. Don't claim infallible AI.
+### Act 2 — Details + auto-uploads (0:30–1:10)
+Short description + category, then add screenshots. Files **upload automatically** with preview thumbnails and Remove. Victim UI stays plain — no OCR buttons, claim types, or timeline builder. Case titles show the victim’s wording (no “Synthetic …” prefix in the UI).
 
-### Act 4 — Graph lead (1:55–2:35)
-Switch to **authorized synthetic consortium analyst**. Run real TigerGraph installed query (not a stored animation). Kochi UPI-A and Bengaluru UPI-B link to a shared **synthetic** second-layer account; path edge provenance available. Show a similar-looking but unrelated case is **not** labeled same perpetrator.
+### Act 3 — Prepare → ask only gaps → submit (1:10–2:10)
+Click **Continue**. Server runs OCR, promotes observed amounts, parses OCR/summary for reference/time heuristics when present, scaffolds a payment timeline, and refreshes essentials (`POST /cases/:id/prepare`). If nothing is missing, skip straight to **Ready to submit**. Otherwise answer only open questions (or “I don’t remember”). Click **Submit complaint**. Labels stay `OBSERVED_IN_UPLOAD` / `VICTIM_RECOLLECTION` / UNVERIFIED — not “Bank Verified.”
 
-### Act 5 — Export (2:35–3:00)
-Generate the human-reviewable report draft: chronology, claims, unknowns, source references, file-hash manifest and optional worksheet. Point to enterprise buyer hypothesis and measurable proof still needed.
+### Act 4 — Officer report + print PDF (2:10–3:20)
+Open `/officer`. Inbox shows **submitted** complaints only (`REVIEW_REQUIRED`). Open the complaint for a single report: screenshots, what we know, answers, similar-case leads already captured at submit (Retry if unavailable), and the versioned HTML draft with **Print / Save as PDF**. Advanced tools stay collapsed. For live TigerGraph fixtures, use **Open by reference** — never invent graph paths.
+
+## Pre-stage checklist
+- [ ] `npm run infra:up` + `db:migrate` + `seed:synthetic` (fictional cases)
+- [ ] Billing alarms $15 / $20; EC2 stopped when idle
+- [ ] `npm run aws:tg:start` (or create) + SSH tunnel + `npm run graph:verify-live`
+- [ ] AWS credentials configured; cheap Bedrock model enabled in the console (Textract, Bedrock, TigerGraph are core and on by default)
+- [ ] `DEMO_MODE=true npm run dev:demo`
+- [ ] No real identifiers on screen
+
+## Cost teardown (end of rehearsal / day)
+1. Stop the app and the SSH tunnel (Textract/Bedrock bill per call, so nothing runs while the app is down)
+2. `npm run aws:tg:stop` (or `aws:tg:destroy` after final demo)
+3. Confirm CloudWatch billing; rotate IAM keys after hackathon
 
 ## Backup plan
-- Keep a preloaded synthetic fixture for OCR failures, clearly labeled **precomputed test input**.
-- If TigerGraph is down, **do not** substitute hard-coded paths as if live. Explain the blocker and show reproducible query files/test evidence.
-- No false promises of recovered funds, FIR submission, court certification or shared criminal identity.
-
-## Demo checklist
-- [ ] Backend/DB boot and test seed are successful
-- [ ] TigerGraph instance and installed query verified before stage
-- [ ] No real identifiers or sensitive records on screen
-- [ ] One supported bounding-box highlight works
-- [ ] One contradiction and optional unknown answer work
-- [ ] Graph is labeled **synthetic investigative lead**
-- [ ] One export works, correctly marked `DRAFT`
-- [ ] Offline/local services have a demonstrated fallback state
-
-## Judge questions to be prepared for
-- Why TigerGraph instead of `JOIN`? Demonstrate genuine multi-hop path/edge provenance, not a single lookup.
-- Can you access Indian police or bank records? **No**, not without authorized agreements; demo data is fictional.
-- Is this better than C-Mitra or Goa 1930 AI? Different hypothesis: provenance + continuity from intake to institutional review; needs comparative pilots.
-- Can a hash prove screenshot authenticity? **No**, only integrity since ingest.
-- Who pays? Bank fraud-response/BPO team is hypothesis; validate workflow savings before selling.
-- Why not include Jev or phone calls? Optional if verified useful and cost feasible; not a precondition for the central value.
+If TigerGraph is down (`ALLOW_DEGRADED=true` to start anyway): show honest unavailable on similar-case search / Retry; still demo filing → submit → officer report + print. Never invent graph paths.

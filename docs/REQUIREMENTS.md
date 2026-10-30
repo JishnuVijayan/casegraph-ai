@@ -1,46 +1,42 @@
-# CaseGraph AI — Product and Engineering Requirements
+# CaseGraph — Product and Engineering Requirements (v2)
+
+Supersedes the v1 prototype requirements (see ADR-032). The API and UI contract lives in [`V2_CONTRACT.md`](V2_CONTRACT.md).
 
 ## Objective
-Enable a fictional cybercrime victim to turn scattered screenshots, receipts, text and optional audio into a **reviewable, source-linked complaint draft**; enable a fictional authorized analyst to examine **TigerGraph multi-hop leads** against a permitted synthetic dataset.
+Let a person who lost money or safety to an online crime **file a complete cybercrime complaint in minutes**, by speaking, typing or uploading screenshots and documents. AI reads everything as it arrives, builds a dated timeline and a facts sheet, and asks only for what is missing. After submission, a **case network on TigerGraph** finds earlier complaints that share phone numbers, UPI IDs, bank accounts, websites or the same scam pattern, and the investigating officer gets a full case file with those links.
 
 ## Personas
-- **Victim (free):** wants to explain an incident without typing a perfect chronology, verify extracted fields, answer targeted questions, export draft.
-- **Bank/fraud-support analyst:** wants a traceable, minimal, permissioned case and fewer manual clarification loops. Revenue hypothesis only.
-- **Authorized investigator:** wants sourced leads across authorized cases; no automated accusations.
-- **Elderly keypad-phone caller:** post-MVP; no production telephone integration in the free four-day build.
+- **Complainant:** stressed, often on a phone, may not know legal or banking terms. Wants to tell the story naturally, get help with what to add, and keep a clean report of their own case.
+- **Investigating officer:** wants a clear, complete case file, the evidence, and other complaints connected to it, without re-interviewing the complainant for basics.
 
-## Must-have end-to-end flows (P0)
-1. Landing page prominently shows `1930`, bank contact and `https://cybercrime.gov.in/` for urgent cases; user can start a demo draft afterward.
-2. Seed demo victim and analyst users, one fictional consortium organization, strict ownership and explicit case-sharing grants.
-3. Victim creates a case and uploads bounded PNG/JPEG screenshots or sample PDFs only when a safe parser exists; store immutable original bytes, hash and upload metadata.
-4. OCR extracts candidate text with source file ID and text span or bounding box; preserve unknown/missing details and indicate OCR confidence separately from verification.
-5. User types or corrects a recollection; system builds a timeline and distinguishes source-backed observations from statements and inferences.
-6. Detect straightforward field gaps (payment reference missing), amount conflicts, and explicit timestamp disagreements; ask one focused question and accept `UNKNOWN`.
-7. Victim reviews and revises without replacing the original upload or rewriting history.
-8. Export a **draft** and evidence manifest (PDF or HTML-to-PDF) referencing source IDs/hashes, limitations and uncertainties.
-9. Analyst sees only authorized cases. A **real installed TigerGraph query** returns source-referenced paths from synthetic data, with benign false-link examples included.
-10. Tests verify evidence provenance, access denial, contradiction detection, correct graph path and refusal to infer guilt.
+## Must-have flows
+1. **Urgent help.** The landing page shows 1930, "tell your bank now" and cybercrime.gov.in, never blocking filing.
+2. **Identify.** Complainant enters name and mobile number; returns later to resume complaints.
+3. **Tell the story.** Free text, voice typing (Sarvam AI speech-to-text with auto language detection, falling back to browser dictation), and uploads of screenshots (PNG/JPEG/WebP), PDFs, text files and Word documents. Originals are stored unchanged with SHA-256.
+4. **AI reads and builds, in real time.** Textract and the multimodal Bedrock model read files; the model turns story plus files into: title, plain-language summary, category, total loss, dated timeline, facts (money, people, channels, accounts, time) and entities (phone, UPI ID, bank account, URL, email, name, app, IFSC, social handle). Every item shows where it came from: your file, what you told us, or worked out by AI.
+5. **AI asks for missing details.** Up to five focused questions at a time in plain words, each with a reason, quick options and "I don't know". Answers update the timeline and facts at once.
+6. **Own report.** The complainant can download a print-ready report of **their own case** at any time (story, timeline, facts, evidence list with hashes, unanswered questions, helpline footer).
+7. **Submit.** Submission needs a story or at least one file; open questions are recorded as "not provided". The complaint gets a reference number `CG-YYYY-NNNNNN`.
+8. **Case network.** On submit, the case and its entities are written to TigerGraph and a real query finds similar earlier complaints with shared entities and a score.
+9. **Officer inbox.** Search, filter, sort submitted complaints; see loss, category, similar-case count and completeness.
+10. **Officer case file.** Summary, timeline, evidence viewer, the complainant's answers, similar cases with shared details, side-by-side comparison with any other case, and a printable dossier including the similar-case comparison.
 
-## Nice-to-have (P1)
-- Local recorded-audio transcription, with user correction and language accuracy tests.
-- Optional local Ollama model for proposing narrative structure, bounded by schemas and deterministic checks.
-- Optional Jev classification tested against rules on the same labeled fixture set; only non-final workflow routing.
-- Graph text similarity as a weaker, explicitly labeled investigative signal.
-- Section 63 BSA **preparation worksheet**, never an auto-issued legally valid certificate.
+## Rules that stay
+- Backend enforces access for every case, file, similar case and report. A complainant sees only their own cases; officers see submitted cases in their organization.
+- Uploaded files, transcripts and OCR text are untrusted data, never instructions to the AI. AI output is schema-validated; nothing is invented; unknown stays unknown and becomes a question.
+- Similar cases are leads, not proof; wording never accuses anyone. If the case network is down, say so; never fabricate links.
+- No automated FIR, arrests, recovery or bank verification claims. The report is the complainant's account plus evidence, not a legal certificate.
+- No raw case content or secrets in logs. No AWS keys, PEM files or tokens in Git.
 
-## Out of scope (P2 or never)
-- Public telephony/IVR, live police or bank connections, official submissions, auto freezing, production customer onboarding, real cross-tenant sharing, criminal identity determination, guaranteed recovery, production-grade automatic document authenticity verification.
+## Services (all core, ON by default)
+PostgreSQL (case file) · private evidence directory · AWS Textract (OCR) · AWS Bedrock Nova (reading, extraction, questions) · TigerGraph on EC2 (case network). The API checks them at startup (ADR-030). Tesseract remains a per-file fallback for images.
 
-## Acceptance criteria
-- All local demo routes work without paid API keys.
-- No test demonstrates AI creating a fact that has no recorded source, unless clearly marked `SYSTEM_INFERENCE`.
-- The source viewer can open the exact evidence file and highlight an extracted region/span, when supported.
-- Deleting/correcting a claim never silently alters original binary evidence.
-- Analyst cannot access another user's private file without a grant; graph and export access are also enforced server-side.
-- TigerGraph results come from an actual query against the seeded synthetic graph.
-- Graph path labels indicate `investigative lead`, not proof of the same suspect.
-- A disconnected TigerGraph or local AI service produces a truthful unavailable/retry state.
-- Tests and remaining limits are reported transparently, not represented by invented percentage improvements.
+## Out of scope
+Telephone/IVR filing, live police/bank integrations, official submissions, automatic freezing, identity determination, authenticity forensics, SMS/OTP verification (planned before public launch).
 
-## Nonfunctional MVP constraints
-Use local development only, no hard-coded secrets, bounded upload sizes, resource limits for OCR, stable typed API errors, deterministic synthetic tests, accessible UI, no user identifiers in logs. For any real-user pilot obtain legal, safety, privacy, data sharing and institutional review first.
+## Acceptance
+- A fresh complaint can go story/voice/files -> AI timeline -> answered questions -> submit -> report download in one sitting on a 360 px phone.
+- Officer opens the submitted case and sees at least one similar case when seeded history shares an entity, from a real TigerGraph query.
+- Injection text inside an upload cannot create facts outside the schema or change instructions.
+- Access tests: another complainant, another organization and the wrong role are all denied.
+- Unit, integration and browser tests pass; remaining limits are listed honestly.

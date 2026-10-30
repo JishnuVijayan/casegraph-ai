@@ -1,0 +1,22 @@
+// Candidate 4.2.5 GSQL source; compilation/live acceptance pending the future host.
+USE GRAPH CaseGraphDemoV1
+CREATE OR REPLACE QUERY get_lead_sources(SET<STRING> evidence_ids, SET<STRING> allowed_case_ids) FOR GRAPH CaseGraphDemoV1 SYNTAX V2 {
+  TYPEDEF TUPLE<STRING id, STRING case_id, STRING from_id, STRING to_id, STRING relation_type, STRING fixture_kind,
+    STRING source_kind, STRING verification_status, STRING data_origin, BOOL synthetic> SourceRef;
+  SetAccum<SourceRef> @@sources;
+  IF evidence_ids.size() <= 80 AND allowed_case_ids.size() <= 250 THEN
+    Start = {CaseReport.*};
+    Sources = SELECT r FROM Start:c -(RELATION_SUPPORTED_BY_EVIDENCE>:e)- EvidenceRef:r
+      WHERE allowed_case_ids.contains(c.case_id) AND evidence_ids.contains(r.id)
+        AND c.synthetic AND r.synthetic AND e.synthetic
+        AND r.case_id == c.case_id AND e.case_id == c.case_id AND e.evidence_id == r.id
+        AND r.source_kind == "SYSTEM_INFERENCE" AND e.source_kind == r.source_kind
+        AND r.verification_status == "UNVERIFIED" AND e.verification_status == r.verification_status
+        AND r.data_origin == "SYNTHETIC_FIXTURE" AND e.data_origin == r.data_origin
+        AND e.review_status == "NEEDS_REVIEW"
+      ACCUM @@sources += SourceRef(r.id, r.case_id, r.from_id, r.to_id, r.relation_type, r.fixture_kind,
+        r.source_kind, r.verification_status, r.data_origin, r.synthetic);
+  END;
+  PRINT @@sources AS sources, "SYNTHETIC_FIXTURE_SOURCES" AS classification;
+}
+INSTALL QUERY get_lead_sources

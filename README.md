@@ -981,3 +981,47 @@ complaint. Export hashes do not authenticate screenshots or bank records. Keep s
 copies private. Owners and currently granted analysts can generate/read exports;
 revocation blocks future server requests. Run `npm run test:exports` against local
 PostgreSQL for the isolated synthetic HTTP suite.
+
+### T10 graph source preparation (live installation pending)
+
+`npm run graph:bundle` creates a deterministic private CSV/GSQL deployment package
+for 20 fictional cases. `npm run graph:test` runs offline fixture/transport contracts,
+also included in `npm test`. Candidate GSQL provides a scoped four-hop financial
+lead with source refs; benign shared-host/text cases are excluded by that query
+shape. No fixture is shown as a live graph result. `npm run graph:verify-live` is
+reserved for the future secured TigerGraph host/tunnel and returns unavailable
+without its runtime/token. See [graph runbook](graph/README.md). T09 and T10 remain
+incomplete until actual installation, compilation, repeated seed and query checks.
+
+### T11 analyst workspace (live demo pending)
+
+Sign in as each synthetic case owner and grant **Read and investigate synthetic
+graph** to the fictional consortium for both cases in a potential path. Sign in as
+Fictional Analyst, read a permitted case and use **Run scoped TigerGraph query**.
+The server requires current investigation grants and an actually configured instance;
+without TigerGraph it reports unavailable. Successful queries create NEEDS_REVIEW
+snapshots with a four-hop visual and source drilldown. Human review never establishes
+guilt or verifies a bank record. Saved snapshots display capture time and are hidden
+if a case grant is revoked/expired. These app paths have synthetic mocked-transport
+HTTP/component coverage; an actual installed query demonstration is still pending
+T09/T10 on the future compatible host. See graph/README.md for handoff/configuration.
+
+### T12 browser workflow (local reporting passed; live graph pending)
+
+With local PostgreSQL, Google Chrome and English Tesseract installed, run
+`npm run test:e2e`. Playwright drives the actual UI through six disordered synthetic
+uploads, real OCR/source crops, correction/history, chronological review, UNKNOWN,
+export preview/download/hash checks and scoped access/revocation. It uses a fresh
+isolated temporary database/private files and separate servers, then cleans them up.
+Default mode requires honest graph-unavailable behavior. The separate
+`npm run test:e2e:live` requires the future installed graph and private app token;
+it never skips the live path or substitutes fixtures. See [E2E runbook](e2e/README.md).
+T12 remains unchecked until the actual live-graph branch passes after deployment.
+
+### T13 local security regression
+
+`npm run test:security` combines unit/component, HTTP adversarial and browser checks
+using only temporary synthetic records. It covers access denial/revocation, bad uploads,
+source integrity, ambiguous OCR, inert hostile text and truthful unavailable services.
+It requires local PostgreSQL, Chrome and Tesseract. Live TigerGraph security acceptance
+still awaits deployment; offline/mock results are not presented as live isolation proof.

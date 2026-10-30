@@ -1,0 +1,29 @@
+# T09 supported-host template; runtime UNVERIFIED on this ARM workspace.
+# Review infra/TIGERGRAPH.md before pulling/starting; no public ports or credentials.
+services:
+  tigergraph:
+    image: tigergraph/community:4.2.5@sha256:190c505bf5c22c90e597b901ea8fcfaf2da7e883b688d7d48c8fe60af0a20ddb
+    platform: linux/amd64
+    tty: true
+    init: true
+    volumes:
+      - tigergraph-data:/home/tigergraph
+    networks:
+      - graph-private
+    ulimits:
+      nofile:
+        soft: 1000000
+        hard: 1000000
+    cpus: 4.0
+    mem_limit: 8000000000
+    stop_grace_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: "2"
+networks:
+  graph-private:
+    internal: true
+volumes:
+  tigergraph-data:

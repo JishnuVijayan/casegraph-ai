@@ -1,9 +1,31 @@
+# Dependencies & build
 node_modules/
 dist/
 coverage/
+*.tsbuildinfo
+
+# Env & secrets — never commit keys, tokens, or PEM files
 .env
 .env.*
 !.env.example
-.DS_Store
-*.log
+*.pem
+*.token
+*.password
+
+# Local runtime (evidence, AWS EC2 state, TigerGraph tokens, e2e artifacts)
 .local/
+
+# Logs & OS
+*.log
+.DS_Store
+
+# Test / browser artifacts
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# Editors (keep shared VS Code settings if added later under !.vscode/*.json)
+.idea/
+*.swp
+*~

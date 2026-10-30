@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, HttpException, Inject, Injectable, OnModuleDestroy, ServiceUnavailableException } from '@nestjs/common';
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import { connect } from '../db/connection';
 import { loadFixtures } from '../db/fixtures';
 import { auditEvents, cases, caseAccessGrants, organizations, users } from '../db/schema';
@@ -26,22 +26,68 @@ export class AccessStore implements OnModuleDestroy {
   async createCase(actor: Actor, title: string, category: string, requestId: string) {
     if (actor.role !== 'victim') throw new ForbiddenException();
     return this.available((db) => db.transaction(async (tx) => {
-      const [row] = await tx.insert(cases).values({ ownerId: actor.id, title: `Synthetic ${title}`, category, synthetic: true }).returning();
+      const organizationId = this.fixtures.organization.id;
+      if (!organizationId) throw new ServiceUnavailableException();
+      const [row] = await tx.insert(cases).values({ ownerId: actor.id, title, category, synthetic: true }).returning();
       await tx.insert(auditEvents).values({ actorId: actor.id, action: 'CASE_CREATED', resourceType: 'case', resourceId: row.id, requestId });
-      return { id: row.id, title: row.title, category: row.category, status: row.status, synthetic: row.synthetic };
+      // Hackathon officer inbox: new complaints are auto-shared for investigation with the demo consortium.
+      const [grant] = await tx.insert(caseAccessGrants).values({
+        caseId: row.id, scope: 'INVESTIGATE', organizationId, grantedBy: actor.id, expiresAt: null,
+      }).onConflictDoUpdate({
+        target: [caseAccessGrants.caseId, caseAccessGrants.organizationId, caseAccessGrants.scope],
+        set: { grantedBy: actor.id, revokedAt: null, expiresAt: null, createdAt: new Date() },
+      }).returning();
+      await tx.insert(auditEvents).values({ actorId: actor.id, action: 'CASE_AUTO_SHARED', resourceType: 'grant', resourceId: grant.id, requestId });
+      return { id: row.id, reference: row.reference };
     }));
+  }
+  /** Demo intake: upsert a synthetic victim keyed by mobile. Not real KYC/OTP. */
+  async upsertIntakeVictim(displayName: string, mobile: string): Promise<Actor> {
+    const demoSubject = `intake:${mobile}`;
+    return this.available(async (db) => {
+      const [existing] = await db.select().from(users).where(eq(users.demoSubject, demoSubject));
+      if (existing) {
+        if (!existing.synthetic || existing.role !== 'victim' || existing.organizationId !== null) throw new ForbiddenException();
+        const [updated] = await db.update(users).set({ displayName }).where(eq(users.id, existing.id)).returning();
+        return { id: updated.id, role: 'victim' as const, organizationId: null, displayName: updated.displayName };
+      }
+      const [inserted] = await db.insert(users).values({
+        role: 'victim', organizationId: null, demoSubject, displayName, synthetic: true,
+      }).returning();
+      return { id: inserted.id, role: 'victim' as const, organizationId: null, displayName: inserted.displayName };
+    });
   }
   async actor(id: string): Promise<Actor | undefined> {
     return this.available(async (db) => {
       const [row] = await db.select().from(users).where(eq(users.id, id));
+      if (!row || !row.synthetic) return;
       const fixture = this.fixtures.users.find((user) => user.id === id);
-      if (!row || !fixture || !row.synthetic || row.role !== fixture.role || row.demoSubject !== fixture.demoSubject || row.organizationId !== fixture.organizationId) return;
-      if (row.organizationId) {
-        const [org] = await db.select({ synthetic: organizations.synthetic }).from(organizations).where(eq(organizations.id, row.organizationId));
-        if (!org?.synthetic) return;
+      if (fixture) {
+        if (row.role !== fixture.role || row.demoSubject !== fixture.demoSubject || row.organizationId !== fixture.organizationId) return;
+        if (row.organizationId) {
+          const [org] = await db.select({ synthetic: organizations.synthetic }).from(organizations).where(eq(organizations.id, row.organizationId));
+          if (!org?.synthetic) return;
+        }
+        return { id: row.id, role: row.role, organizationId: row.organizationId, displayName: row.displayName };
       }
-      return { id: row.id, role: row.role, organizationId: row.organizationId, displayName: row.displayName };
+      // Ephemeral intake victims created via POST /auth/intake (demo only).
+      if (row.role === 'victim' && row.demoSubject.startsWith('intake:') && row.organizationId === null) {
+        return { id: row.id, role: row.role, organizationId: null, displayName: row.displayName };
+      }
     });
+  }
+  /** Active INVESTIGATE-scoped synthetic cases for the demo consortium (submit-time graph scope). */
+  async orgInvestigateCaseIds(limit = 20): Promise<string[]> {
+    const organizationId = this.fixtures.organization.id;
+    if (!organizationId) throw new ServiceUnavailableException();
+    return this.available(async (db) => (await db.select({ id: cases.id }).from(cases)
+      .where(and(eq(cases.synthetic, true), sql`exists (select 1 from ${caseAccessGrants} where
+        ${caseAccessGrants.caseId} = ${cases.id} and
+        ${caseAccessGrants.organizationId} = ${organizationId} and
+        ${caseAccessGrants.grantedBy} = ${cases.ownerId} and
+        ${caseAccessGrants.scope} = 'INVESTIGATE' and ${caseAccessGrants.revokedAt} is null and
+        (${caseAccessGrants.expiresAt} is null or ${caseAccessGrants.expiresAt} > now()))`))
+      .orderBy(cases.id).limit(limit)).map((row) => row.id));
   }
   private permitted(actor: Actor, permission: CasePermission) {
     if (permission === 'INVESTIGATE' && actor.role !== 'analyst') return sql`false`;
@@ -66,9 +112,18 @@ export class AccessStore implements OnModuleDestroy {
   async findCase(actor: Actor, caseId: string, permission: CasePermission) {
     return this.available((db) => this.findCaseIn(db, actor, caseId, permission));
   }
+  async investigationCaseIds(actor: Actor) {
+    return this.available(async (db) => (await db.select({id:cases.id}).from(cases)
+      .where(and(eq(cases.synthetic,true),this.permitted(actor,'INVESTIGATE'))).orderBy(cases.id).limit(21)).map((row)=>row.id));
+  }
   async list(actor: Actor) {
-    return this.available((db) => db.select({ id: cases.id, title: cases.title, status: cases.status, synthetic: cases.synthetic })
-      .from(cases).where(and(eq(cases.synthetic, true), this.permitted(actor, 'READ'))).orderBy(cases.id));
+    // Officers only see submitted complaints; victims see their own drafts too.
+    const filters = [eq(cases.synthetic, true), this.permitted(actor, 'READ')];
+    if (actor.role === 'analyst') filters.push(eq(cases.status, 'REVIEW_REQUIRED'));
+    return this.available((db) => db.select({
+      id: cases.id, title: cases.title, status: cases.status, category: cases.category, reference: cases.reference,
+      updatedAt: cases.updatedAt,
+    }).from(cases).where(and(...filters)).orderBy(actor.role === 'analyst' ? desc(cases.updatedAt) : cases.id));
   }
   async audit(actor: Actor, action: string, resourceType: string, resourceId: string, requestId: string) {
     await this.available(async (db) => {

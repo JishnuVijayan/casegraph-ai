@@ -79,3 +79,54 @@ After migration/seeding, use `npm run dev:demo` to opt into fictional login.
 Regular `npm run dev` leaves login disabled by default. `npm run test:auth`
 requires PostgreSQL and uses/removes an isolated temporary database. No paid
 identity service or API key is needed. Never use demo role selection for real data.
+
+## T09 platform preflight (setup incomplete)
+
+Run `npm run graph:preflight` before any installation. This Apple Silicon workspace
+reports `UNSUPPORTED_PLATFORM`; no compatible host is available. No TigerGraph
+software was installed. `npm run graph:config` validates the isolated candidate
+Compose template only; `graph:health` cannot claim graph readiness. Follow
+[the supported-host runbook](../infra/TIGERGRAPH.md) once an owned x86-64 host exists.
+It records the pinned candidate image, official platform/license references and
+unexecuted setup steps. No paid host or emulation is configured.
+
+## Future TigerGraph EC2 demo plan (not provisioned)
+
+The user plans to host only TigerGraph on an Intel/AMD x86-64 EC2 machine later.
+This may satisfy the platform requirement but requires a supported OS, sufficient
+CPU/RAM/storage, license/demo review and a hosting budget. AWS compute/EBS costs
+are separate from paid API usage; this task creates no cloud resources or charges.
+Local frontend/backend/OCR continue without paid APIs. T09 runtime and T10 live
+checks remain pending. See [graph deployment source/runbook](../graph/README.md).
+
+## T11 graph application configuration (future host/tunnel)
+
+The analyst panel and backend are implemented; TigerGraph remains disabled by
+default. After actual T09/T10 deployment and query/authentication verification, store
+a distinct least-privilege application query token in ignored mode-0600
+`.local/tigergraph-app.token`. Keep the administrative verification token separate.
+Start with exported process variables:
+
+```bash
+TIGERGRAPH_ENABLED=true TIGERGRAPH_LOCAL_PORT=14240 npm run dev:demo
+```
+
+These optional graph flags read process environment, not .env. No browser token or
+VITE_ credential variable is used. Only loopback/tunnel endpoints are accepted.
+Grant INVESTIGATE on both fixture cases to the fictional consortium using each
+owner's demo identity before querying as analyst. Without a configured server/token,
+query actions show unavailable; no fake path is substituted. Future EC2 setup may
+incur hosting costs and needs its own deployment/budget review; no resource was
+provisioned during T11. `npm run test:investigations` uses local PostgreSQL plus
+explicitly mocked TigerGraph transport in a temporary synthetic database.
+
+## T12 real browser workflow
+
+After `npm ci`, ensure Google Chrome, local English Tesseract and PostgreSQL are
+available, then run `npm run test:e2e`. It uses a temporary synthetic database/private
+files and separate servers; it never resets the working DB or reuses running app
+ports. Default graph mode is disabled and must show unavailable. No browser binary
+or paid API service is installed by this command. `test:e2e:live` requires the future
+actual graph/tunnel and private app token, failing when absent rather than skipping.
+See [E2E runbook](../e2e/README.md). Both modes clean owned servers/database/files;
+stop project PostgreSQL separately with `npm run infra:down` when finished.

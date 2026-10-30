@@ -1,0 +1,31 @@
+// Ranks OTHER complaints by the entities they share with case_id.
+// STRONG kinds identify a channel/account; WEAK kinds (app_name, person_name) are common
+// words and only support a match. A shared category alone is never returned.
+// Per case: strong_count, weak_count, category_match and the shared entities as "kind|value".
+USE GRAPH CaseGraphV2
+CREATE OR REPLACE QUERY similar_cases(STRING case_id, INT max_results = 10) FOR GRAPH CaseGraphV2 SYNTAX V2 {
+  SumAccum<INT> @strong;
+  SumAccum<INT> @weak;
+  SumAccum<INT> @category_match;
+  ListAccum<STRING> @shared;
+  MaxAccum<STRING> @@my_category;
+
+  Start = {Complaint.*};
+  Start = SELECT s FROM Start:s WHERE s.case_id == case_id;
+  Mine = SELECT s FROM Start:s ACCUM @@my_category += s.category;
+  Ents = SELECT e FROM Start:s -(MENTIONS:m)- Entity:e;
+  Others = SELECT t FROM Ents:e -(MENTIONS:m)- Complaint:t
+    WHERE t.case_id != case_id
+    ACCUM
+      CASE WHEN e.entity_kind == "app_name" OR e.entity_kind == "person_name"
+        THEN t.@weak += 1
+        ELSE t.@strong += 1 END,
+      t.@shared += e.entity_kind + "|" + e.entity_value
+    POST-ACCUM
+      CASE WHEN t.category == @@my_category THEN t.@category_match += 1 END;
+  Ranked = SELECT t FROM Others:t
+    ORDER BY t.@strong DESC, t.@weak DESC, t.@category_match DESC, t.submitted_at DESC
+    LIMIT max_results;
+  PRINT Ranked;
+}
+INSTALL QUERY similar_cases

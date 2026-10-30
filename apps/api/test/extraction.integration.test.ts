@@ -12,7 +12,6 @@ import { DemoConfig } from '../src/auth/config';
 import { LOCAL_DATABASE } from '../src/auth/store';
 import { configureHttp } from '../src/common/http';
 import { connect } from '../src/db/connection';
-import { loadFixtures } from '../src/db/fixtures';
 import { migrateDatabase } from '../src/db/migrate';
 import { seedSynthetic } from '../src/db/seed';
 import { EVIDENCE_DIRECTORY } from '../src/evidence/storage';
@@ -21,7 +20,6 @@ import { tesseractTsv } from '../src/extraction/tesseract';
 
 describe('local Tesseract extraction and source-region access', () => {
   const database = `casegraph_t05_test_${randomUUID().replaceAll('-', '')}`;
-  const fixture = loadFixtures();
   let app: INestApplication;
   let admin: ReturnType<typeof connect>; let connection: ReturnType<typeof connect>;
   let parent: string; let directory: string; let created = false;
@@ -45,7 +43,7 @@ describe('local Tesseract extraction and source-region access', () => {
     app = module.createNestApplication({ logger: false }); configureHttp(app); await app.init();
     const login = async (demoSubject: string) => (await http().post('/api/v1/auth/demo').send({ demoSubject }).expect(200)).body.data.token;
     a = await login('synthetic-victim-a'); b = await login('synthetic-victim-b'); analyst = await login('synthetic-analyst');
-    const draft = await http().post('/api/v1/cases').set('Authorization', auth(a)).send({ title: 'OCR source region', category: 'payment', syntheticAcknowledged: true }).expect(201);
+    const draft = await http().post('/api/v1/cases').set('Authorization', auth(a)).send({ title: 'OCR source region', category: 'upi_payment_fraud' }).expect(201);
     caseId = draft.body.data.id;
     const svg = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="360"><rect width="100%" height="100%" fill="white"/><text x="70" y="210" font-family="Arial,sans-serif" font-size="112" fill="black">Synthetic payment INR 2500</text></svg>');
     receipt = await sharp(svg).png().toBuffer();
@@ -112,10 +110,12 @@ describe('local Tesseract extraction and source-region access', () => {
     const extraction = (await run(id).expect(201)).body.data;
     const amount = extraction.regions.find((region: { kind: string }) => region.kind === 'AMOUNT');
     await run(id, b).expect(403); await read(id, b).expect(403);
-    const share = await http().post(`/api/v1/cases/${caseId}/shares`).set('Authorization', auth(a))
-      .send({ organizationId: fixture.organization.id, scope: 'READ' }).expect(201);
-    await read(id, analyst).expect(200);
-    await http().delete(`/api/v1/cases/${caseId}/shares/${share.body.data.id}`).set('Authorization', auth(a)).expect(200);
+    await read(id, analyst).expect(200); // auto INVESTIGATE from createCase
+    const active = (await connection.pool.query(
+      'SELECT id FROM case_access_grants WHERE case_id = $1 AND revoked_at IS NULL', [caseId])).rows as { id: string }[];
+    for (const grant of active) {
+      await http().delete(`/api/v1/cases/${caseId}/shares/${grant.id}`).set('Authorization', auth(a)).expect(200);
+    }
     await read(id, analyst).expect(403);
     await http().get(`/api/v1/cases/${caseId}/extractions/${id}/regions/${amount.id}/crop`).set('Authorization', auth(analyst)).expect(403);
   });
