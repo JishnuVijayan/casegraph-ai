@@ -283,4 +283,39 @@ similar-case leads when available (honest UNAVAILABLE otherwise). Officer `/offi
 aside from receiving auto-granted submitted cases.
 Consequences and tests: Seeded demo subjects remain for officer and regression fixtures. Update
 web/e2e selectors; auth tests cover intake upsert. Revisit before any real-user pilot.
-Approved by: User request for simple complaint filing UI on develop.
+Approved by: User request for simple complaint filing on the AWS demo branch.
+
+### ADR-028 — Victim auto-prepare; hide investigator tools (2026-10-30)
+Context: Victims were shown claim types, OCR buttons, timeline builders, and
+“save recollection” controls that belong in an officer workspace. Normal
+customers cannot be expected to assemble claims manually.
+Alternatives considered: keep review step with softer labels; confirm OCR
+amounts before promoting; generative “AI invents whole case file.”
+Decision: Victim wizard is intake → details/uploads → questions → submit.
+`POST /cases/:id/prepare` (OWNER) runs OCR as needed, promotes AMOUNT regions to
+`payment_amount` claims (`OBSERVED_IN_UPLOAD`), adds a statement recollection from
+the complaint title when missing, ensures one `payment` timeline event with links,
+and refreshes clarifications. Victim Evidence/Questions UIs stay plain-language.
+Officer `/officer` retains full Review/Evidence tooling. Reconstruction remains
+deterministic OCR + rules (Bedrock may polish question wording only); never bank
+verification or invented graph paths.
+Consequences and tests: prepare + web/e2e cover the simplified path; officer e2e
+still opens claims/timeline. Revisit before any real-user pilot.
+Approved by: User request to rework complaint filing for normal customers.
+
+### ADR-029 — Victim/officer complaint UX (2026-10-30)
+Context: UI still said “synthetic,” victims had a manual Upload button, prepare
+re-asked known OCR details, and the officer inbox flooded with seeded DRAFTs
+instead of a reviewable complaint package.
+Alternatives considered: paid PDF services; keep Synthetic title prefix; show all
+grants in inbox; invent graph paths when TigerGraph is down.
+Decision: Strip “synthetic” from user-visible copy/titles while keeping
+`synthetic: true` and seed fixtures. Victim multi-select auto-uploads with
+preview + `DELETE` evidence (OWNER, DRAFT only). Prepare also parses OCR/summary
+heuristics for amount/reference/time recollections and skips the questions step
+when `openQuestions === 0`. Analyst `GET /cases` returns `REVIEW_REQUIRED` only.
+Officer opens a single report (screenshots, facts, answers, saved leads, HTML
+draft + browser Print/Save as PDF); advanced tools stay collapsed. Open-by-
+reference remains for live fixture cases outside the submitted inbox.
+Consequences and tests: web/API/e2e + DEMO updated; no Puppeteer/paid PDF.
+Approved by: User plan “Victim officer UX fix.”

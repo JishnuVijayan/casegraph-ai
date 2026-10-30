@@ -27,6 +27,13 @@ export class CasesController {
   async create(@Body() dto: CreateCase, @Req() request: ApiRequest) {
     return envelope(request, await this.store.createCase(request.actor!, dto.title, dto.category, request.requestId));
   }
+  @Post(':caseId/prepare')
+  @Roles('victim')
+  @RequireCaseScope('OWNER')
+  @UseGuards(CaseScopeGuard)
+  async prepare(@Req() request: ApiRequest) {
+    return envelope(request, await this.cases.prepare(request));
+  }
   @Post(':caseId/submit')
   @Roles('victim')
   @RequireCaseScope('OWNER')
