@@ -2,15 +2,15 @@
  * Bedrock phrasing assist — gated by deterministic essentials rules.
  * Never invents bank verification or free-form facts without a rule-flagged gap.
  */
+import { coreServiceEnabled } from '../common/core-services';
+
 export const BEDROCK_CLIENT = Symbol('BEDROCK_CLIENT');
 
 export type BedrockQuestion = { kind: string; prompt: string; priority: number; fingerprint: string; context: unknown };
 export type BedrockClientLike = { invoke: (prompt: string) => Promise<string> };
 
 export function bedrockEnabled(): boolean {
-  const flag = process.env.BEDROCK_ENABLED ?? 'false';
-  if (!['true', 'false'].includes(flag)) throw new Error('BEDROCK_ENABLED must be true or false.');
-  return flag === 'true';
+  return coreServiceEnabled('BEDROCK_ENABLED');
 }
 
 const ALLOWED_KINDS = new Set(['MISSING_REFERENCE', 'MISSING_AMOUNT', 'MISSING_TIME', 'AMOUNT_CONFLICT', 'TIME_CONFLICT']);
@@ -22,7 +22,7 @@ function extractJsonObject(text: string): unknown {
   return JSON.parse(text.slice(start, end + 1));
 }
 
-/** Apply optional Bedrock rephrasing; on any failure return the deterministic prompts unchanged. */
+/** Apply Bedrock rephrasing; on any failure return the deterministic prompts unchanged. */
 export async function polishQuestions(client: BedrockClientLike | null | undefined, questions: BedrockQuestion[]): Promise<BedrockQuestion[]> {
   if (!client || !bedrockEnabled() || questions.length === 0) return questions;
   const top = questions[0];

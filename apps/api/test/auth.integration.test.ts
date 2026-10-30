@@ -71,7 +71,7 @@ describe('PostgreSQL-backed HTTP authorization', () => {
   });
   it('rejects missing/forged sessions, undeclared routes, identity overrides and foreign origins', async () => {
     const denied = await http().get(`/api/v1/cases/${caseA}`).expect(401);
-    expect(denied.body).toEqual({ error: { code: 'UNAUTHENTICATED', message: 'Demo sign-in required.' }, requestId: expect.any(String) });
+    expect(denied.body).toEqual({ error: { code: 'UNAUTHENTICATED', message: 'Please sign in to continue.' }, requestId: expect.any(String) });
     await http().get('/api/v1/cases').set('Authorization', auth('0'.repeat(64))).expect(401);
     await http().get('/api/v1/test/unguarded').set('Authorization', auth(a)).expect(403);
     await http().post('/api/v1/auth/demo').send({ demoSubject: 'synthetic-victim-a', role: 'analyst', userId: fixture.users[2].id }).expect(400);
@@ -80,7 +80,7 @@ describe('PostgreSQL-backed HTTP authorization', () => {
   });
   it('allows each owner and scopes list/read from DB, ignoring claimed user headers', async () => {
     const own = await http().get(`/api/v1/cases/${caseA}`).set('Authorization', auth(a)).expect(200);
-    expect(own.body.data.synthetic).toBe(true);
+    expect(own.body.data.reference).toMatch(/^CG-\d{4}-\d{6}$/);
     await http().get(`/api/v1/cases/${caseB}`).set('Authorization', auth(b)).expect(200);
     const denied = await http().get(`/api/v1/cases/${caseA}`).set('Authorization', auth(b)).set('X-User-ID', fixture.users[0].id!).expect(403);
     const absent = await http().get(`/api/v1/cases/${randomUUID()}`).set('Authorization', auth(b)).expect(403);
@@ -164,9 +164,9 @@ describe('PostgreSQL-backed HTTP authorization', () => {
     a = await login('synthetic-victim-a');
     analyst = await login('synthetic-analyst');
     const created = await http().post('/api/v1/cases').set('Authorization', auth(a))
-      .send({ title: 'auto-share inbox case', category: 'payment', syntheticAcknowledged: true }).expect(201);
+      .send({ title: 'auto-share inbox case', category: 'upi_payment_fraud' }).expect(201);
     const id = created.body.data.id as string;
-    expect(created.body.data.title).toBe('auto-share inbox case');
+    expect(created.body.data.reference).toMatch(/^CG-/);
     await http().get(`/api/v1/cases/${id}`).set('Authorization', auth(analyst)).expect(200);
     await http().get(`/api/v1/test/${id}/investigate`).set('Authorization', auth(analyst)).expect(200);
     const draftInbox = (await http().get('/api/v1/cases').set('Authorization', auth(analyst)).expect(200)).body.data as { id: string }[];

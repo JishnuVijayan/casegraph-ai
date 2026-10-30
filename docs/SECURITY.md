@@ -179,7 +179,7 @@ its persistence/response. Source drilldown validates organization and membership
 then rechecks both cases. Saved paths containing an inaccessible case are withheld.
 No client-provided allowlist is trusted. Victims and READ-only analysts cannot query.
 
-TigerGraph is disabled unless TIGERGRAPH_ENABLED=true is explicitly exported. Only
+TigerGraph is a core service, enabled unless TIGERGRAPH_ENABLED=false is set. Only
 fixed loopback/tunnel queries are sent with a server-side token from an owner-only,
 no-symlink file; token, raw errors and result payloads are never logged. Redirects,
 invalid shapes/labels, missing references and source/edge endpoint mismatches fail

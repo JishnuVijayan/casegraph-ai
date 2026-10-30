@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
-  boolean, check, foreignKey, index, integer, jsonb, pgEnum, pgTable,
+  boolean, check, foreignKey, index, integer, jsonb, numeric, pgEnum, pgSequence, pgTable,
   primaryKey, text, timestamp, unique, uuid,
 } from 'drizzle-orm/pg-core';
 
@@ -32,8 +32,12 @@ export const users = pgTable('users', {
   synthetic: boolean('synthetic').default(true).notNull(), createdAt: createdAt(),
 }, (t) => [index('users_organization_idx').on(t.organizationId)]);
 
+export const caseReferenceSeq = pgSequence('case_reference_seq');
+
 export const cases = pgTable('cases', {
-  id: id(), ownerId: uuid('owner_id').notNull().references(() => users.id),
+  id: id(), reference: text('reference').notNull().unique()
+    .default(sql`('CG-' || to_char(now(), 'YYYY') || '-' || lpad(nextval('case_reference_seq')::text, 6, '0'))`),
+  ownerId: uuid('owner_id').notNull().references(() => users.id),
   organizationId: uuid('organization_id').references(() => organizations.id),
   status: caseStatus('status').default('DRAFT').notNull(), category: text('category').notNull(),
   title: text('title').notNull(), synthetic: boolean('synthetic').default(true).notNull(),
@@ -57,7 +61,7 @@ export const evidenceFiles = pgTable('evidence_files', {
   id: id(), caseId: uuid('case_id').notNull().references(() => cases.id),
   objectKey: text('object_key').unique().notNull(), sha256: text('sha256').notNull(),
   mimeType: text('mime_type').notNull(), sizeBytes: integer('size_bytes').notNull(),
-  uploaderId: uuid('uploader_id').notNull().references(() => users.id),
+  uploaderId: uuid('uploader_id').notNull().references(() => users.id), originalName: text('original_name'),
   ingestStatus: processingStatus('ingest_status').default('PENDING').notNull(), createdAt: createdAt(),
 }, (t) => [
   index('evidence_case_idx').on(t.caseId), unique('evidence_id_case_unique').on(t.id, t.caseId),
@@ -121,6 +125,9 @@ export const timelineEvents = pgTable('timeline_events', {
   id: id(), caseId: uuid('case_id').notNull().references(() => cases.id),
   eventType: text('event_type').notNull(), occurredAt: timestamp('occurred_at', { withTimezone: true }),
   precision: text('precision').notNull(), uncertainty: text('uncertainty').notNull(), createdAt: createdAt(),
+  title: text('title'), detail: text('detail'), atLabel: text('at_label'),
+  origin: text('origin').default('MANUAL').notNull(),
+  sources: jsonb('sources_json').$type<{ type: 'FILE' | 'STORY' | 'AI'; evidenceId?: string; label: string }[]>(),
 }, (t) => [index('timeline_case_idx').on(t.caseId), unique('events_id_case_unique').on(t.id, t.caseId),
   check('timeline_event_type_allowed', sql`${t.eventType} IN ('payment', 'contact', 'account_action', 'other')`),
   check('timeline_precision_allowed', sql`${t.precision} IN ('EXACT', 'APPROXIMATE', 'DATE_ONLY', 'UNKNOWN')`),
@@ -140,6 +147,7 @@ export const clarifications = pgTable('clarifications', {
   prompt: text('prompt').notNull(), answer: jsonb('answer_json'),
   fingerprint: text('fingerprint'), context: jsonb('context_json'),
   status: clarificationStatus('status').default('OPEN').notNull(), priority: integer('priority').default(0).notNull(),
+  why: text('why'), options: jsonb('options_json').$type<string[]>(), origin: text('origin').default('LEGACY').notNull(),
   createdAt: createdAt(),
 }, (t) => [index('clarifications_case_idx').on(t.caseId), unique('clarifications_case_fingerprint_unique').on(t.caseId, t.fingerprint)]);
 
@@ -163,3 +171,30 @@ export const auditEvents = pgTable('audit_events', {
   action: text('action').notNull(), resourceType: text('resource_type').notNull(),
   resourceId: uuid('resource_id').notNull(), requestId: uuid('request_id').notNull(), createdAt: createdAt(),
 }, (t) => [index('audit_created_idx').on(t.createdAt)]);
+
+export const narratives = pgTable('narratives', {
+  id: id(), caseId: uuid('case_id').notNull().references(() => cases.id),
+  text: text('text').notNull(), channel: text('channel').notNull(), createdAt: createdAt(),
+}, (t) => [index('narratives_case_idx').on(t.caseId),
+  check('narratives_channel_allowed', sql`${t.channel} IN ('typed', 'voice')`),
+  check('narratives_text_bounds', sql`length(${t.text}) BETWEEN 1 AND 20000`)]);
+
+/** Per-file read result: model/OCR text excerpt plus structured extraction JSON. */
+export const fileReads = pgTable('file_reads', {
+  id: id(), caseId: uuid('case_id').notNull().references(() => cases.id),
+  evidenceFileId: uuid('evidence_file_id').notNull().unique().references(() => evidenceFiles.id),
+  status: text('status').notNull(), engine: text('engine').notNull(), excerpt: text('excerpt'),
+  structured: jsonb('structured_json'), errorCode: text('error_code'),
+  createdAt: createdAt(), updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index('file_reads_case_idx').on(t.caseId),
+  check('file_reads_status_allowed', sql`${t.status} IN ('READ', 'FAILED')`)]);
+
+export const caseAnalyses = pgTable('case_analyses', {
+  caseId: uuid('case_id').primaryKey().references(() => cases.id),
+  state: text('state').default('IDLE').notNull(), summary: text('summary'),
+  totalLoss: numeric('total_loss', { precision: 14, scale: 2 }),
+  missing: jsonb('missing_json').$type<string[]>().default(sql`'[]'::jsonb`).notNull(),
+  userCategory: boolean('user_category').default(false).notNull(), userTitle: boolean('user_title').default(false).notNull(),
+  errorCode: text('error_code'), startedAt: timestamp('started_at', { withTimezone: true }),
+  updatedAt: timestamp('updated_at', { withTimezone: true }),
+}, (t) => [check('case_analyses_state_allowed', sql`${t.state} IN ('IDLE', 'RUNNING', 'READY', 'FAILED')`)]);

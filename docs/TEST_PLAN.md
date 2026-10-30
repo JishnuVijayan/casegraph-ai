@@ -62,3 +62,6 @@ It includes existing HTTP denial/tamper/invalid-upload/unavailable-service cover
 new adversarial parser/export tests, and actual browser hostile-text/OCR checks.
 Default browser graph mode remains disabled; live graph tests still require deployment.
 This command expects PostgreSQL already running; stop it afterward with infra:down.
+
+## v2 end-to-end (ADR-032)
+`npm run test:e2e` (`infra/e2e-live.mjs`) drives the running stack through the real API: story + document, AI timeline/facts/entities, questions, submit, own-report download, officer case file and similar cases from TigerGraph, plus denial of other users and of the wrong role. It needs Postgres, Textract, Bedrock and the TigerGraph tunnel up (`npm run dev:demo`). The old Playwright suite tested the removed prepare/export flow and was deleted; browser checks are manual until a v2 browser suite is added (V09).

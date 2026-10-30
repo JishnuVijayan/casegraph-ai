@@ -151,9 +151,8 @@ in this ARM workspace.
 For the local NestJS app, use a separate `.local/tigergraph-app.token` mode-0600 file,
 not the administrative `.local/tigergraph.token` file used by graph:verify-live. The
 app token must only have the privileges required by find_case_links/get_lead_sources.
-After actual server auth and tunnel verification, export TIGERGRAPH_ENABLED=true
-and TIGERGRAPH_LOCAL_PORT=14240 when starting dev:demo. It defaults disabled and
-accepts no arbitrary remote URL. No token goes to Vite, URLs, logs or Git.
+After actual server auth and tunnel verification, start dev:demo with TIGERGRAPH_LOCAL_PORT=14240 (TIGERGRAPH_ENABLED defaults to true;
+set false only to opt out). It accepts no arbitrary remote URL. No token goes to Vite, URLs, logs or Git.
 
 The app derives allowed cases from current PostgreSQL INVESTIGATE grants. Both
 fixture case owners must explicitly grant that scope for the pair to be eligible.

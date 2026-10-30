@@ -319,3 +319,53 @@ draft + browser Print/Save as PDF); advanced tools stay collapsed. Open-by-
 reference remains for live fixture cases outside the submitted inbox.
 Consequences and tests: web/API/e2e + DEMO updated; no Puppeteer/paid PDF.
 Approved by: User plan “Victim officer UX fix.”
+
+### ADR-030 — Textract, Bedrock and TigerGraph are core services (2026-10-30)
+Context: ADR-026 and the docs treated Textract, Bedrock and TigerGraph as optional,
+default-off demo extras. The product depends on them: Textract for OCR quality, the
+LLM for plain-language questions and fact extraction, TigerGraph for similar-case leads.
+Alternatives considered: keep opt-in flags; remove the fallbacks entirely.
+Decision: `TEXTRACT_ENABLED`, `BEDROCK_ENABLED` and `TIGERGRAPH_ENABLED` default to
+true (unset means on; `false` is the explicit opt-out for tests and offline work).
+`apps/api` runs a startup preflight (AWS credentials, TigerGraph tunnel) and exits
+if a core service is down unless `ALLOW_DEGRADED=true`. Per-request fallbacks stay:
+Tesseract if Textract fails, deterministic wording if Bedrock fails, and an honest
+"unavailable" for graph leads. Graph paths are never invented. Jest and e2e set the
+flags to `false` explicitly. ADR-026's $20 / `ap-south-1` cap and stop-EC2-when-idle
+rule still apply and matter more with three paid services in the main path.
+Consequences and tests: unit suites pass offline; running the API without AWS
+credentials or the tunnel now fails fast.
+Approved by: User instruction that these services are core.
+
+### ADR-033 — v2 case network: new graph `CaseGraphV2` (2026-10-30)
+Context: v2 needs "which earlier complaints share a phone, UPI ID, account, site or handle with this one". The v1 graph (`CaseGraphDemoV1`) is a fixed 200-case fixture with typed vertex/edge families and a path query; its live schema is installed on EC2 and extending it needs schema-change jobs on a server we cannot inspect offline.
+Alternatives considered: extend v1 with generic Entity/MENTIONS; add the v2 types to v1 via a schema change job.
+Decision: a separate graph `CaseGraphV2` (vertex `Complaint` since `Case` is reserved in GSQL, vertex `Entity` with id `kind:normalized_value`, undirected edge `MENTIONS`) and query `similar_cases(case_id, max_results)` ranking other complaints by shared entities. STRONG kinds: phone, upi, bank_account, url, email, social_handle, ifsc. WEAK kinds: app_name, person_name; a shared category only adds a small bonus and a category-only match is never returned. Values are normalized in the API before upsert (phone last 10 digits, UPI/email lowercase, URL host lowercase without `www.`, account digits only, IFSC upper case, very common public sites ignored). Postgres stays the source of truth; the API upserts a complaint on submit (RESTPP) and graph:sync re-pushes every submitted case. Results are saved in `graph_leads.path_json` as `{version:2, kind:'SIMILAR_SNAPSHOT'|'SIMILAR_REVIEW'}` rows (no migration; v1 lead listing ignores them). If the graph is down the status is UNAVAILABLE; nothing is invented. The v1 graph and its queries are untouched.
+Consequences and tests: the app token must be valid for `CaseGraphV2` (TigerGraph secrets are per graph); `npm run graph:install-v2` installs schema and query on EC2. Offline: normalization, scoring, upsert body, UNAVAILABLE path, officer access and the GSQL text are tested. Live compile and query results are recorded in `docs/V2_CONTRACT.md` Graph notes.
+Approved by: Graph/officer task brief.
+
+### ADR-032 — v2 production rebuild: AI-led complaint intake (2026-10-30)
+Context: the v1 prototype was shaped around a staged demo: synthetic-only wording, a manual
+claims/clarifications workflow with jargon, Tesseract-first OCR, and an officer view built on
+a fixed fixture graph. The product goal is a real complaint system: people tell their story by
+voice, text, screenshots and documents; AI builds the timeline and asks for missing details;
+the complainant downloads their own report; on submit TigerGraph finds similar earlier cases
+for the officer.
+Alternatives considered: keep the staged wizard and polish copy; microservice split for AI;
+Wispr Flow for voice (enterprise-only API key via sales, so not usable now).
+Decision: Add an AI intake pipeline (Textract + Bedrock Nova multimodal, schema-validated,
+prompt-injection safe), a Brief API (timeline, facts, entities, questions, completeness),
+plain-language vocabulary and categories (`docs/V2_CONTRACT.md`), owner-only report download,
+officer inbox/case file/dossier, and a new victim and officer UI. Voice uses browser speech
+recognition behind `apps/web/src/voice/`. Old v1 task items T09–T11 are replaced by V03/V07.
+Consequences and tests: see `docs/TASKS.md` Phase 4. Identity is still name + mobile and the
+officer sign-in is a pre-provisioned account; SMS/OTP and officer SSO are required before a
+public launch (V10).
+Approved by: User request to make the system production-ready.
+
+### ADR-034 — Voice typing through Sarvam AI (2026-10-30)
+Context: ADR-032 used browser dictation because Wispr Flow's API is enterprise-only. Browser dictation is weak for Indian languages and mixed-language speech, and unsupported in some browsers.
+Alternatives considered: Wispr Flow (no self-serve key); Amazon Transcribe (needs S3 or a streaming proxy, weaker Indic coverage); keep browser dictation only.
+Decision: Add `POST /voice/transcribe` and `GET /voice/status`. The API holds `SARVAM_API_KEY` and forwards short audio clips to Sarvam `saaras:v4`; the browser records about 7-second clips and shows text as each clip returns. No key, no support or any failure falls back to browser dictation with a plain message. The key is read from the environment or the git-ignored `.env` (loaded at startup; real environment variables win).
+Consequences and tests: text appears a few seconds after speaking, not word by word. Audio is sent to Sarvam and is not stored by us. Unit tests cover request shape, error handling and provider choice; a real Sarvam call and microphone capture were not exercised because no key was available when this was built.
+Approved by: User request to use Sarvam instead of Wispr.

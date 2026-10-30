@@ -41,7 +41,7 @@ describe('source-linked claims, revisions and case timeline', () => {
     const login = async (demoSubject: string) => (await http().post('/api/v1/auth/demo').send({ demoSubject }).expect(200)).body.data.token;
     a = await login('synthetic-victim-a'); b = await login('synthetic-victim-b'); analyst = await login('synthetic-analyst');
     const makeCase = async (title: string) => (await http().post('/api/v1/cases').set('Authorization', auth(a))
-      .send({ title, category: 'payment', syntheticAcknowledged: true }).expect(201)).body.data.id as string;
+      .send({ title, category: 'upi_payment_fraud' }).expect(201)).body.data.id as string;
     caseId = await makeCase('T06 source-linked review'); otherCaseId = await makeCase('T06 separate synthetic case');
     const syntheticImage = await sharp(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="240"><rect width="100%" height="100%" fill="white"/><text x="30" y="145" font-family="Arial" font-size="82">INR 2500</text></svg>')).png().toBuffer();
     evidenceId = (await http().post(`/api/v1/cases/${caseId}/evidence`).set('Authorization', auth(a))

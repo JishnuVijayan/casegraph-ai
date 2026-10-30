@@ -1,6 +1,7 @@
 import { inArray } from 'drizzle-orm';
 import { Database } from './connection';
 import { loadFixtures } from './fixtures';
+import { seedV2Complaints } from './seed-v2';
 import { organizations, users, cases, caseAccessGrants, claims, timelineEvents, eventClaims } from './schema';
 
 export async function seedSynthetic(db: Database) {
@@ -39,4 +40,5 @@ export async function seedSynthetic(db: Database) {
       }))).onConflictDoNothing();
     }
   });
+  await seedV2Complaints(db);
 }

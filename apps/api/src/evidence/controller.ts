@@ -20,7 +20,7 @@ export class EvidenceController {
   async remove(@Param('evidenceId') id: string, @Req() request: ApiRequest) {
     return envelope(request, await this.evidence.remove(request, id));
   }
-  @Get(':evidenceId/view')
+  @Get([':evidenceId/view', ':evidenceId/file'])
   async original(@Param('evidenceId') id: string, @Req() request: ApiRequest, @Res({ passthrough: true }) response: Response) {
     response.setHeader('X-Content-Type-Options', 'nosniff');
     response.setHeader('Content-Security-Policy', "sandbox; default-src 'none'; img-src 'self' blob: data:");

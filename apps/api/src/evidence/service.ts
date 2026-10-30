@@ -7,12 +7,16 @@ import { AccessStore } from '../auth/store';
 import { ApiRequest } from '../common/http';
 import {
   auditEvents, cases, claimRevisions, claimSources, claims, eventClaims,
-  evidenceFiles, extractionRegions, extractionRuns,
+  evidenceFiles, extractionRegions, extractionRuns, fileReads,
 } from '../db/schema';
 import { EvidenceStorage } from './storage';
 
 const projection = { id: evidenceFiles.id, caseId: evidenceFiles.caseId, mimeType: evidenceFiles.mimeType,
-  sizeBytes: evidenceFiles.sizeBytes, sha256: evidenceFiles.sha256, createdAt: evidenceFiles.createdAt };
+  sizeBytes: evidenceFiles.sizeBytes, sha256: evidenceFiles.sha256, createdAt: evidenceFiles.createdAt,
+  originalName: evidenceFiles.originalName };
+
+const EXTENSION: Record<string, string> = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'application/pdf': 'pdf', 'text/plain': 'txt',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx' };
 
 @Injectable()
 export class EvidenceService {
@@ -29,7 +33,7 @@ export class EvidenceService {
         await this.storage.publish(received.temporary, received.id); published = true;
         const [row] = await tx.insert(evidenceFiles).values({ id: received.id, caseId: owned.id,
           uploaderId: request.actor!.id, objectKey: `${received.id}.original`, sha256: received.sha256,
-          sizeBytes: received.sizeBytes, mimeType: received.mimeType, ingestStatus: 'SUCCEEDED' }).returning(projection);
+          sizeBytes: received.sizeBytes, mimeType: received.mimeType, originalName: received.originalName, ingestStatus: 'SUCCEEDED' }).returning(projection);
         await tx.insert(auditEvents).values({ actorId: request.actor!.id, action: 'EVIDENCE_UPLOADED', resourceType: 'evidence', resourceId: received.id, requestId: request.requestId });
         return row;
       }));
@@ -57,7 +61,7 @@ export class EvidenceService {
     const { row, bytes } = await this.readVerified(request, id);
     await this.access.audit(request.actor!, 'EVIDENCE_READ', 'evidence', row.id, request.requestId);
     return new StreamableFile(bytes, { type: row.mimeType || 'application/octet-stream',
-      disposition: `inline; filename="${row.id}.${row.mimeType === 'image/png' ? 'png' : 'jpg'}"`, length: bytes.length });
+      disposition: `inline; filename="${row.id}.${EXTENSION[row.mimeType] ?? 'bin'}"`, length: bytes.length });
   }
 
   /** Victim may remove an upload only while the complaint is still a draft. */
@@ -92,6 +96,7 @@ export class EvidenceService {
         await tx.delete(extractionRegions).where(inArray(extractionRegions.runId, runIds));
         await tx.delete(extractionRuns).where(inArray(extractionRuns.id, runIds));
       }
+      await tx.delete(fileReads).where(eq(fileReads.evidenceFileId, id));
       await tx.delete(evidenceFiles).where(and(eq(evidenceFiles.id, id), eq(evidenceFiles.caseId, caseId)));
       await tx.insert(auditEvents).values({
         actorId: actor.id, action: 'EVIDENCE_REMOVED', resourceType: 'evidence', resourceId: id, requestId: request.requestId,

@@ -1,5 +1,5 @@
 import { ForbiddenException, Injectable, ServiceUnavailableException } from '@nestjs/common';
-import { and, desc, eq, inArray } from 'drizzle-orm';
+import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import { AccessStore } from '../auth/store';
 import { ApiRequest } from '../common/http';
 import { auditEvents, cases, graphLeads } from '../db/schema';
@@ -96,7 +96,7 @@ export class InvestigationsService {
   }
   async list(req:ApiRequest){
     const root=req.caseRecord!.id,allowed=await this.scope(req);if(!allowed.includes(root))throw new ForbiddenException();
-    const rows=await this.access.available((db)=>db.select().from(graphLeads).where(and(eq(graphLeads.caseId,root),eq(graphLeads.organizationId,req.actor!.organizationId!))).orderBy(desc(graphLeads.createdAt),desc(graphLeads.id)).limit(100));
+    const rows=await this.access.available((db)=>db.select().from(graphLeads).where(and(eq(graphLeads.caseId,root),eq(graphLeads.organizationId,req.actor!.organizationId!),sql`${graphLeads.path}->>'kind' is null`)).orderBy(desc(graphLeads.createdAt),desc(graphLeads.id)).limit(100));
     const permitted=rows.filter((row)=>{try{parseSnapshot(row.path,root,allowed);return true;}catch(error){if(error instanceof ForbiddenException)return false;throw error;}});
     await this.access.audit(req.actor!,'GRAPH_LEADS_LISTED','case',root,req.requestId);
     const current=await this.scope(req);if(!current.includes(root))throw new ForbiddenException();

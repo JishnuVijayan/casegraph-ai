@@ -1,17 +1,14 @@
-import { Route, Routes, Link } from 'react-router-dom';
-import { OfficerInboxPage } from './OfficerInboxPage';
-import { VictimFilingPage } from './VictimFilingPage';
+import { lazy, Suspense } from 'react';
+import { Route, Routes } from 'react-router-dom';
+import VictimApp from './victim/VictimApp';
+
+const OfficerApp = lazy(() => import('./officer/OfficerApp'));
 
 export function App() {
   return (
     <Routes>
-      <Route path="/" element={<VictimFilingPage />} />
-      <Route path="/officer" element={<OfficerInboxPage />} />
-      <Route path="*" element={
-        <main className="workspace">
-          <p>Page not found. <Link to="/">File a complaint</Link> or <Link to="/officer">open the officer workspace</Link>.</p>
-        </main>
-      } />
+      <Route path="/officer/*" element={<Suspense fallback={<p className="sr-only" role="status">Loading…</p>}><OfficerApp /></Suspense>} />
+      <Route path="/*" element={<VictimApp />} />
     </Routes>
   );
 }

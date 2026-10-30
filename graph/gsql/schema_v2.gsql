@@ -1,0 +1,7 @@
+// CaseGraph v2 "case network" schema. A NEW graph (CaseGraphV2); the v1 fixture graph
+// (CaseGraphDemoV1) is left untouched. Fictional/synthetic data only in this repo.
+// "Case" is a reserved GSQL word, so the case vertex type is named Complaint.
+CREATE VERTEX Complaint (PRIMARY_ID case_id STRING, category STRING, reference STRING, submitted_at STRING, loss_amount DOUBLE) WITH primary_id_as_attribute="true"
+CREATE VERTEX Entity (PRIMARY_ID id STRING, entity_kind STRING, entity_value STRING) WITH primary_id_as_attribute="true"
+CREATE UNDIRECTED EDGE MENTIONS (FROM Complaint, TO Entity, entity_kind STRING)
+CREATE GRAPH CaseGraphV2 (Complaint, Entity, MENTIONS)

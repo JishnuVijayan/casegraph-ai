@@ -32,5 +32,5 @@ test('Bedrock polish only rewrites prompt text and never invents kinds', async (
     invoke: async () => '{"prompt":"Bank verified UTR is confirmed."}',
   }, base);
   expect(rejected[0].prompt).toBe(base[0].prompt);
-  delete process.env.BEDROCK_ENABLED;
+  process.env.BEDROCK_ENABLED = 'false';
 });

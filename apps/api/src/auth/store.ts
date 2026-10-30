@@ -38,7 +38,7 @@ export class AccessStore implements OnModuleDestroy {
         set: { grantedBy: actor.id, revokedAt: null, expiresAt: null, createdAt: new Date() },
       }).returning();
       await tx.insert(auditEvents).values({ actorId: actor.id, action: 'CASE_AUTO_SHARED', resourceType: 'grant', resourceId: grant.id, requestId });
-      return { id: row.id, title: row.title, category: row.category, status: row.status, synthetic: row.synthetic };
+      return { id: row.id, reference: row.reference };
     }));
   }
   /** Demo intake: upsert a synthetic victim keyed by mobile. Not real KYC/OTP. */
@@ -121,7 +121,7 @@ export class AccessStore implements OnModuleDestroy {
     const filters = [eq(cases.synthetic, true), this.permitted(actor, 'READ')];
     if (actor.role === 'analyst') filters.push(eq(cases.status, 'REVIEW_REQUIRED'));
     return this.available((db) => db.select({
-      id: cases.id, title: cases.title, status: cases.status, category: cases.category, synthetic: cases.synthetic,
+      id: cases.id, title: cases.title, status: cases.status, category: cases.category, reference: cases.reference,
       updatedAt: cases.updatedAt,
     }).from(cases).where(and(...filters)).orderBy(actor.role === 'analyst' ? desc(cases.updatedAt) : cases.id));
   }

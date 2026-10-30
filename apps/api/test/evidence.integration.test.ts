@@ -50,13 +50,13 @@ describe('immutable synthetic image evidence over HTTP', () => {
     } finally { if (admin) await admin.pool.end(); if (parent) await rm(parent, { recursive: true, force: true }); }
   });
   it('creates only victim-owned synthetic drafts and rejects identity injection', async () => {
-    const dto = { title: 'Fictional image test', category: 'payment', syntheticAcknowledged: true };
+    const dto = { title: 'Fictional image test', category: 'upi_payment_fraud' };
     await http().post('/api/v1/cases').set('Authorization', auth(analyst)).send(dto).expect(403);
     await http().post('/api/v1/cases').set('Authorization', auth(a)).send({ ...dto, ownerId: fixture.users[1].id }).expect(400);
-    await http().post('/api/v1/cases').set('Authorization', auth(a)).send({ ...dto, syntheticAcknowledged: false }).expect(400);
+    await http().post('/api/v1/cases').set('Authorization', auth(a)).send({ ...dto, category: 'bogus' }).expect(400);
     const res = await http().post('/api/v1/cases').set('Authorization', auth(a)).send(dto).expect(201);
     caseId = res.body.data.id;
-    expect(res.body.data.title).toBe('Fictional image test');
+    expect(res.body.data.reference).toMatch(/^CG-/);
     expect((await connection.pool.query('SELECT owner_id FROM cases WHERE id=$1', [caseId])).rows[0].owner_id).toBe(fixture.users[0].id);
   });
   it('preserves exact PNG bytes, SHA-256 and private read-only original metadata', async () => {

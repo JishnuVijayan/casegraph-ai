@@ -21,14 +21,14 @@ Open `/officer`. Inbox shows **submitted** complaints only (`REVIEW_REQUIRED`). 
 - [ ] `npm run infra:up` + `db:migrate` + `seed:synthetic` (fictional cases)
 - [ ] Billing alarms $15 / $20; EC2 stopped when idle
 - [ ] `npm run aws:tg:start` (or create) + SSH tunnel + `npm run graph:verify-live`
-- [ ] Optional: `TEXTRACT_ENABLED=true`, `BEDROCK_ENABLED=true`, cheap model enabled in Bedrock console
+- [ ] AWS credentials configured; cheap Bedrock model enabled in the console (Textract, Bedrock, TigerGraph are core and on by default)
 - [ ] `DEMO_MODE=true npm run dev:demo`
 - [ ] No real identifiers on screen
 
 ## Cost teardown (end of rehearsal / day)
-1. `BEDROCK_ENABLED=false` / `TEXTRACT_ENABLED=false`
+1. Stop the app and the SSH tunnel (Textract/Bedrock bill per call, so nothing runs while the app is down)
 2. `npm run aws:tg:stop` (or `aws:tg:destroy` after final demo)
 3. Confirm CloudWatch billing; rotate IAM keys after hackathon
 
 ## Backup plan
-If TigerGraph is down: show honest unavailable on similar-case search / Retry; still demo filing → submit → officer report + print. Never invent graph paths.
+If TigerGraph is down (`ALLOW_DEGRADED=true` to start anyway): show honest unavailable on similar-case search / Retry; still demo filing → submit → officer report + print. Never invent graph paths.

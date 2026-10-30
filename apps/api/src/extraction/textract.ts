@@ -1,3 +1,4 @@
+import { coreServiceEnabled } from '../common/core-services';
 import { finalizeRegions } from './regions';
 import { OcrFailure, type Region } from './types';
 
@@ -15,9 +16,7 @@ export type TextractClientLike = {
 };
 
 export function textractEnabled(): boolean {
-  const flag = process.env.TEXTRACT_ENABLED ?? 'false';
-  if (!['true', 'false'].includes(flag)) throw new Error('TEXTRACT_ENABLED must be true or false.');
-  return flag === 'true';
+  return coreServiceEnabled('TEXTRACT_ENABLED');
 }
 
 export function parseTextractBlocks(blocks: TextractWordBlock[] | undefined): { outputText: string; regions: Region[]; version: string } {
@@ -58,7 +57,7 @@ export async function runTextract(client: TextractClientLike, bytes: Buffer): Pr
   }
 }
 
-/** Lazy AWS SDK client; only constructed when TEXTRACT_ENABLED=true. */
+/** Lazy AWS SDK client; constructed unless TEXTRACT_ENABLED=false. */
 export async function createDefaultTextractClient(): Promise<TextractClientLike> {
   const region = process.env.AWS_REGION || 'ap-south-1';
   const { TextractClient, DetectDocumentTextCommand } = await import('@aws-sdk/client-textract');

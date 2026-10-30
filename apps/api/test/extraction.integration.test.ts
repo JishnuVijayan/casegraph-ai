@@ -43,7 +43,7 @@ describe('local Tesseract extraction and source-region access', () => {
     app = module.createNestApplication({ logger: false }); configureHttp(app); await app.init();
     const login = async (demoSubject: string) => (await http().post('/api/v1/auth/demo').send({ demoSubject }).expect(200)).body.data.token;
     a = await login('synthetic-victim-a'); b = await login('synthetic-victim-b'); analyst = await login('synthetic-analyst');
-    const draft = await http().post('/api/v1/cases').set('Authorization', auth(a)).send({ title: 'OCR source region', category: 'payment', syntheticAcknowledged: true }).expect(201);
+    const draft = await http().post('/api/v1/cases').set('Authorization', auth(a)).send({ title: 'OCR source region', category: 'upi_payment_fraud' }).expect(201);
     caseId = draft.body.data.id;
     const svg = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="360"><rect width="100%" height="100%" fill="white"/><text x="70" y="210" font-family="Arial,sans-serif" font-size="112" fill="black">Synthetic payment INR 2500</text></svg>');
     receipt = await sharp(svg).png().toBuffer();

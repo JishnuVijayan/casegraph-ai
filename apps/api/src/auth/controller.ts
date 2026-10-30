@@ -42,10 +42,10 @@ export class AuthController {
     const actor = await this.store.actor(fixture.id!);
     if (!actor) throw new ForbiddenException();
     await this.store.audit(actor, 'DEMO_LOGIN', 'user', actor.id, request.requestId);
-    return envelope(request, { ...this.sessions.issue(actor.id), user: actor, mode: 'LOCAL_SYNTHETIC_DEMO' });
+    return envelope(request, { ...this.sessions.issue(actor.id), user: actor });
   }
 
-  /** Name + mobile intake for victims. Demo-only synthetic session; not OTP/KYC. */
+  /** Name + mobile sign-in for people filing a complaint. Not OTP-verified. */
   @Public()
   @Post('intake')
   @HttpCode(200)
@@ -53,7 +53,7 @@ export class AuthController {
     this.assertLocalDemo(request);
     const actor = await this.store.upsertIntakeVictim(dto.displayName, dto.mobile);
     await this.store.audit(actor, 'INTAKE_LOGIN', 'user', actor.id, request.requestId);
-    return envelope(request, { ...this.sessions.issue(actor.id), user: actor, mode: 'LOCAL_SYNTHETIC_DEMO' });
+    return envelope(request, { ...this.sessions.issue(actor.id), user: actor });
   }
 
   @Get('me')

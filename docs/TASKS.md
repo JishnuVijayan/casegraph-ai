@@ -29,6 +29,19 @@ Current detailed plan: [`task.md`](../task.md) — AWS 24h working-demo (ADR-026
 - [ ] **T15 Optional local LLM.** Ollama on compatible machine; compare against OCR+rules with labeled fixtures. **Done:** no fabricated facts; if inferior, leave disabled.
 - [ ] **T16 Optional Jev benchmark.** Only with sponsor credits/approved access; compare non-final routing with deterministic rules. **Done:** measured results, no unverifiable latency promises.
 
+## Phase 4 — v2 production rebuild (ADR-032)
+Replaces the demo-shaped flow. T09–T11 (v1 fixture graph and analyst panel) are superseded by V03/V07; T14 (voice) and T15 (LLM) are now core.
+- [ ] **V01 Contract and design system.** `docs/V2_CONTRACT.md`, shared types, tokens. **Done:** web and API code against one contract.
+- [ ] **V02 AI intake pipeline.** Narratives, multi-format evidence, Textract + Bedrock extraction, category, timeline, facts, entities, AI questions, brief. **Done:** idempotent analysis; injection fixture adds nothing outside schema.
+- [ ] **V03 Case network.** Graph schema v2, upsert on submit, `similar_cases` query, `graph:sync`. **Done:** real query on live TigerGraph returns seeded clusters.
+- [ ] **V04 Reports.** Complainant report and officer dossier (HTML, print/PDF). **Done:** owner-only download; dossier includes similar-case comparison.
+- [ ] **V05 Officer API.** Inbox, case file, compare, review. **Done:** wrong org/role denied.
+- [ ] **V06 Complainant app.** Story composer with voice, uploads, live case panel, questions, submit, report. **Done:** full flow works at 360 px.
+- [ ] **V07 Officer app.** Inbox, case file, evidence viewer, similar cases, compare, network view. **Done:** keyboard usable; states for network offline/none.
+- [ ] **V08 Seed history.** About 40 fictional submitted complaints in clusters. **Done:** clusters return in similar cases.
+- [ ] **V09 Tests and E2E.** Unit, integration, adversarial, Playwright on the new flow. **Done:** results recorded below.
+- [ ] **V10 Release hardening (before public launch).** SMS/OTP identity, officer SSO, rate limits per user, retention policy, legal review. **Not started.**
+
 ## Delivery checklist
 - [ ] `npm test`, lint, typecheck, migrations and startup commands verified where scripts are implemented.
 - [ ] A full free local demo runs on fresh clone with synthetic fixture data and no paid API key.
