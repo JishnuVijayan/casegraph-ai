@@ -4,16 +4,20 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "studio": "node scripts/make-sound.mjs && remotion studio src/index.ts",
+    "studio": "node scripts/make-sound.mjs && node scripts/make-captions.mjs --if-missing && remotion studio src/index.ts",
     "voiceover": "node scripts/generate-voiceover.mjs",
     "sync": "node scripts/sync-timing.mjs",
-    "render": "node scripts/make-sound.mjs && remotion render src/index.ts Launch out/casegraph-launch.mp4 --codec=h264 --crf=18 --audio-codec=aac --audio-bitrate=192k",
+    "render": "node scripts/make-sound.mjs && node scripts/make-captions.mjs --if-missing && remotion render src/index.ts Launch out/casegraph-launch.mp4 --codec=h264 --crf=18 --audio-codec=aac --audio-bitrate=192k",
     "typecheck": "tsc --noEmit",
     "sound": "node scripts/make-sound.mjs",
-    "voices": "node scripts/list-voices.mjs"
+    "voices": "node scripts/list-voices.mjs",
+    "captions": "node scripts/make-captions.mjs",
+    "narrate": "node scripts/narrate.mjs narration/casegraph-walkthrough.txt"
   },
   "dependencies": {
     "@remotion/cli": "4.0.250",
+    "@remotion/media-utils": "4.0.250",
+    "@remotion/transitions": "4.0.250",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "remotion": "4.0.250"

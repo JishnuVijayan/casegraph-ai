@@ -36,7 +36,8 @@ export class OfficerService {
       victimName: users.displayName, demoSubject: users.demoSubject, totalLoss: caseAnalyses.totalLoss, missing: caseAnalyses.missing,
     }).from(cases).innerJoin(users, eq(users.id, cases.ownerId)).leftJoin(caseAnalyses, eq(caseAnalyses.caseId, cases.id))
       .where(inArray(cases.id, ids)));
-    const counts = await this.similar.storedCounts(ids);
+    // Prefer live fill when submit-time graph was down so the inbox matches the case page.
+    const counts = await this.similar.ensureCounts(ids);
     // Same number the case file shows, so the inbox and the case page never disagree.
     const percents = new Map<string, number>();
     await Promise.all(ids.slice(0, 200).map(async (id) => {

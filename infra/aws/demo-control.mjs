@@ -90,15 +90,23 @@ function start() {
   ensurePemMode(pem);
   try {
     const tgHost = tgState.privateIp || tgState.publicDns || tgState.publicIp;
-    ssh(appState.publicDns || appState.publicIp, pem,
+    ssh(appState.publicIp || appState.publicDns, pem,
       `bash -lc 'echo TG_HOST=${tgHost} | sudo tee /opt/casegraph/secrets/tunnel.env >/dev/null; sudo chmod 600 /opt/casegraph/secrets/tunnel.env; sudo systemctl restart casegraph-tg-tunnel.service casegraph-api.service caddy.service || true'`);
   } catch (error) {
     console.error(JSON.stringify({ warning: 'Remote service restart skipped (bootstrap may be needed)', reason: error.message }));
   }
 
   try {
-    ssh(tgState.publicDns || tgState.publicIp, pemPath(tgState.keyName || KEY),
+    const tgHost = tgState.publicIp || tgState.publicDns;
+    ssh(tgHost, pemPath(tgState.keyName || KEY),
       'bash -lc \'sg docker -c "docker start casegraph-graph-tigergraph-1" || true\'');
+    // Wait briefly for RESTPP; API can still use ALLOW_DEGRADED if slow.
+    for (let i = 0; i < 24; i += 1) {
+      const ping = spawnSync('ssh', ['-i', pemPath(tgState.keyName || KEY), '-o', 'StrictHostKeyChecking=accept-new', '-o', 'ConnectTimeout=15',
+        `ec2-user@${tgHost}`, 'curl -fsS --max-time 3 http://127.0.0.1:14240/api/ping'], { encoding: 'utf8' });
+      if (ping.status === 0 && /pong/i.test(ping.stdout || '')) break;
+      spawnSync('sleep', ['5']);
+    }
   } catch (error) {
     console.error(JSON.stringify({ warning: 'Could not start TigerGraph container remotely', reason: error.message }));
   }
@@ -155,21 +163,21 @@ function duckdnsOnly() {
 
 function bootstrap() {
   const hostName = publicHost();
-  const github = readSecretFile(localPath('github.token'), 'GitHub PAT');
   readSecretFile(DUCK_TOKEN, 'DuckDNS token');
   const appState = refreshInstancePublic(loadJson(APP_STATE, 'Create the app EC2 first: npm run aws:app:create'));
   if (appState.state && appState.state !== 'running') throw new Error('App EC2 must be running. npm run aws:app:start');
   const tgState = refreshInstancePublic(loadJson(TG_STATE, 'TigerGraph state missing. npm run aws:tg:create/start'));
   const pem = pemPath(appState.keyName || KEY);
   ensurePemMode(pem);
-  const host = appState.publicDns || appState.publicIp;
+  // Prefer IP — public DNS can lag or fail to resolve from some networks.
+  const host = appState.publicIp || appState.publicDns;
+  if (!host) throw new Error('App EC2 has no public IP.');
 
   // Prepare secrets directory on remote
   ssh(host, pem, 'bash -lc \'sudo mkdir -p /opt/casegraph/secrets && sudo chown -R ec2-user:ec2-user /opt/casegraph && chmod 700 /opt/casegraph/secrets\'');
 
   const tmp = localPath('deploy-staging');
   mkdirSync(tmp, { recursive: true });
-  writeFileSync(join(tmp, 'github.token'), `${github}\n`, { mode: 0o600 });
   writeFileSync(join(tmp, 'duckdns.domain'), `${hostName}\n`, { mode: 0o600 });
   copyFileSync(DUCK_TOKEN, join(tmp, 'duckdns.token'));
   chmodSync(join(tmp, 'duckdns.token'), 0o600);
@@ -193,8 +201,18 @@ function bootstrap() {
     throw new Error('Set a strong POSTGRES_PASSWORD (32–128) in .env or the environment before bootstrap.');
   }
 
-  const awsKey = process.env.AWS_ACCESS_KEY_ID || '';
-  const awsSecret = process.env.AWS_SECRET_ACCESS_KEY || '';
+  let awsKey = process.env.AWS_ACCESS_KEY_ID || '';
+  let awsSecret = process.env.AWS_SECRET_ACCESS_KEY || '';
+  let awsToken = process.env.AWS_SESSION_TOKEN || '';
+  // Fall back to `aws configure` shared credentials (never printed).
+  if (!awsKey || !awsSecret) {
+    const keyR = spawnSync('aws', ['configure', 'get', 'aws_access_key_id'], { encoding: 'utf8' });
+    const secretR = spawnSync('aws', ['configure', 'get', 'aws_secret_access_key'], { encoding: 'utf8' });
+    if (keyR.status === 0 && secretR.status === 0) {
+      awsKey = (keyR.stdout || '').trim();
+      awsSecret = (secretR.stdout || '').trim();
+    }
+  }
   const awsLines = [
     'DEMO_MODE=true',
     'NODE_ENV=production',
@@ -207,15 +225,15 @@ function bootstrap() {
     'BEDROCK_MODEL_ID=apac.amazon.nova-pro-v1:0',
     'TIGERGRAPH_ENABLED=true',
     'TIGERGRAPH_LOCAL_PORT=14240',
-    'ALLOW_DEGRADED=false',
+    'ALLOW_DEGRADED=true',
   ];
   // Server-only credentials for Textract/Bedrock (never VITE_ / never printed). Prefer an IAM instance profile later.
   if (awsKey && awsSecret) {
     awsLines.push(`AWS_ACCESS_KEY_ID=${awsKey}`, `AWS_SECRET_ACCESS_KEY=${awsSecret}`);
-    if (process.env.AWS_SESSION_TOKEN) awsLines.push(`AWS_SESSION_TOKEN=${process.env.AWS_SESSION_TOKEN}`);
+    if (awsToken) awsLines.push(`AWS_SESSION_TOKEN=${awsToken}`);
   } else {
     console.error(JSON.stringify({
-      warning: 'AWS_ACCESS_KEY_ID/SECRET not in this shell — Textract/Bedrock on the app EC2 need an instance profile or keys in app.env',
+      warning: 'No AWS credentials found in env or aws configure — Textract/Bedrock on the app EC2 will fail until keys or an instance profile are set',
     }));
   }
   const appEnv = `${awsLines.join('\n')}\n`;
@@ -224,7 +242,7 @@ function bootstrap() {
   const tgHost = tgState.privateIp || tgState.publicDns || tgState.publicIp;
   writeFileSync(join(tmp, 'tunnel.env'), `TG_HOST=${tgHost}\n`, { mode: 0o600 });
 
-  for (const name of ['github.token', 'duckdns.domain', 'duckdns.token', 'tg.pem', 'tigergraph-app.token', 'app.env', 'tunnel.env']) {
+  for (const name of ['duckdns.domain', 'duckdns.token', 'tg.pem', 'tigergraph-app.token', 'app.env', 'tunnel.env']) {
     const local = join(tmp, name);
     if (!existsSync(local)) continue;
     scpTo(host, pem, local, `/opt/casegraph/secrets/${name}`);

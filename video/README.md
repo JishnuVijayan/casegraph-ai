@@ -8,6 +8,12 @@ cd video && npm install
 npm run studio                      # live preview in the browser
 ```
 
+## What makes it feel premium
+- **Reacts to the audio:** `@remotion/media-utils` reads the real voiceover and music, frame by frame. The background glow, the waveform on the phone, the network hub, the logo glow and the progress line all move with the sound.
+- **Cinematic transitions:** `@remotion/transitions` (wipe, slide, fade, flip) between scenes, each scene starting exactly on its narrated moment.
+- **Word-synced captions** (`src/captions.json`), a slow camera push-in on every scene, film grain, and a moving aurora backdrop.
+- Framer Motion is deliberately not used: Remotion renders each frame on its own, so real-time animation libraries flicker or drift. `spring()` and `interpolate()` give the same motion deterministically.
+
 ## Voiceover with exact sync (ElevenLabs)
 `voiceover-script.txt` has one line per scene (about 63 words, roughly 25 seconds of speech). Edit freely, keep 6 lines and stay under 30 s.
 

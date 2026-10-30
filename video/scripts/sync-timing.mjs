@@ -14,4 +14,5 @@ const words = lines.map((l) => l.split(/\s+/).length), total = words.reduce((a, 
 let spoken = 0; const starts = words.map((w) => { const s = (spoken / total) * seconds; spoken += w; return s; });
 const timing = buildTiming(starts, seconds);
 writeTiming(timing);
+execFileSync('node', [join(here, 'make-captions.mjs')], { stdio: 'inherit' });
 console.log(`voiceover.mp3 is ${seconds.toFixed(2)}s. Scene frames:`, timing.scenes.map((s) => `${s.id} ${s.from}+${s.len}`).join(', '));

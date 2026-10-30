@@ -35,7 +35,7 @@ assert.equal(report.status, 200); assert.match(report.headers.get('content-dispo
 assert.ok(html.includes('1930') && html.includes(created.data.reference) && !/similar case/i.test(html), 'own report: helpline, reference, no network data');
 const other = await call('/auth/intake', null, { displayName: 'Other Person', mobile: '9000000098' });
 assert.equal((await fetch(`${API}/cases/${id}/report.html`, { headers: { Authorization: `Bearer ${other.data.token}` } })).status, 403, 'another person cannot download it');
-const officer = await call('/auth/demo', null, { demoSubject: 'synthetic-analyst' }); const officerToken = officer.data.token;
+const officer = await call('/auth/demo', null, { demoSubject: 'synthetic-analyst', password: 'HHGOAOFFICER' }); const officerToken = officer.data.token;
 assert.equal((await call(`/officer/cases/${id}`, token)).status, 403, 'complainant cannot use officer routes');
 const file = await call(`/officer/cases/${id}`, officerToken);
 assert.equal(file.status, 200); assert.equal(file.data.similar.status, 'READY');

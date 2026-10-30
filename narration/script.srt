@@ -1,0 +1,92 @@
+00:00:00,280 --> 00:00:08,380 [Speaker 0]
+When someone becomes a victim of cybercrime, the evidence is often scattered across messages, screenshots, payment receipts, and call records.
+
+00:00:09,560 --> 00:00:12,160 [Speaker 0]
+Reconstructing what actually happened can be difficult.
+
+00:00:13,280 --> 00:00:18,200 [Speaker 0]
+Introducing CaseGraph AI, turning scattered evidence into a clear, traceable case.
+
+00:00:19,540 --> 00:00:20,720 [Speaker 0]
+Let's see how it works.
+
+00:00:21,980 --> 00:00:26,020 [Speaker 0]
+First, the victim logs into CaseGraph AI and starts a new complaint.
+
+00:00:28,360 --> 00:00:38,060 [Speaker 0]
+They describe the incident, enter the relevant details, and upload whatever evidence they have, including chat screenshots, payment receipts, and other supporting documents.
+
+00:00:41,320 --> 00:00:47,260 [Speaker 0]
+CaseGraph uses OCR-assisted processing to extract relevant information and organize the available evidence.
+
+00:00:50,260 --> 00:00:53,240 [Speaker 0]
+But sometimes, the submitted information is incomplete.
+
+00:00:54,420 --> 00:01:00,280 [Speaker 0]
+Instead of leaving those gaps unnoticed, CaseGraph asks focused follow-up questions based on the available details.
+
+00:01:01,500 --> 00:01:07,540 [Speaker 0]
+The victim can provide additional information, correct interpretations, or indicate when an answer is unknown.
+
+00:01:08,640 --> 00:01:12,460 [Speaker 0]
+This helps build a clearer account without making unsupported assumptions.
+
+00:01:15,280 --> 00:01:19,120 [Speaker 0]
+Next, CaseGraph reconstructs the incident into a chronological timeline.
+
+00:01:20,260 --> 00:01:26,820 [Speaker 0]
+From the initial contact to the suspicious messages and financial transaction, the events are organized into a sequence.
+
+00:01:28,000 --> 00:01:33,100 [Speaker 0]
+The victim can review the timeline, check the supporting evidence, and correct any inaccuracies.
+
+00:01:35,580 --> 00:01:40,720 [Speaker 0]
+Once the details have been reviewed, CaseGraph generates a structured, downloadable complaint draft.
+
+00:01:41,860 --> 00:01:50,040 [Speaker 0]
+It brings together the incident summary, timeline, evidence references, and unresolved questions, making the case easier to explain and review.
+
+00:01:51,800 --> 00:01:55,420 [Speaker 0]
+Now, let's look at CaseGraph from an authorized officer's perspective.
+
+00:01:56,620 --> 00:02:01,840 [Speaker 0]
+After logging in, the officer can access permitted complaints and review their supporting information.
+
+00:02:03,300 --> 00:02:09,080 [Speaker 0]
+Officers can view the latest complaints and access all the details and supporting evidence collected for each case.
+
+00:02:10,280 --> 00:02:13,380 [Speaker 0]
+But cybercrime cases don't always exist in isolation.
+
+00:02:14,620 --> 00:02:21,000 [Speaker 0]
+What if different reports contain the same suspicious payment identifier, domain, or other evidence-backed connection?
+
+00:02:22,240 --> 00:02:23,960 [Speaker 0]
+This is where TigerGraph comes in.
+
+00:02:25,100 --> 00:02:33,360 [Speaker 0]
+Using a separate synthetic investigation dataset, CaseGraph demonstrates how officers can explore relationships between cases through an interactive graph.
+
+00:02:34,540 --> 00:02:44,760 [Speaker 0]
+By following connected nodes, analysts can investigate shared identifiers, examine the supporting references, and discover potential leads that might otherwise be difficult to notice.
+
+00:02:45,940 --> 00:02:51,280 [Speaker 0]
+These connections are leads for human investigation, not proof that the same criminal is responsible.
+
+00:02:53,040 --> 00:02:55,860 [Speaker 0]
+And the potential goes beyond individual investigations.
+
+00:02:57,060 --> 00:03:05,360 [Speaker 0]
+Over time, responsibly reviewed case information could help analysts recognize recurring fraud tactics and support more targeted cybersecurity awareness,
+
+00:03:06,540 --> 00:03:08,440 [Speaker 0]
+helping victims report more clearly,
+
+00:03:09,580 --> 00:03:12,040 [Speaker 0]
+helping officers investigate more effectively,
+
+00:03:13,240 --> 00:03:15,900 [Speaker 0]
+and helping communities recognize potential threats.
+
+00:03:17,040 --> 00:03:20,580 [Speaker 0]
+CaseGraph AI, from scattered evidence to traceable clarity.

@@ -1,6 +1,8 @@
 import { createContext, useContext, type CSSProperties, type ReactNode } from 'react';
 import { AbsoluteFill, Img, interpolate, random, spring, staticFile, useCurrentFrame, useVideoConfig } from 'remotion';
 import { C, FONT } from './theme';
+import { useAudio } from './audio';
+import { T } from './timing';
 
 export const clamp = { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' } as const;
 
@@ -8,7 +10,7 @@ export const clamp = { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' } as 
 const ScaleContext = createContext(1);
 export const Scaled = ({ frames: designFrames, children }: { frames: number; children: ReactNode }) => {
   const { durationInFrames } = useVideoConfig();
-  return <ScaleContext.Provider value={designFrames / Math.max(1, durationInFrames - 6)}>{children}</ScaleContext.Provider>;
+  return <ScaleContext.Provider value={designFrames / Math.max(1, durationInFrames - T)}>{children}</ScaleContext.Provider>;
 };
 export const useFrame = () => useCurrentFrame() * useContext(ScaleContext);
 /** A spring that starts at `delay` and settles at 1. */
@@ -18,23 +20,43 @@ export const useSpring = (delay = 0, config: { damping?: number; stiffness?: num
   return spring({ frame: frame - delay, fps, config: { damping: 14, stiffness: 150, mass: 0.7, ...config } });
 };
 
-/** Moving aurora, soft grid and drifting dust: the living background behind every scene. */
+/** The living background: deep gradient, aurora that breathes with the voice, a drifting network of connected points, a glowing perspective floor and a slow light sweep. */
 export const Backdrop = ({ a, b, c = C.mint, base = C.navy }: { a: string; b: string; c?: string; base?: string }) => {
   const f = useCurrentFrame();
-  const blob = (x: number, y: number, size: number, color: string, speed: number, phase: number): CSSProperties => ({
-    position: 'absolute', width: size, height: size, borderRadius: '50%', background: color, opacity: 0.4, filter: 'blur(150px)',
-    left: `${x + Math.sin(f / speed + phase) * 6}%`, top: `${y + Math.cos(f / (speed * 1.3) + phase) * 8}%`, transform: 'translate(-50%,-50%)',
-  });
+  const { voice, bass } = useAudio();
+  const W = 1920, H = 1080;
+  const blob = (x: number, y: number, size: number, color: string, speed: number, phase: number, op = 0.42): CSSProperties => {
+    const s = size * (1 + voice * 0.2 + bass * 0.08);
+    return { position: 'absolute', width: s, height: s, borderRadius: '50%', background: color, opacity: op + voice * 0.2, filter: 'blur(140px)', mixBlendMode: 'screen',
+      left: `${x + Math.sin(f / speed + phase) * 7}%`, top: `${y + Math.cos(f / (speed * 1.3) + phase) * 9}%`, transform: 'translate(-50%,-50%)' };
+  };
+  // Drifting points, joined when they come close: a quiet nod to the case network.
+  const pts = Array.from({ length: 30 }, (_, i) => ({
+    x: (random(`px${i}`) * W * 1.2 + Math.sin(f / (90 + i * 4) + i) * 90 + f * (0.15 + random(`pv${i}`) * 0.25)) % (W * 1.2) - W * 0.1,
+    y: random(`py${i}`) * H + Math.cos(f / (110 + i * 3) + i * 2) * 70,
+    r: 2 + random(`pr${i}`) * 3.5,
+  }));
+  const links: ReactNode[] = [];
+  for (let i = 0; i < pts.length; i += 1) for (let j = i + 1; j < pts.length; j += 1) {
+    const d = Math.hypot(pts[i].x - pts[j].x, pts[i].y - pts[j].y);
+    if (d < 280) links.push(<line key={`${i}-${j}`} x1={pts[i].x} y1={pts[i].y} x2={pts[j].x} y2={pts[j].y} stroke="#fff" strokeOpacity={(1 - d / 280) * (0.22 + voice * 0.25)} strokeWidth={1.4} />);
+  }
+  const sweep = ((f * 5) % 3600) - 900;
   return (
-    <AbsoluteFill style={{ background: base, overflow: 'hidden' }}>
-      <div style={blob(18, 20, 1000, a, 55, 0)} /><div style={blob(82, 78, 1100, b, 70, 2)} /><div style={blob(60, 12, 700, c, 90, 4)} />
-      <AbsoluteFill style={{ opacity: 0.07, backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '90px 90px', transform: `translateY(${(f * 0.6) % 90}px)` }} />
-      {Array.from({ length: 36 }, (_, i) => {
-        const x = random(`x${i}`) * 100, size = 3 + random(`s${i}`) * 6, speed = 0.15 + random(`v${i}`) * 0.5;
-        const y = ((random(`y${i}`) * 140 - f * speed * 0.12 + 140) % 140) - 20;
-        return <div key={i} style={{ position: 'absolute', left: `${x}%`, top: `${y}%`, width: size, height: size, borderRadius: '50%', background: '#fff', opacity: 0.12 + random(`o${i}`) * 0.25 }} />;
-      })}
-      <AbsoluteFill style={{ background: 'radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.45) 100%)' }} />
+    <AbsoluteFill style={{ background: `radial-gradient(120% 90% at 20% 0%, ${base}, #050c1a 75%)`, overflow: 'hidden' }}>
+      <div style={blob(16, 18, 1100, a, 60, 0)} /><div style={blob(84, 80, 1200, b, 75, 2)} /><div style={blob(62, 10, 760, c, 95, 4, 0.3)} /><div style={blob(8, 92, 700, b, 80, 1, 0.28)} />
+      {/* Glowing floor in perspective, scrolling toward the camera */}
+      <div style={{ position: 'absolute', left: '-25%', right: '-25%', bottom: -120, height: 640, perspective: 520, perspectiveOrigin: '50% 0%', WebkitMaskImage: 'linear-gradient(to top, #000 15%, transparent 92%)', maskImage: 'linear-gradient(to top, #000 15%, transparent 92%)' }}>
+        <div style={{ position: 'absolute', inset: 0, transform: 'rotateX(68deg)', transformOrigin: '50% 0%', backgroundImage: `linear-gradient(${c}55 2px, transparent 2px), linear-gradient(90deg, ${c}44 2px, transparent 2px)`, backgroundSize: '110px 110px', backgroundPosition: `0 ${(f * 1.4) % 110}px`, opacity: 0.5 + bass * 0.3 }} />
+      </div>
+      <svg width={W} height={H} style={{ position: 'absolute', inset: 0, opacity: 0.9 }}>
+        {links}
+        {pts.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r={p.r + voice * 2} fill="#fff" opacity={0.35 + random(`po${i}`) * 0.4} />)}
+      </svg>
+      {/* Soft bokeh and a slow diagonal light sweep */}
+      {Array.from({ length: 5 }, (_, i) => <div key={i} style={{ position: 'absolute', left: `${10 + random(`bx${i}`) * 80}%`, top: `${8 + random(`by${i}`) * 80}%`, width: 120 + random(`bs${i}`) * 220, height: 120 + random(`bs${i}`) * 220, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.12)', background: 'radial-gradient(circle, rgba(255,255,255,0.07), transparent 70%)', transform: `translateY(${Math.sin(f / (70 + i * 12) + i) * 24}px)` }} />)}
+      <div style={{ position: 'absolute', top: -300, left: sweep, width: 380, height: 1700, transform: 'rotate(18deg)', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent)', filter: 'blur(14px)' }} />
+      <AbsoluteFill style={{ background: 'radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.5) 100%)' }} />
     </AbsoluteFill>
   );
 };

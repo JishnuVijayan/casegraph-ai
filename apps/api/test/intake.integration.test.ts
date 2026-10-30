@@ -83,7 +83,7 @@ describe('AI complaint intake', () => {
     app = module.createNestApplication({ logger: false }); configureHttp(app); await app.init();
     token = (await http().post('/api/v1/auth/intake').send({ displayName: 'Asha Nair', mobile: '9812345670' }).expect(200)).body.data.token;
     other = (await http().post('/api/v1/auth/intake').send({ displayName: 'Other Person', mobile: '9812345671' }).expect(200)).body.data.token;
-    officer = (await http().post('/api/v1/auth/demo').send({ demoSubject: 'synthetic-analyst' }).expect(200)).body.data.token;
+    officer = (await http().post('/api/v1/auth/demo').send({ demoSubject: 'synthetic-analyst', password: 'HHGOAOFFICER' }).expect(200)).body.data.token;
     png = await sharp(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="120"><rect width="100%" height="100%" fill="white"/><text x="10" y="80" font-size="50">Rs 4500</text></svg>')).png().toBuffer();
   });
   afterAll(async () => {

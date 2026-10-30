@@ -30,3 +30,5 @@ playwright/.cache/
 *.swp
 *~
 out/
+launch-original/
+video/

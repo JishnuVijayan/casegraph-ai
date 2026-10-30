@@ -40,7 +40,8 @@ describe('PostgreSQL-backed HTTP authorization', () => {
   const http = () => request(app.getHttpServer());
   const auth = (token: string) => `Bearer ${token}`;
   async function login(demoSubject: string) {
-    const res = await http().post('/api/v1/auth/demo').send({ demoSubject }).expect(200);
+    const body = demoSubject === 'synthetic-analyst' ? { demoSubject, password: 'HHGOAOFFICER' } : { demoSubject };
+    const res = await http().post('/api/v1/auth/demo').send(body).expect(200);
     expect(res.headers['cache-control']).toBe('no-store');
     expect(res.body.data.token).toMatch(/^[a-f0-9]{64}$/);
     return res.body.data.token as string;
@@ -77,6 +78,9 @@ describe('PostgreSQL-backed HTTP authorization', () => {
     await http().post('/api/v1/auth/demo').send({ demoSubject: 'synthetic-victim-a', role: 'analyst', userId: fixture.users[2].id }).expect(400);
     await http().post('/api/v1/auth/demo').send({ demoSubject: 'not-seeded' }).expect(400);
     await http().post('/api/v1/auth/demo').set('Origin', 'https://foreign.invalid').send({ demoSubject: 'synthetic-victim-a' }).expect(403);
+    const badPw = await http().post('/api/v1/auth/demo').send({ demoSubject: 'synthetic-analyst', password: 'wrong' }).expect(401);
+    expect(badPw.body.error.message).toBe('Incorrect officer password.');
+    await http().post('/api/v1/auth/demo').send({ demoSubject: 'synthetic-analyst' }).expect(401);
   });
   it('allows each owner and scopes list/read from DB, ignoring claimed user headers', async () => {
     const own = await http().get(`/api/v1/cases/${caseA}`).set('Authorization', auth(a)).expect(200);

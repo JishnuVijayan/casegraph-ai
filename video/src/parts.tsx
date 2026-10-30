@@ -2,18 +2,12 @@ import type { CSSProperties, ReactNode } from 'react';
 import { AbsoluteFill, Img, interpolate, spring, useCurrentFrame, useVideoConfig } from 'remotion';
 import { C, FONT } from './theme';
 
-/** Springs the whole scene in and out so cuts feel physical, not abrupt. */
+/** One scene: a slow camera push-in that never stops, so nothing ever sits still. Transitions between scenes are handled by TransitionSeries. */
 export const SceneShell = ({ children, bg }: { children: ReactNode; bg: string }) => {
   const frame = useCurrentFrame();
-  const { fps, durationInFrames } = useVideoConfig();
-  const enter = spring({ frame, fps, config: { damping: 18, stiffness: 140, mass: 0.7 } });
-  const exit = spring({ frame: frame - (durationInFrames - 12), fps, config: { damping: 20, stiffness: 160 } });
-  const scale = interpolate(enter, [0, 1], [1.06, 1]) * interpolate(exit, [0, 1], [1, 0.97]);
-  return (
-    <AbsoluteFill style={{ background: bg, fontFamily: FONT, opacity: interpolate(enter, [0, 1], [0, 1]) * interpolate(exit, [0, 1], [1, 0]), transform: `scale(${scale})` }}>
-      {children}
-    </AbsoluteFill>
-  );
+  const { durationInFrames } = useVideoConfig();
+  const push = interpolate(frame, [0, durationInFrames], [1, 1.045], { extrapolateRight: 'clamp' });
+  return <AbsoluteFill style={{ background: bg, fontFamily: FONT, transform: `scale(${push})` }}>{children}</AbsoluteFill>;
 };
 
 /** Kinetic type: each word springs up on its own beat. `hot` words get the accent colour. */

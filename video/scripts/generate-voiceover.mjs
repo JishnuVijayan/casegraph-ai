@@ -40,5 +40,13 @@ const startOf = (lineIndex) => alignment.character_start_times_seconds[lines.sli
 const ends = alignment.character_end_times_seconds;
 const seconds = ends[ends.length - 1];
 const timing = buildTiming(lines.map((_, i) => startOf(i)), seconds);
+
+// Exact word times for the captions, straight from ElevenLabs' character timings.
+const chars = alignment.characters, starts = alignment.character_start_times_seconds, ends2 = alignment.character_end_times_seconds;
+const captionWords = []; let wordStart = -1, wordText = '';
+const flush = (endIndex) => { if (wordText) { const line = lines.findIndex((_, li) => wordStart < lines.slice(0, li + 1).join(' ').length + 1); captionWords.push({ w: wordText, s: Number(starts[wordStart].toFixed(3)), e: Number(ends2[endIndex].toFixed(3)), line }); } wordText = ''; wordStart = -1; };
+chars.forEach((ch, i) => { if (/\s/.test(ch)) flush(i - 1); else { if (wordStart < 0) wordStart = i; wordText += ch; } });
+flush(chars.length - 1);
+writeFileSync(join(here, '../src/captions.json'), `${JSON.stringify(captionWords, null, 1)}\n`);
 writeTiming(timing);
 console.log(`Saved public/voiceover.mp3 (${seconds.toFixed(1)}s). Scene frames:`, timing.scenes.map((s) => `${s.id} ${s.from}+${s.len}`).join(', '));

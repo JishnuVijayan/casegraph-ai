@@ -154,6 +154,33 @@ export class SimilarGraphService implements SimilarCasesProvider {
     return out;
   }
 
+  /**
+   * Inbox counts: use stored snapshots, and live-fill any case that has none or only
+   * UNAVAILABLE (e.g. graph was down at submit). Opening a case already refreshed and
+   * persisted; without this the inbox stayed at "None found" until that happened.
+   */
+  async ensureCounts(caseIds: string[]): Promise<Map<string, { status: SimilarStatus; count: number }>> {
+    const out = await this.storedCounts(caseIds);
+    if (!this.graph.enabled || !caseIds.length) return out;
+    const need = caseIds.filter((id) => {
+      const cur = out.get(id);
+      return !cur || cur.status === 'UNAVAILABLE';
+    }).slice(0, 40);
+    const workers = 5;
+    for (let i = 0; i < need.length; i += workers) {
+      await Promise.all(need.slice(i, i + workers).map(async (id) => {
+        try {
+          // refresh matches the case-file path (query + remember). Prefer that over inventing.
+          const result = await this.refresh(id);
+          out.set(id, { status: result.status, count: result.cases.length });
+        } catch {
+          if (!out.has(id)) out.set(id, { status: 'UNAVAILABLE', count: 0 });
+        }
+      }));
+    }
+    return out;
+  }
+
   async reviews(caseId: string): Promise<Map<string, PairReview>> {
     const rows = await this.access.available((db) => db.select({ path: graphLeads.path }).from(graphLeads)
       .where(and(eq(graphLeads.caseId, caseId), sql`${graphLeads.path}->>'kind' = 'SIMILAR_REVIEW'`)));

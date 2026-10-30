@@ -38,7 +38,7 @@ describe('immutable synthetic image evidence over HTTP', () => {
       .overrideProvider(DemoConfig).useValue({ enabled: true, ttlMs: 1800000 })
       .overrideProvider(LOCAL_DATABASE).useValue(connection).overrideProvider(EVIDENCE_DIRECTORY).useValue(directory).compile();
     app = module.createNestApplication({ logger: false }); configureHttp(app); await app.init();
-    const login = async (demoSubject: string) => (await http().post('/api/v1/auth/demo').send({ demoSubject }).expect(200)).body.data.token;
+    const login = async (demoSubject: string) => (await http().post('/api/v1/auth/demo').send(demoSubject === 'synthetic-analyst' ? { demoSubject, password: 'HHGOAOFFICER' } : { demoSubject }).expect(200)).body.data.token;
     a = await login('synthetic-victim-a'); b = await login('synthetic-victim-b'); analyst = await login('synthetic-analyst');
     png = await sharp({ create: { width: 4, height: 4, channels: 3, background: '#ffffff' } }).png().toBuffer();
     jpeg = await sharp({ create: { width: 4, height: 4, channels: 3, background: '#abcdef' } }).jpeg().toBuffer();

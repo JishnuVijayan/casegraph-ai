@@ -28,7 +28,7 @@ describe('analyst investigation authorization with explicitly mocked TigerGraph 
     admin=connect();await admin.pool.query(`CREATE DATABASE "${database}"`);created=true;connection=connect(database);await migrateDatabase(connection.db);await seedSynthetic(connection.db);
     const module=await Test.createTestingModule({imports:[AppModule]}).overrideProvider(DemoConfig).useValue({enabled:true,ttlMs:1800000}).overrideProvider(LOCAL_DATABASE).useValue(connection).overrideProvider(TigerGraphClient).useValue(graph).compile();
     app=module.createNestApplication({logger:false});configureHttp(app);await app.init();
-    const login=async(subject:string)=>(await http().post('/api/v1/auth/demo').send({demoSubject:subject}).expect(200)).body.data.token;
+    const login=async(subject:string)=>(await http().post('/api/v1/auth/demo').send({demoSubject:subject,...(subject==='synthetic-analyst'?{password:'HHGOAOFFICER'}:{})}).expect(200)).body.data.token;
     a=await login('synthetic-victim-a');b=await login('synthetic-victim-b');analyst=await login('synthetic-analyst');
   });
   afterAll(async()=>{try{if(app)await app.close();else if(connection)await connection.pool.end();if(created)await admin.pool.query(`DROP DATABASE "${database}"`);}finally{if(admin)await admin.pool.end();}});

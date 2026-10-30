@@ -52,7 +52,7 @@ Hosts Nest + React + Postgres + Caddy on a **second** EC2. TigerGraph stays on t
 | App Postgres / Nest | Loopback only on the app instance. |
 | TG :14240 | **No inbound rule.** |
 | TG :22 | Operator `/32` + app security group only. |
-| AWS keys / TG token / GitHub PAT | Server or `.local/` only — **never** in the SPA or `VITE_*`. |
+| AWS keys / TG token / DuckDNS token | Server or `.local/` only — **never** in the SPA or `VITE_*`. |
 
 Website users can use the product through your API; they **cannot** extract Bedrock, Textract, or TigerGraph credentials.
 
@@ -64,10 +64,10 @@ Website users can use the product through your API; they **cannot** extract Bedr
 ```bash
 echo 'casegraph-hhgoa.duckdns.org' > .local/duckdns.domain
 echo 'YOUR_DUCKDNS_TOKEN' > .local/duckdns.token
-# GitHub PAT for clone (contents:read on JishnuVijayan/casegraph-ai) — rotate if pasted in chat
-echo 'YOUR_GITHUB_PAT' > .local/github.token
-chmod 600 .local/duckdns.domain .local/duckdns.token .local/github.token
+chmod 600 .local/duckdns.domain .local/duckdns.token
 ```
+
+App code is cloned from the **public** repo `https://github.com/JishnuVijayan/casegraph-ai.git` branch **`main`** (no GitHub token). Override with `CASEGRAPH_GIT_BRANCH` / `CASEGRAPH_GIT_REPO` if needed.
 
 3. Ensure `.env` has a strong `POSTGRES_PASSWORD` (32–128) — used on the server DB.
 4. Export AWS keys in the shell that runs bootstrap (copied only into server `app.env` mode `0600`, never into the SPA):
@@ -87,7 +87,7 @@ npm run aws:tg:harden-sg
 npm run aws:demo:bootstrap    # clone from GitHub, Caddy, migrate, seed
 ```
 
-Bootstrap clones `https://github.com/JishnuVijayan/casegraph-ai.git` branch `feat/aws-24h-demo` using `.local/github.token` (token is not logged).
+Bootstrap clones the public repo on branch `main` (no GitHub token).
 
 ### Day-to-day (billing control)
 
@@ -99,7 +99,7 @@ npm run aws:demo:status
 npm run aws:demo:url
 ```
 
-After the hackathon: `npm run aws:app:destroy` and `npm run aws:tg:destroy`; rotate GitHub PAT and AWS keys.
+After the hackathon: `npm run aws:app:destroy` and `npm run aws:tg:destroy`; rotate AWS keys.
 
 ### npm helpers
 

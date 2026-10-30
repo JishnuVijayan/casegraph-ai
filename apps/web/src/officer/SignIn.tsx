@@ -6,14 +6,19 @@ import type { Session } from '../types.v2';
 export function SignIn() {
   const { signIn, expired } = useOfficer();
   const [officerId, setOfficerId] = useState('');
+  const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
   async function submit(e: FormEvent) {
     e.preventDefault();
+    if (!password.trim()) { setError('Enter the officer password.'); return; }
     setBusy(true); setError('');
     try {
-      const s = await jsonRequest<Session>('/auth/demo', undefined, { method: 'POST', body: { demoSubject: 'synthetic-analyst' } });
+      const s = await jsonRequest<Session>('/auth/demo', undefined, {
+        method: 'POST',
+        body: { demoSubject: 'synthetic-analyst', password },
+      });
       signIn(s, officerId);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Sign-in failed. Please try again.');
@@ -36,6 +41,10 @@ export function SignIn() {
           <label className="cg-label" htmlFor="o-officer-id">Officer ID</label>
           <input id="o-officer-id" className="cg-input" autoComplete="username" placeholder="e.g. CCU-2041" value={officerId}
             onChange={(e) => setOfficerId(e.target.value)} autoFocus />
+          <label className="cg-label" htmlFor="o-officer-password">Password</label>
+          <input id="o-officer-password" className="cg-input" type="password" autoComplete="current-password"
+            placeholder="Officer password" value={password}
+            onChange={(e) => setPassword(e.target.value)} />
           {error && <p className="o-field-error" role="alert">{error}</p>}
           <button className="cg-btn o-wide" type="submit" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button>
           <p className="o-fine">Access is logged. Use this workspace only for official investigations.</p>

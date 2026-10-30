@@ -139,7 +139,7 @@ export function ssh(host, pem, remoteCommand, opts = {}) {
     stdio: opts.stdio || 'pipe',
   });
   if (result.status !== 0) {
-    throw new Error((result.stderr || result.stdout || 'ssh failed').trim().slice(0, 500));
+    throw new Error((result.stderr || result.stdout || 'ssh failed').trim().slice(-2000));
   }
   return result.stdout || '';
 }

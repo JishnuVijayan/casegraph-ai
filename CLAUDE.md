@@ -27,13 +27,13 @@ npm run aws:tg:stop
 
 ## Public HTTPS demo — one-command billing control
 
-Secrets (gitignored, `0600`): `.local/duckdns.domain`, `.local/duckdns.token`, `.local/github.token`, `.local/casegraph-tg-aps1.pem`, `.local/tigergraph-app.token`.
+Secrets (gitignored, `0600`): `.local/duckdns.domain`, `.local/duckdns.token`, `.local/casegraph-tg-aps1.pem`, `.local/tigergraph-app.token`.
 
 ```bash
 # one-time
 npm run aws:app:create
 npm run aws:tg:harden-sg
-npm run aws:demo:bootstrap   # clones github.com/JishnuVijayan/casegraph-ai
+npm run aws:demo:bootstrap   # clones public github.com/JishnuVijayan/casegraph-ai (main)
 
 # every rehearsal
 npm run aws:demo:start       # starts app + TG EC2, DuckDNS, prints https://…duckdns.org

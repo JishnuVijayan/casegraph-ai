@@ -1,16 +1,30 @@
 import { Body, Controller, ForbiddenException, Get, HttpCode, Post, Req } from '@nestjs/common';
-import { IsIn, IsString, Length, Matches } from 'class-validator';
+import { IsIn, IsOptional, IsString, Length, Matches } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { ApiRequest, envelope } from '../common/http';
+import { createHash, timingSafeEqual } from 'node:crypto';
+import { ApiRequest, PlainError, envelope } from '../common/http';
 import { DemoConfig } from './config';
 import { Public, Roles } from './guards';
 import { isAllowedDemoOrigin } from './origins';
 import { Sessions } from './sessions';
 import { AccessStore } from './store';
 
+/** Demo officer gate. Override with OFFICER_DEMO_PASSWORD (never ship real auth this way). */
+const OFFICER_DEMO_PASSWORD = process.env.OFFICER_DEMO_PASSWORD || 'HHGOAOFFICER';
+
+function officerPasswordOk(provided: string | undefined): boolean {
+  if (typeof provided !== 'string' || !provided) return false;
+  const a = createHash('sha256').update(provided, 'utf8').digest();
+  const b = createHash('sha256').update(OFFICER_DEMO_PASSWORD, 'utf8').digest();
+  return timingSafeEqual(a, b);
+}
+
 export class DemoLogin {
   @IsIn(['synthetic-victim-a', 'synthetic-victim-b', 'synthetic-analyst'])
   demoSubject!: string;
+  /** Required for synthetic-analyst (officer) sign-in. */
+  @IsOptional() @IsString() @Length(1, 128)
+  password?: string;
 }
 
 export class IntakeLogin {
@@ -40,6 +54,9 @@ export class AuthController {
   @HttpCode(200)
   async login(@Body() dto: DemoLogin, @Req() request: ApiRequest) {
     this.assertLocalDemo(request);
+    if (dto.demoSubject === 'synthetic-analyst' && !officerPasswordOk(dto.password)) {
+      throw new PlainError(401, 'Incorrect officer password.', 'UNAUTHENTICATED');
+    }
     const fixture = this.store.fixtures.users.find((user) => user.demoSubject === dto.demoSubject)!;
     const actor = await this.store.actor(fixture.id!);
     if (!actor) throw new ForbiddenException();

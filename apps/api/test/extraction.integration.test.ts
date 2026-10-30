@@ -41,7 +41,7 @@ describe('local Tesseract extraction and source-region access', () => {
       .overrideProvider(DemoConfig).useValue({ enabled: true, ttlMs: 1800000 })
       .overrideProvider(LOCAL_DATABASE).useValue(connection).overrideProvider(EVIDENCE_DIRECTORY).useValue(directory).compile();
     app = module.createNestApplication({ logger: false }); configureHttp(app); await app.init();
-    const login = async (demoSubject: string) => (await http().post('/api/v1/auth/demo').send({ demoSubject }).expect(200)).body.data.token;
+    const login = async (demoSubject: string) => (await http().post('/api/v1/auth/demo').send(demoSubject === 'synthetic-analyst' ? { demoSubject, password: 'HHGOAOFFICER' } : { demoSubject }).expect(200)).body.data.token;
     a = await login('synthetic-victim-a'); b = await login('synthetic-victim-b'); analyst = await login('synthetic-analyst');
     const draft = await http().post('/api/v1/cases').set('Authorization', auth(a)).send({ title: 'OCR source region', category: 'upi_payment_fraud' }).expect(201);
     caseId = draft.body.data.id;

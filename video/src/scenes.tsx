@@ -1,5 +1,6 @@
 import { AbsoluteFill, interpolate } from 'remotion';
 import { Backdrop, CountUp, Headline, Logo, Phone, Ring, Scaled, Shot, clamp, useFrame, useSpring } from './fx';
+import { useAudio } from './audio';
 import { SceneShell } from './parts';
 import { C, FONT, shot } from './theme';
 
@@ -23,7 +24,8 @@ export const Hook = () => {
   const gone = f >= 52;
   const flash = interpolate(f, [52, 56, 70], [0, 0.55, 0], clamp);
   const glitch = gone && f < 76 ? Math.sin(f * 9) * 8 : 0;
-  const vibrate = f > 6 && f < 52 ? Math.sin(f * 2.2) * 2 : 0;
+  const audioHook = useAudio();
+  const vibrate = f > 6 && f < 52 ? Math.sin(f * 2.2) * (2 + audioHook.bass * 5) : 0;
   return (
     <SceneShell bg="transparent"><Scaled frames={100}>
       <Backdrop a={C.primary} b={C.red} c={C.navy2} />
@@ -105,6 +107,7 @@ export const Problem = () => {
 const TEXT = "A man called saying he was from my bank. He asked for a code, and then 12,000 rupees left my account.";
 export const Tell = () => {
   const f = useFrame();
+  const audio = useAudio();
   const shown = TEXT.slice(0, Math.max(0, Math.floor((f - 26) * 1.7)));
   const mic = f > 58;
   const real = shot('tell');
@@ -134,7 +137,7 @@ export const Tell = () => {
                   <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: mic ? C.teal : C.primary, color: '#fff', fontSize: 42, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🎙</div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 7, height: 80 }}>
-                  {Array.from({ length: 16 }, (_, i) => <div key={i} style={{ width: 9, borderRadius: 5, background: C.teal, height: mic ? 14 + Math.abs(Math.sin(f / 4 + i * 0.9)) * 58 : 10 }} />)}
+                  {Array.from({ length: 16 }, (_, i) => <div key={i} style={{ width: 9, borderRadius: 5, background: C.teal, height: mic ? 14 + (audio.voice > 0.01 ? audio.bins[i + 1] * 96 : Math.abs(Math.sin(f / 4 + i * 0.9)) * 58) : 10 }} />)}
                 </div>
               </div>
               <div style={{ marginTop: 30, fontSize: 26, fontWeight: 700, color: '#64748b' }}>Add proof</div>
@@ -217,6 +220,7 @@ const NODES = [
 const EDGES: [number, string, string][] = [[1, 'Same phone', C.red], [2, 'Same UPI ID', C.amber], [3, 'Same website', C.mint], [4, 'Same bank account', C.sky]];
 export const Network = () => {
   const f = useFrame();
+  const audio = useAudio();
   const score = useSpring(100, { damping: 12, stiffness: 140 });
   return (
     <SceneShell bg="transparent"><Scaled frames={150}>
@@ -249,7 +253,7 @@ export const Network = () => {
           const p = useSpring(6 + i * 7, { damping: 11, stiffness: 190 });
           return (
             <g key={n.label} transform={`translate(${n.x} ${n.y}) scale(${p})`}>
-              {n.main && <circle r={92 + Math.sin(f / 9) * 6} fill="none" stroke={C.mint} strokeWidth={3} opacity={0.5} />}
+              {n.main && <circle r={92 + Math.sin(f / 9) * 6 + audio.bass * 26} fill="none" stroke={C.mint} strokeWidth={3} opacity={0.45 + audio.voice * 0.4} />}
               <circle r={n.main ? 72 : 52} fill={C.ink} stroke={n.c} strokeWidth={6} filter="url(#glow)" />
               <text y={8} textAnchor="middle" fontSize={n.main ? 26 : 21} fontWeight="800" fill="#fff" fontFamily={FONT}>{n.label}</text>
             </g>
@@ -263,6 +267,7 @@ export const Network = () => {
 /* ───────────────────────── 6. CALL TO ACTION ───────────────────────── */
 export const Cta = () => {
   const f = useFrame();
+  const audio = useAudio();
   const logo = useSpring(4, { damping: 11, stiffness: 120 });
   const chip = useSpring(52, { damping: 12, stiffness: 160 });
   const draw = interpolate(f, [6, 34], [0, 1], clamp);
@@ -271,10 +276,10 @@ export const Cta = () => {
       <Backdrop a={C.primary} b={C.teal} c={C.mint} base={C.navy} />
       <AbsoluteFill style={{ alignItems: 'center', justifyContent: 'center' }}>
         {[0, 1, 2].map((i) => <div key={i} style={{ position: 'absolute', width: 300, height: 300, borderRadius: '50%', border: `4px solid ${C.mint}`, opacity: Math.max(0, 0.6 - ((f + i * 30) % 90) / 90), transform: `scale(${1 + ((f + i * 30) % 90) / 90 * 4})`, top: 215 }} />)}
-        <div style={{ transform: `scale(${interpolate(logo, [0, 1], [0.3, 1])}) rotate(${(1 - logo) * -25}deg)`, opacity: logo }}><Logo size={220} draw={draw} /></div>
+        <div style={{ transform: `scale(${interpolate(logo, [0, 1], [0.3, 1]) * (1 + audio.voice * 0.06)}) rotate(${(1 - logo) * -25}deg)`, opacity: logo }}><Logo size={220} draw={draw} /></div>
         <div style={{ marginTop: 26 }}><Headline lines={['CaseGraph']} size={190} delay={14} style={{ textAlign: 'center', justifyContent: 'center' }} /></div>
         <div style={{ marginTop: 6, fontFamily: FONT, fontSize: 68, fontWeight: 600, color: C.sky, opacity: interpolate(f, [30, 46], [0, 1], clamp), transform: `translateY(${interpolate(f, [30, 46], [30, 0], clamp)}px)` }}>Report a cyber crime in minutes.</div>
-        <div style={{ marginTop: 50, padding: '22px 56px', borderRadius: 999, background: C.mint, color: C.ink, fontFamily: FONT, fontSize: 48, fontWeight: 800, opacity: chip, transform: `scale(${interpolate(chip, [0, 1], [0.5, 1]) * (1 + Math.sin(f / 7) * 0.02)})`, boxShadow: `0 0 60px ${C.mint}66` }}>Lost money? Call 1930 first</div>
+        <div style={{ marginTop: 50, padding: '22px 56px', borderRadius: 999, background: C.mint, color: C.ink, fontFamily: FONT, fontSize: 48, fontWeight: 800, opacity: chip, transform: `scale(${interpolate(chip, [0, 1], [0.5, 1]) * (1 + Math.sin(f / 7) * 0.02)})`, boxShadow: `0 0 ${50 + audio.bass * 90}px ${C.mint}88` }}>Lost money? Call 1930 first</div>
         <div style={{ marginTop: 22, fontFamily: FONT, fontSize: 32, color: 'rgba(255,255,255,0.7)', opacity: interpolate(f, [70, 86], [0, 1], clamp) }}>cybercrime.gov.in</div>
       </AbsoluteFill>
     </Scaled></SceneShell>
