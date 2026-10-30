@@ -7,7 +7,7 @@ import { caseAccessGrants, caseAnalyses, cases, claims, eventClaims, narratives,
  * Names, numbers, UPI IDs and sites are invented (reserved ".example" domains, fictional handles).
  * Clusters share entities on purpose; some overlaps are weak/benign; some complaints stand alone.
  */
-type Cat = 'upi_payment_fraud' | 'investment_scam' | 'job_or_task_scam' | 'loan_app_harassment' | 'phishing_or_kyc' | 'sextortion_blackmail' | 'romance_scam' | 'account_hacking' | 'online_shopping' | 'impersonation' | 'other';
+type Cat = 'upi_payment_fraud' | 'investment_scam' | 'job_or_task_scam' | 'loan_app_harassment' | 'phishing_or_kyc' | 'sextortion_blackmail' | 'romance_scam' | 'account_hacking' | 'online_shopping' | 'impersonation' | 'online_harassment' | 'identity_theft' | 'malware_or_ransomware' | 'fake_profile' | 'other';
 type Spec = { cat: Cat; name: string; mobile: string; loss: number; days: number; what: string; ents: [string, string][] };
 
 const PH = { jobTg: '+91 90000 11111', inv: '90000 22222', shop: '9000033333', loan: '+919000044444', kyc: '90000 55555', courier: '9000066666', romance: '9000077777', sext: '9000088888' };
@@ -63,6 +63,48 @@ export const SEED_SPECS: Spec[] = [
   { cat: 'impersonation', name: 'Salim Akhtar', mobile: '9000100038', loss: 18000, days: 17, what: 'a caller pretending to be a relative stuck at an airport', ents: [['phone', '9000099908'], ['upi_id', 'airport.help@okfictpay']] },
   { cat: 'investment_scam', name: 'Rekha Nambiar', mobile: '9000100039', loss: 33000, days: 13, what: 'a crypto doubling offer on a messaging group', ents: [['url', 'coindouble-fast.example'], ['phone', '9000099909']] },
   { cat: 'job_or_task_scam', name: 'Prakash Jain', mobile: '9000100040', loss: 22000, days: 7, what: 'a hotel review task job; "mentor" asked for deposits to unlock rewards', ents: [['phone', '9000099910'], ['upi_id', 'hotelreview.pay@okfictbank'], ['app_name', 'Telegram']] },
+
+  // ---- Round 2: every crime type, plus links that cross crime types and chains of links (fictional) ----
+  // Mule account: ONE bank account receives money in an investment case, a job scam and a romance scam (see Cluster B).
+  { cat: 'job_or_task_scam', name: 'Divya Menon', mobile: '9000100041', loss: 64000, days: 18, what: 'a "prepaid task" job; the final deposit went to a bank account that investors also used', ents: [['bank_account', '501000001234 56'], ['phone', '9000120011'], ['app_name', 'Telegram']] },
+  { cat: 'romance_scam', name: 'Ajay Kurian', mobile: '9000100042', loss: 140000, days: 12, what: 'a woman he met online asked him to "invest together" and sent a trading link and an account number', ents: [['bank_account', '50100000123456'], ['url', 'tradepro-global.example'], ['social_handle', '@daniel_hart_official']] },
+  { cat: 'investment_scam', name: 'Saira Banu', mobile: '9000100043', loss: 275000, days: 5, what: 'a "fund manager" from a dating app profile pushed her into the same trading website', ents: [['url', 'https://tradepro-global.example/vip'], ['social_handle', 'daniel_hart_official'], ['phone', '90000 22222']] },
+  // Same operator, two crime types: the sextortion number also collects for a loan app.
+  { cat: 'loan_app_harassment', name: 'Naveen Reddy', mobile: '9000100044', loss: 9000, days: 8, what: 'a loan app collector who also threatened to send private pictures to relatives', ents: [['phone', '+91 90000 88888'], ['app_name', 'QuickCash Lite']] },
+  { cat: 'sextortion_blackmail', name: 'Karthik Rao', mobile: '9000100045', loss: 52000, days: 3, what: 'a video call turned into blackmail; payments were asked on a UPI ID', ents: [['phone', '9000088888'], ['upi_id', 'safe.deal@okfictpay'], ['social_handle', '@priya.chat.live']] },
+  // A chain: P1 and P4 share nothing directly, but P1-P2 share a website, P2-P3 an email and P3-P4 a UPI ID.
+  { cat: 'phishing_or_kyc', name: 'Leela Krishnan', mobile: '9000100046', loss: 18000, days: 20, what: 'an SMS about a pending tax refund with a claim link', ents: [['url', 'https://kyc-refund-portal.example/claim'], ['phone', '9000120001']] },
+  { cat: 'phishing_or_kyc', name: 'Vinod Pillai', mobile: '9000100047', loss: 36000, days: 14, what: 'a refund portal that asked for card details and an OTP', ents: [['url', 'kyc-refund-portal.example'], ['email', 'refunds@fastclaim.example']] },
+  { cat: 'impersonation', name: 'Teresa Dias', mobile: '9000100048', loss: 72000, days: 9, what: 'an "income tax officer" emailed a notice and asked to pay a settlement', ents: [['email', 'Refunds@FastClaim.example'], ['upi_id', 'refund.claims@okfictbank']] },
+  { cat: 'upi_payment_fraud', name: 'Harish Nambiar', mobile: '9000100049', loss: 11000, days: 4, what: 'a "refund" collect request approved by mistake; money went to the same UPI ID', ents: [['upi_id', 'Refund.Claims@okfictbank'], ['phone', '9000120009']] },
+  // Online harassment (new type): one handle and phone across three people
+  { cat: 'online_harassment', name: 'Ishita Roy', mobile: '9000100050', loss: 0, days: 22, what: 'a stranger sent abusive and threatening messages and made new accounts after being blocked', ents: [['social_handle', '@shadow_critic_01'], ['app_name', 'Instagram']] },
+  { cat: 'online_harassment', name: 'Farhan Qureshi', mobile: '9000100051', loss: 0, days: 15, what: 'repeated insulting comments and threats to expose personal details', ents: [['social_handle', 'https://instagram.com/shadow_critic_01'], ['phone', '9000130001']] },
+  { cat: 'online_harassment', name: 'Gayathri Nair', mobile: '9000100052', loss: 0, days: 6, what: 'someone followed her across platforms and posted her college name', ents: [['phone', '+91 90001 30001'], ['app_name', 'Snapchat']] },
+  { cat: 'online_harassment', name: 'Pooja Verma', mobile: '9000100053', loss: 0, days: 2, what: 'a group chat that shared her photos with insulting captions', ents: [['app_name', 'Telegram'], ['social_handle', '@campus_gossip_hub']] },
+  // Identity theft / data misuse (new type)
+  { cat: 'identity_theft', name: 'Rajeev Menon', mobile: '9000100054', loss: 85000, days: 26, what: 'a personal loan was taken in his name using a copy of his Aadhaar and PAN', ents: [['email', 'loan.verify@docdesk.example'], ['phone', '9000140001']] },
+  { cat: 'identity_theft', name: 'Alka Sharma', mobile: '9000100055', loss: 0, days: 17, what: 'her SIM stopped working; a duplicate SIM was issued to someone else', ents: [['phone', '9000140001'], ['person_name', 'Rakesh Dubey']] },
+  { cat: 'identity_theft', name: 'Joseph Antony', mobile: '9000100056', loss: 23000, days: 8, what: 'bank accounts opened with his documents; he only found out from SMS alerts', ents: [['email', 'LOAN.VERIFY@docdesk.example'], ['bank_account', '30200000778899']] },
+  { cat: 'identity_theft', name: 'Neha Kapoor', mobile: '9000100057', loss: 0, days: 3, what: 'her photo and number were used on a loan application she never made', ents: [['bank_account', '30200000778899'], ['app_name', 'EasyRupee Plus']] },
+  // Malware / ransomware / remote access (new type)
+  { cat: 'malware_or_ransomware', name: 'Suresh Iyer', mobile: '9000100058', loss: 40000, days: 19, what: 'a shop computer was locked after a file from an email; a payment was demanded to unlock it', ents: [['email', 'unlock.files@securemail.example'], ['url', 'invoice-viewer-download.example']] },
+  { cat: 'malware_or_ransomware', name: 'Bhavna Shah', mobile: '9000100059', loss: 0, days: 11, what: 'photos and documents were encrypted after installing a "PDF viewer"', ents: [['url', 'https://invoice-viewer-download.example/setup'], ['email', 'Unlock.Files@securemail.example']] },
+  { cat: 'malware_or_ransomware', name: 'Dinesh Pai', mobile: '9000100060', loss: 55000, days: 5, what: 'a "bank support" caller made him install a remote-control app and then moved money', ents: [['app_name', 'AnyDesk'], ['phone', '9000055555']] },
+  { cat: 'malware_or_ransomware', name: 'Revathi S', mobile: '9000100061', loss: 0, days: 1, what: 'a fake game app on a third-party store stole saved passwords', ents: [['url', 'freegames-apk-store.example'], ['app_name', 'ModGame Pro']] },
+  // Fake profile / false posts (new type), linked to the shopping page and the romance profile
+  { cat: 'fake_profile', name: 'Anjali Das', mobile: '9000100062', loss: 0, days: 13, what: 'a fake profile in her name and photos messaged her contacts for money', ents: [['social_handle', '@anjali.das.official2'], ['phone', '9000150001']] },
+  { cat: 'fake_profile', name: 'Mukesh Goyal', mobile: '9000100063', loss: 5000, days: 9, what: 'a fake business page copied his shop name and took advance payments', ents: [['social_handle', '@dealsbazaar_x'], ['phone', '9000033333']] },
+  { cat: 'fake_profile', name: 'Fatima Noor', mobile: '9000100064', loss: 0, days: 4, what: 'a profile posting false and morphed content about her', ents: [['phone', '9000150001'], ['social_handle', 'https://instagram.com/noor.truth.posts']] },
+  { cat: 'fake_profile', name: 'Xavier Pinto', mobile: '9000100065', loss: 12000, days: 2, what: 'a copycat of an NGO page collected "donations" to a personal UPI ID', ents: [['social_handle', '@helping.hands.fund'], ['upi_id', 'donate.now@okfictpay']] },
+  // Account hacking cluster (shared phishing page) and more of the existing types
+  { cat: 'account_hacking', name: 'Lalitha Subramanian', mobile: '9000100066', loss: 0, days: 21, what: 'a "security check" page captured her social media login', ents: [['url', 'https://fb-security-check.example/login'], ['email', 'recover.support@mailbox-help.example']] },
+  { cat: 'account_hacking', name: 'Nikhil Joshi', mobile: '9000100067', loss: 7500, days: 10, what: 'his wallet account was emptied after the same fake security page', ents: [['url', 'fb-security-check.example'], ['phone', '9000160001']] },
+  { cat: 'impersonation', name: 'Omana Thomas', mobile: '9000100068', loss: 195000, days: 7, what: 'a fake "cyber cell" officer on video call demanded money for a "case closure"', ents: [['phone', '+91 90000 66666'], ['upi_id', 'settlement.desk@okfictbank'], ['person_name', 'Inspector Rathore']] },
+  { cat: 'impersonation', name: 'Yusuf Mirza', mobile: '9000100069', loss: 88000, days: 5, what: 'a caller claimed a parcel in his name had drugs and asked for a "bond" payment', ents: [['phone', '9000066666'], ['person_name', 'Inspector Rathore']] },
+  { cat: 'upi_payment_fraud', name: 'Sobha Raj', mobile: '9000100070', loss: 6400, days: 3, what: 'a seller on a marketplace sent a QR code to "receive" money', ents: [['upi_id', 'qrpay.helper@okfictbank'], ['phone', '9000099902']] },
+  { cat: 'investment_scam', name: 'Jacob Kurian', mobile: '9000100071', loss: 90000, days: 16, what: 'a crypto doubling group; the admin asked for deposits to a wallet-linked UPI ID', ents: [['url', 'coindouble-fast.example'], ['upi_id', 'coin.doubler@okfictpay']] },
+  { cat: 'online_shopping', name: 'Maya Varghese', mobile: '9000100072', loss: 4200, days: 1, what: 'a branded watch from a cheap store never arrived and the store vanished', ents: [['url', 'cheapgadget-store.example'], ['upi_id', 'cheapgadget.pay@okfictbank']] },
 ];
 
 const hex = (n: number, width: number) => n.toString(16).padStart(width, '0');
@@ -73,7 +115,8 @@ export const SEED_ENTITY_CLAIM_TYPES = ['phone', 'upi_id', 'bank_account', 'url'
 const CONTACT_WORDS: Record<Cat, string> = {
   upi_payment_fraud: 'payment request', investment_scam: 'investment offer', job_or_task_scam: 'job offer', loan_app_harassment: 'loan app',
   phishing_or_kyc: 'call and link', sextortion_blackmail: 'video call', romance_scam: 'online friendship', account_hacking: 'account takeover',
-  online_shopping: 'online order', impersonation: 'phone call', other: 'incident',
+  online_shopping: 'online order', impersonation: 'phone call', online_harassment: 'abusive messages', identity_theft: 'misuse of my documents',
+  malware_or_ransomware: 'harmful file', fake_profile: 'fake profile', other: 'incident',
 };
 
 /** Fictional, insert-only. Safe to run repeatedly. */

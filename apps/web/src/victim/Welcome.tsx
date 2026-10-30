@@ -36,7 +36,7 @@ export function Welcome({ onSession }: { onSession: (s: Session) => void }) {
       <HelpStrip />
       <main className="v-welcome">
         <section className="v-hero" aria-labelledby="v-hero-title">
-          <p className="v-brand"><span className="v-brand-mark" aria-hidden="true" />CaseGraph</p>
+          <p className="v-brand"><img className="v-brand-mark" src="/logo.png" alt="" width={32} height={32} />CaseGraph</p>
           <h1 id="v-hero-title">Hit by a cyber crime? We will help you report it.</h1>
           <p className="v-hero-sub">Scam, hacking, threats, a fake profile, stolen data, anything online. Tell us what happened in your own words and we turn it into a clear complaint.</p>
           <ul className="v-points">

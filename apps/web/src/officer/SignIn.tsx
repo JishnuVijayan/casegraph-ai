@@ -2,7 +2,6 @@ import { useState, type FormEvent } from 'react';
 import { jsonRequest } from './officerApi';
 import { useOfficer } from './session';
 import type { Session } from '../types.v2';
-import { Icon } from './parts';
 
 export function SignIn() {
   const { signIn, expired } = useOfficer();
@@ -24,7 +23,7 @@ export function SignIn() {
   return (
     <main className="o-signin">
       <section className="o-signin__brand" aria-hidden="true">
-        <div className="o-brandmark"><Icon name="shield" size={22} /> CaseGraph</div>
+        <div className="o-brandmark"><img className="o-logo" src="/icon-192.png" alt="" width={34} height={34} /> CaseGraph</div>
         <h2>Every complaint,<br />connected.</h2>
         <p>See the full story, the evidence, and every earlier complaint that shares a phone number, UPI ID or website, in one place.</p>
       </section>

@@ -1,0 +1,18 @@
+[Unit]
+Description=CaseGraph Nest API (loopback only)
+After=network.target docker.service
+Wants=docker.service
+
+[Service]
+Type=simple
+User=ec2-user
+WorkingDirectory=/opt/casegraph/app
+EnvironmentFile=/opt/casegraph/secrets/app.env
+ExecStart=/usr/bin/npm run start -w @casegraph/api
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

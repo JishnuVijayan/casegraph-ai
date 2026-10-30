@@ -17,7 +17,7 @@ function Shell() {
     <div className="o-app">
       <a className="o-skip" href="#o-main">Skip to content</a>
       <header className="o-topbar">
-        <NavLink to="/officer" end className="o-brand"><Icon name="shield" size={18} /> <strong>CaseGraph</strong><span>Investigation workspace</span></NavLink>
+        <NavLink to="/officer" end className="o-brand"><img className="o-logo" src="/icon-192.png" alt="" width={28} height={28} /> <strong>CaseGraph</strong><span>Investigation workspace</span></NavLink>
         <nav aria-label="Primary" className="o-topnav">
           <NavLink to="/officer" end>Inbox</NavLink>
         </nav>

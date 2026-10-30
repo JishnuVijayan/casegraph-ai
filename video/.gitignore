@@ -1,0 +1,5 @@
+node_modules
+out
+public/sfx
+public/voiceover.mp3
+public/voiceover.previous.mp3

@@ -33,7 +33,7 @@ export function Home({ session, onSignOut }: { session: Session; onSignOut: () =
     <div className="v-page">
       <HelpStrip />
       <header className="v-bar">
-        <p className="v-brand v-brand--dark"><span className="v-brand-mark" aria-hidden="true" />CaseGraph</p>
+        <p className="v-brand v-brand--dark"><img className="v-brand-mark" src="/logo.png" alt="" width={32} height={32} />CaseGraph</p>
         <button type="button" className="cg-btn cg-btn--ghost cg-btn--sm" onClick={onSignOut}>Sign out</button>
       </header>
       <main className="v-main">

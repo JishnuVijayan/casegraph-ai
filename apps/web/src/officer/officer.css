@@ -347,3 +347,6 @@ a.o-ref:hover { text-decoration: underline; }
   .cg-card, .o-simcard, .o-similar { box-shadow: none; break-inside: avoid; }
   .o-casehead { break-inside: avoid; }
 }
+
+.o-logo { width: 28px; height: 28px; border-radius: 7px; flex-shrink: 0; object-fit: cover; }
+.o-brandmark .o-logo { width: 34px; height: 34px; border-radius: 9px; }

@@ -1,0 +1,15 @@
+[Unit]
+Description=SSH tunnel to TigerGraph (localhost:14240 only)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ec2-user
+EnvironmentFile=/opt/casegraph/secrets/tunnel.env
+ExecStart=/usr/bin/ssh -i /opt/casegraph/secrets/tg.pem -N -L 14240:127.0.0.1:14240 -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o StrictHostKeyChecking=accept-new ec2-user@${TG_HOST}
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

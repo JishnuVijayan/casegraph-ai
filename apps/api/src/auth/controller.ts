@@ -4,6 +4,7 @@ import { Transform } from 'class-transformer';
 import { ApiRequest, envelope } from '../common/http';
 import { DemoConfig } from './config';
 import { Public, Roles } from './guards';
+import { isAllowedDemoOrigin } from './origins';
 import { Sessions } from './sessions';
 import { AccessStore } from './store';
 
@@ -28,8 +29,9 @@ export class AuthController {
   private assertLocalDemo(request: ApiRequest) {
     if (!this.config.enabled) throw new ForbiddenException();
     // Bearer sessions do not use cookies; reject cross-site demo sign-in requests too.
+    // PUBLIC_ORIGIN (exact https host) is allowed for the secured DuckDNS public demo.
     if (request.headers['sec-fetch-site'] === 'cross-site' ||
-      (request.headers.origin && !/^http:\/\/(127\.0\.0\.1|localhost):(5173|3000|15173)$/.test(request.headers.origin))) throw new ForbiddenException();
+      !isAllowedDemoOrigin(request.headers.origin)) throw new ForbiddenException();
     this.sessions.throttle();
   }
 

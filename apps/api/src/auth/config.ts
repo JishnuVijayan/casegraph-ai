@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { existsSync, lstatSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { parseEnv } from 'node:util';
+import { publicOriginFromEnv } from './origins';
 
 @Injectable()
 export class DemoConfig {
@@ -20,7 +21,10 @@ export class DemoConfig {
     const mode = process.env.DEMO_MODE ?? file.DEMO_MODE ?? 'false';
     if (!['true', 'false'].includes(mode)) throw new Error('DEMO_MODE must be true or false.');
     this.enabled = mode === 'true';
-    if (this.enabled && process.env.NODE_ENV === 'production') throw new Error('Demo authentication cannot run in production.');
+    // Public DuckDNS demo may run with NODE_ENV=production only when PUBLIC_ORIGIN is set.
+    if (this.enabled && process.env.NODE_ENV === 'production' && !publicOriginFromEnv()) {
+      throw new Error('Demo authentication cannot run in production without PUBLIC_ORIGIN=https://hostname.');
+    }
     if (this.enabled) {
       const port = Number(file.POSTGRES_PORT ?? '55432');
       const password = file.POSTGRES_PASSWORD ?? '';

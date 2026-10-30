@@ -52,7 +52,21 @@
     "aws:tg:stop": "node infra/aws/ec2-tigergraph.mjs stop",
     "aws:tg:start": "node infra/aws/ec2-tigergraph.mjs start",
     "aws:tg:destroy": "node infra/aws/ec2-tigergraph.mjs destroy",
-    "aws:tg:tunnel-hint": "node infra/aws/ec2-tigergraph.mjs tunnel-hint"
+    "aws:tg:tunnel-hint": "node infra/aws/ec2-tigergraph.mjs tunnel-hint",
+    "aws:tg:harden-sg": "node infra/aws/ec2-tigergraph.mjs harden-sg",
+    "aws:tg:refresh-ssh": "node infra/aws/ec2-tigergraph.mjs refresh-ssh",
+    "aws:app:create": "node infra/aws/ec2-app.mjs create",
+    "aws:app:status": "node infra/aws/ec2-app.mjs status",
+    "aws:app:stop": "node infra/aws/ec2-app.mjs stop",
+    "aws:app:start": "node infra/aws/ec2-app.mjs start",
+    "aws:app:destroy": "node infra/aws/ec2-app.mjs destroy",
+    "aws:app:refresh-ssh": "node infra/aws/ec2-app.mjs refresh-ssh",
+    "aws:demo:start": "node infra/aws/demo-control.mjs start",
+    "aws:demo:stop": "node infra/aws/demo-control.mjs stop",
+    "aws:demo:status": "node infra/aws/demo-control.mjs status",
+    "aws:demo:url": "node infra/aws/demo-control.mjs url",
+    "aws:demo:duckdns": "node infra/aws/demo-control.mjs duckdns",
+    "aws:demo:bootstrap": "node infra/aws/demo-control.mjs bootstrap"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.0",

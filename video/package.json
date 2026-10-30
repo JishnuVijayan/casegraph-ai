@@ -1,0 +1,25 @@
+{
+  "name": "casegraph-launch-video",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "studio": "node scripts/make-sound.mjs && remotion studio src/index.ts",
+    "voiceover": "node scripts/generate-voiceover.mjs",
+    "sync": "node scripts/sync-timing.mjs",
+    "render": "node scripts/make-sound.mjs && remotion render src/index.ts Launch out/casegraph-launch.mp4 --codec=h264 --crf=18 --audio-codec=aac --audio-bitrate=192k",
+    "typecheck": "tsc --noEmit",
+    "sound": "node scripts/make-sound.mjs",
+    "voices": "node scripts/list-voices.mjs"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.250",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "4.0.250"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "typescript": "^5.6.0"
+  }
+}

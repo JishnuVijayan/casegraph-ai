@@ -86,14 +86,36 @@ describe('SimilarGraphService availability', () => {
 });
 
 describe('synthetic seed', () => {
-  it('has ~40 fictional complaints with the intended clusters', () => {
-    expect(SEED_SPECS.length).toBeGreaterThanOrEqual(40);
+  it('has fictional complaints with the intended clusters', () => {
+    expect(SEED_SPECS.length).toBeGreaterThanOrEqual(70);
     const phones = (s: typeof SEED_SPECS[number]) => s.ents.filter(([t]) => t === 'phone').map(([, v]) => normalizeEntity('phone', v)?.id);
     const job = SEED_SPECS.filter((s) => s.cat === 'job_or_task_scam' && phones(s).includes('phone:9000011111'));
     expect(job.length).toBe(3);
     const trading = SEED_SPECS.filter((s) => s.ents.some(([t, v]) => t === 'url' && normalizeEntity('url', v)?.value === 'tradepro-global.example'));
-    expect(trading.length).toBe(4);
+    expect(trading.length).toBe(6); // 4 investors plus a romance and a second investment victim pulled into the same site
     expect(new Set(SEED_SPECS.map((s) => s.mobile)).size).toBe(SEED_SPECS.length);
     expect(seedIds(0).case).not.toBe(seedIds(1).case);
+  });
+
+  const KIND: Record<string, 'phone' | 'upi' | 'bank_account' | 'url' | 'email' | 'person_name' | 'app_name' | 'social_handle' | 'ifsc'> = {
+    upi_id: 'upi', phone: 'phone', bank_account: 'bank_account', url: 'url', email: 'email', person_name: 'person_name', app_name: 'app_name', social_handle: 'social_handle', ifsc: 'ifsc',
+  };
+  const idsOf = (s: typeof SEED_SPECS[number]) => new Set(s.ents.map(([t, v]) => normalizeEntity(KIND[t], v)?.id).filter(Boolean) as string[]);
+  const share = (a: typeof SEED_SPECS[number], b: typeof SEED_SPECS[number]) => [...idsOf(a)].filter((x) => idsOf(b).has(x) && !x.startsWith('app_name:') && !x.startsWith('person_name:'));
+
+  it('covers every crime type the product supports', () => {
+    const covered = new Set(SEED_SPECS.map((s) => s.cat));
+    for (const c of ['upi_payment_fraud', 'investment_scam', 'job_or_task_scam', 'loan_app_harassment', 'phishing_or_kyc', 'sextortion_blackmail', 'romance_scam', 'account_hacking',
+      'online_shopping', 'impersonation', 'online_harassment', 'identity_theft', 'malware_or_ransomware', 'fake_profile', 'other']) expect(covered.has(c as never)).toBe(true);
+  });
+  it('has one bank account used across three different crime types', () => {
+    const mule = SEED_SPECS.filter((s) => idsOf(s).has('bank_account:50100000123456'));
+    expect(new Set(mule.map((s) => s.cat)).size).toBeGreaterThanOrEqual(3);
+  });
+  it('has a chain: the first and last complaint share nothing, but each neighbour shares a detail', () => {
+    const by = (name: string) => SEED_SPECS.find((s) => s.name === name)!;
+    const [p1, p2, p3, p4] = ['Leela Krishnan', 'Vinod Pillai', 'Teresa Dias', 'Harish Nambiar'].map(by);
+    expect(share(p1, p4)).toEqual([]);
+    expect(share(p1, p2).length).toBeGreaterThan(0); expect(share(p2, p3).length).toBeGreaterThan(0); expect(share(p3, p4).length).toBeGreaterThan(0);
   });
 });
