@@ -2,9 +2,6 @@
 
 **Report any cyber crime in minutes. AI turns what happened into a clear, evidence-backed case. Officers see the earlier complaints that connect to it.**
 
-**Live demo: <https://casegraph-hhgoa.duckdns.org/>** &nbsp;·&nbsp; Officer view: <https://casegraph-hhgoa.duckdns.org/officer>
-The demo runs on a small AWS server that is switched on for demos to save cost. If the link does not load, it is switched off; see [Run it yourself](#run-it-yourself).
-
 > Built for **HHGOA 2026** (Hacker House Goa, 28–31 October 2026) with **TigerGraph**. CaseGraph is **not** an official government, police or banking service.
 
 > **Lost money just now?** Call **1930** and tell your bank first, or report at [cybercrime.gov.in](https://cybercrime.gov.in). CaseGraph does not file an FIR, freeze accounts, recover money, identify anyone, or certify evidence for court.
