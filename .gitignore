@@ -1,0 +1,6 @@
+# gh-pages is redirect-only. Ignore everything else left in the working tree.
+*
+!.gitignore
+!index.html
+!404.html
+!CNAME
