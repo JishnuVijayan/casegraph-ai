@@ -76,3 +76,5 @@ Optional `.env`: `BEDROCK_MODEL_ID`, `SARVAM_API_KEY`. Textract, Bedrock and Tig
 - **Legal and privacy review** is needed before real use.
 
 Built at Hacker House Goa 2026 with **TigerGraph**, **AWS** (Textract, Bedrock) and **Sarvam AI**.
+
+hi
